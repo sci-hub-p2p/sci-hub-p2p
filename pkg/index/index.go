@@ -13,41 +13,19 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package main
+// Package index zip file index
+package index
 
-import (
-	"fmt"
-	"os"
+type Index struct {
+	Name       string
+	Doi        string
+	DataOffset int64
+	// compressed data length
+	CompressedSize   int64
+	CompressedMethod uint16
+}
 
-	"sci_hub_p2p/internal/torrent"
-	"sci_hub_p2p/internal/zip"
-)
+// Decompress raw bytes data.
+func (i Index) Decompress() {
 
-func main() {
-	zip.Init()
-
-	const torrentPath = "tests/fixtures/sm_83500000-83599999.torrent"
-	// content, err := os.ReadFile(torrentPath)
-	// if err != nil {
-	// 	return
-	// }
-	//
-	// data, err := bencode1.Unmarshal(content)
-	// if err != nil {
-	// 	return
-	// }
-
-	file, err := os.Open(torrentPath)
-	if err != nil {
-		return
-	}
-
-	t, err := torrent.ParseReader(file)
-	if err != nil {
-		fmt.Println("error:", err)
-
-		return
-	}
-
-	fmt.Println(t)
 }

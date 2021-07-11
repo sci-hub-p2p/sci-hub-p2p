@@ -18,8 +18,10 @@ run:
   # If false (default) - golangci-lint acquires file lock on start.
   allow-parallel-runners: true
 
+  skip-files:
+    - "internal/zip/std_.*\\.go$"
 
-# output configuration options
+    # output configuration options
 output:
   # colored-line-number|line-number|json|tab|checkstyle|code-climate|junit-xml|github-actions
   # default is "colored-line-number"
