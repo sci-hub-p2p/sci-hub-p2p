@@ -40,6 +40,7 @@ jobs:
 
       - name: Run tests
         run: go test -race -coverprofile=coverage.out -covermode=atomic
+        shell: bash
 
       - uses: codecov/codecov-action@v1
         with:
