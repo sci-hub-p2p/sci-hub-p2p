@@ -1,5 +1,5 @@
-// Copyright (C) 2021 Trim21<trim21.me@gmail.com>
-
+// Copyright 2021 Trim21<trim21.me@gmail.com>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
 // published by the Free Software Foundation, either version 3 of the
@@ -11,11 +11,12 @@
 // GNU Affero General Public License for more details.
 //
 // You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+// along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 package torrent
 
 import (
+	"errors"
 	"fmt"
 	"math/bits"
 )
@@ -37,12 +38,12 @@ type info struct {
 }
 
 type torrentFile struct {
-	Announce     string     `json:"announce"`
-	AnnounceList [][]string `json:"announce-list"`
-	CreationDate int        `json:"creation date"`
-	Info         info       `json:"info"`
+	Announce     string
+	AnnounceList [][]string
+	CreationDate int
+	Info         info
 	// should be a [][string, int], golang didn't support this
-	Nodes [][]interface{} `json:"nodes"`
+	Nodes [][]interface{}
 }
 
 func (t torrentFile) toTorrent() (*Torrent, error) {
@@ -53,6 +54,7 @@ func (t torrentFile) toTorrent() (*Torrent, error) {
 	torrent.Pieces = t.Info.Pieces
 	torrent.Announce = t.Announce
 	torrent.AnnounceList = t.AnnounceList
+
 	n, err := caseNodes(t.Nodes)
 	if err != nil {
 		return nil, err
@@ -63,26 +65,30 @@ func (t torrentFile) toTorrent() (*Torrent, error) {
 	return &torrent, nil
 }
 
+var ErrorType = errors.New("can't not cast type")
+
 func caseNodes(i [][]interface{}) ([]Node, error) {
-	var nodes = make([]Node, len(i))
+	nodes := make([]Node, len(i))
 
 	for index, item := range i {
 		if len(item) != 2 {
-			return nil, fmt.Errorf("node %d has worng value %v", index, item)
+			return nil, fmt.Errorf("%w node %d has wrong value %v", ErrorType, index, item)
 		}
 
-		var host, ok1 = item[0].(string)
+		host, ok1 := item[0].(string)
 		if !ok1 {
-			return nil, fmt.Errorf("can't cast node[%d][0] to string, got %v", index, item[0])
+			return nil, fmt.Errorf("%w can't cast node[%d][0] to string, got %v",
+				ErrorType, index, item[0])
 		}
 
-		var port, ok2 = item[1].(int64)
+		port, ok2 := item[1].(int64)
 		if !ok2 || port > MaxInt {
-			return nil, fmt.Errorf("can't cast node[%d][1] to int, got %v", index, item[1])
+			return nil, fmt.Errorf("%w can't cast node[%d][1] to int, got %v",
+				ErrorType, index, item[1])
 		}
 
-		nodes = append(nodes, Node{host, int(port)})
-
+		nodes[index] = Node{host, int(port)}
 	}
+
 	return nodes, nil
 }

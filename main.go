@@ -1,5 +1,5 @@
-// Copyright (C) 2021 Trim21<trim21.me@gmail.com>
-
+// Copyright 2021 Trim21<trim21.me@gmail.com>
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
 // published by the Free Software Foundation, either version 3 of the
@@ -11,7 +11,7 @@
 // GNU Affero General Public License for more details.
 //
 // You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+// along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 package main
 
@@ -35,18 +35,16 @@ func main() {
 	// }
 
 	file, err := os.Open(torrentPath)
-
 	if err != nil {
 		return
 	}
 
 	t, err := torrent.ParseReader(file)
-
 	if err != nil {
 		fmt.Println("error:", err)
+
 		return
 	}
 
 	fmt.Println(t)
-
 }
