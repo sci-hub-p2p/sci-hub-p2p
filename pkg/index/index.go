@@ -38,10 +38,11 @@ type Index struct {
 
 var ErrCheckSum = errors.New("checksum mismatch")
 
-// DecompressFromPiece combine all wanted pieces first
+// DecompressFromPiece combine all wanted pieces first.
 func (i Index) DecompressFromPiece(pieces []byte) ([]byte, error) {
 	offset := int(i.DataOffset % int64(i.Torrent.PieceLength))
 	compressed := pieces[offset : int64(offset)+i.CompressedSize]
+
 	return i.Decompress(compressed)
 }
 
@@ -51,17 +52,20 @@ func (i Index) Decompress(data []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	content, err := io.ReadAll(decompressed)
 	if err != nil {
 		return nil, err
 	}
+
 	if !zip.CheckSum(content, i.Crc32) {
 		return nil, ErrCheckSum
 	}
+
 	return content, nil
 }
 
-// WantedPieces starts from 0
+// WantedPieces starts from 0.
 func (i Index) WantedPieces() []int {
 	t := i.Torrent
 
@@ -77,5 +81,6 @@ func makeRange(min, max int) []int {
 	for i := range a {
 		a[i] = min + i
 	}
+
 	return a
 }

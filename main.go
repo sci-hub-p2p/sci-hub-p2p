@@ -31,7 +31,9 @@ func main() {
 	}
 
 	var row = []interface{}{"1"}
+
 	var v T1
+
 	err := convert.ScanSlice(row, &v)
 	if err != nil {
 		log.Fatalln(err)

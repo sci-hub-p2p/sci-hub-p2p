@@ -42,7 +42,6 @@ output:
   # sorts results by: filepath, line and column
   sort-results: true
 
-
 # all available settings of specific linters
 linters-settings:
   errcheck:
@@ -88,7 +87,7 @@ linters-settings:
   goheader:
     values:
       regexp:
-        author: '.*'
+        author: ".*"
     template: |-
       Copyright {{ YEAR-RANGE }} {{ author }}
 
@@ -130,7 +129,7 @@ linters-settings:
     # Select the Go version to target. The default is '1.13'.
     go: "1.16"
     # https://staticcheck.io/docs/options#checks
-    checks: [ "all" ]
+    checks: ["all"]
 
   importas:
     # if set to `true`, force to use alias.
@@ -157,7 +156,7 @@ linters-settings:
     # Select the Go version to target. The default is '1.13'.
     go: "1.16"
     # https://staticcheck.io/docs/options#checks
-    checks: [ "all" ]
+    checks: ["all"]
 
   stylecheck:
     # Select the Go version to target. The default is '1.13'.
@@ -181,12 +180,13 @@ linters-settings:
     go: "1.16"
 
   whitespace:
-    multi-if: false   # Enforces newlines (or comments) after every multi-line if statement
+    multi-if: false # Enforces newlines (or comments) after every multi-line if statement
     multi-func: false # Enforces newlines (or comments) after every multi-line function signature
 
 linters:
   enable-all: true
   disable:
+    - wsl # noisy
     - exhaustivestruct
     - gofumpt # break import grouping
     - tagliatelle
@@ -198,12 +198,11 @@ linters:
     - interfacer
   fast: false
 
-
 issues:
   new: false
   fix: true
   exclude-rules:
-    - path: 'torrent/*.go'
+    - path: "torrent/*.go"
       text: "weak cryptographic primitive"
       linters:
         - gosec

@@ -69,12 +69,16 @@ func castNodes(i [][]interface{}) ([]Node, error) {
 	nodes := make([]Node, len(i))
 
 	for index, item := range i {
-		var n Node
-		err := convert.ScanSlice(item, &n)
+		var (
+			n   Node
+			err = convert.ScanSlice(item, &n)
+		)
 		if err != nil {
 			return nil, err
 		}
+
 		nodes[index] = n
 	}
+
 	return nodes, nil
 }
