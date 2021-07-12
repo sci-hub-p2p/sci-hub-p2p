@@ -79,10 +79,13 @@ func convert(name string, data interface{}, val reflect.Value) error {
 		err = convertToInt(name, data, val)
 	case reflect.Uint8:
 		err = convertToUInt(name, data, val)
+	case reflect.Float32:
+		err = convertToFloat32(name, data, val)
 	case reflect.Slice:
 		err = convertToSlice(name, data, val)
 	default:
-		return fmt.Errorf("'%s' expected type '%s', got type '%s', value: '%v'\nmaybe it's not implymented yet",
+		return fmt.Errorf(
+			"'%s' expected type '%s', got type '%s', value: '%v'\nmaybe it's not implymented yet",
 			name, val.Type(), k, data)
 	}
 
@@ -104,8 +107,23 @@ func getKind(val reflect.Value) reflect.Kind {
 	}
 }
 
-func convertToFloat(v interface{}) {
+func convertToFloat32(name string, data interface{}, val reflect.Value) error {
+	dataVal := reflect.Indirect(reflect.ValueOf(data))
+	dataKind := getKind(dataVal)
+	switch {
+	case dataKind == reflect.Int:
+		val.SetFloat(float64(dataVal.Int()))
+	case dataKind == reflect.Uint:
+		val.SetFloat(float64(dataVal.Uint()))
+	case dataKind == reflect.Float32:
+		val.SetFloat(dataVal.Float())
+	default:
+		return fmt.Errorf(
+			"'%s' expected type '%s', got unconvertible type '%s', value: '%v'",
+			name, val.Type(), dataVal.Type(), data)
+	}
 
+	return nil
 }
 
 func convertToString(name string, data interface{}, val reflect.Value) error {
@@ -163,6 +181,7 @@ func convertToSlice(name string, data interface{}, val reflect.Value) error {
 		if currentField.Type().Kind() == reflect.Uint8 {
 			val.SetBytes(dataVal.Bytes())
 			set = true
+
 			break
 		} else {
 			fieldName := name + "[" + strconv.Itoa(i) + "]"
@@ -212,8 +231,6 @@ func convertToInt(name string, data interface{}, val reflect.Value) error {
 		val.SetInt(dataVal.Int())
 	case reflect.Uint:
 		val.SetInt(int64(dataVal.Uint()))
-	case reflect.Float32:
-		val.SetInt(int64(dataVal.Float()))
 	default:
 		return fmt.Errorf(
 			"'%s' expected type '%s', got unconvertible type '%s', value: '%v'",
