@@ -13,12 +13,14 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package convert
+package convert_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"sci_hub_p2p/internal/convert"
 )
 
 func TestConvertSlice(t *testing.T) {
@@ -34,7 +36,7 @@ func TestConvertSlice(t *testing.T) {
 	var (
 		v   T1
 		row = []interface{}{"233", 66, []byte("string"), []string{"1", "2", "3"}}
-		err = ScanSlice(row, &v)
+		err = convert.ScanSlice(row, &v)
 	)
 	if err != nil {
 		t.Error(err)
@@ -61,6 +63,6 @@ func TestDontPanic(t *testing.T) {
 		v   T1
 	)
 
-	err := ScanSlice(row, &v)
+	err := convert.ScanSlice(row, &v)
 	assert.NotNil(t, err)
 }
