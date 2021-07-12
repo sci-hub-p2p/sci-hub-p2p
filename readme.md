@@ -9,7 +9,7 @@ This will be a local application with a cropped BitTorrent client that could fet
 So, this requires we generation indexes from the whole data block(zip files), I can't do it on my own.
 I will need help after some days,
 
-checkout all torrents from [this reddit post](https://www.reddit.com/r/DataHoarder/comments/nc27fv/rescue_mission_for_scihub_and_open_science_we_are/).
+checkout all torrents from [libgen](https://libgen.rs/scimag/repository_torrent/).
 
 ## License
 
