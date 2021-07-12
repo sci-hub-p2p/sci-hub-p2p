@@ -16,6 +16,15 @@
 // Package index zip file index
 package index
 
+import (
+	"bytes"
+	"errors"
+	"io"
+
+	"sci_hub_p2p/internal/torrent"
+	"sci_hub_p2p/internal/zip"
+)
+
 type Index struct {
 	Name       string
 	Doi        string
@@ -23,9 +32,50 @@ type Index struct {
 	// compressed data length
 	CompressedSize   int64
 	CompressedMethod uint16
+	Crc32            uint32
+	Torrent          torrent.Torrent
+}
+
+var ErrCheckSum = errors.New("checksum mismatch")
+
+// DecompressFromPiece combine all wanted pieces first
+func (i Index) DecompressFromPiece(pieces []byte) ([]byte, error) {
+	offset := int(i.DataOffset % int64(i.Torrent.PieceLength))
+	compressed := pieces[offset : int64(offset)+i.CompressedSize]
+	return i.Decompress(compressed)
 }
 
 // Decompress raw bytes data.
-func (i Index) Decompress() {
+func (i Index) Decompress(data []byte) ([]byte, error) {
+	var decompressed, err = zip.TryDecompressor(bytes.NewReader(data), i.CompressedMethod)
+	if err != nil {
+		return nil, err
+	}
+	content, err := io.ReadAll(decompressed)
+	if err != nil {
+		return nil, err
+	}
+	if !zip.CheckSum(content, i.Crc32) {
+		return nil, ErrCheckSum
+	}
+	return content, nil
+}
 
+// WantedPieces starts from 0
+func (i Index) WantedPieces() []int {
+	t := i.Torrent
+
+	// 应该不可能会溢出吧
+	start := int(i.DataOffset / int64(t.PieceLength))
+	end := int((i.DataOffset + i.CompressedSize) / int64(t.PieceLength))
+
+	return makeRange(start, end)
+}
+
+func makeRange(min, max int) []int {
+	a := make([]int, max-min+1)
+	for i := range a {
+		a[i] = min + i
+	}
+	return a
 }

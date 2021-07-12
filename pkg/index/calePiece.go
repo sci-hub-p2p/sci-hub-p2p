@@ -13,26 +13,4 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-// Package torrent parse raw torrent file and generate info hash.
-package torrent
-
-import "fmt"
-
-type Node struct {
-	Host string `tuple:"0"`
-	Port int    `tuple:"1"`
-}
-
-type Torrent struct {
-	info
-	Announce     string
-	AnnounceList [][]string
-	CreationDate int
-	Nodes        []Node
-	InfoHash     string
-	Pieces       []byte
-}
-
-func (t Torrent) String() string {
-	return fmt.Sprintf("Torrent{Name=%s, info_hash=%s}", t.Name, t.InfoHash)
-}
+package index

@@ -16,17 +16,30 @@
 package main
 
 import (
-	"fmt"
-	"os"
+	"log"
 
-	"sci_hub_p2p/internal/torrent"
+	"sci_hub_p2p/internal/convert"
 	"sci_hub_p2p/internal/zip"
 )
 
 func main() {
+	type T1 struct {
+		Host  string   `tuple:"0"`
+		Port  int      `tuple:"1"`
+		Names []string `tuple:"3"`
+		Raw   []byte   `tuple:"2"`
+	}
+
+	var row = []interface{}{"1"}
+	var v T1
+	err := convert.ScanSlice(row, &v)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	zip.Init()
 
-	const torrentPath = "tests/fixtures/sm_83500000-83599999.torrent"
+	// const torrentPath = "tests/fixtures/sm_83500000-83599999.torrent"
 	// content, err := os.ReadFile(torrentPath)
 	// if err != nil {
 	// 	return
@@ -37,17 +50,17 @@ func main() {
 	// 	return
 	// }
 
-	file, err := os.Open(torrentPath)
-	if err != nil {
-		return
-	}
-
-	t, err := torrent.ParseReader(file)
-	if err != nil {
-		fmt.Println("error:", err)
-
-		return
-	}
-
-	fmt.Println(t)
+	// file, err := os.Open(torrentPath)
+	// if err != nil {
+	// 	return
+	// }
+	//
+	// t, err := torrent.ParseReader(file)
+	// if err != nil {
+	// 	fmt.Println("error:", err)
+	//
+	// 	return
+	// }
+	//
+	// fmt.Println(t)
 }

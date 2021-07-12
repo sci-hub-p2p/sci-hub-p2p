@@ -64,7 +64,7 @@ func Init() {
 			continue
 		}
 
-		r, err := tryDecompressor(
+		r, err := TryDecompressor(
 			bytes.NewReader(compressed),
 			// dataOffset,
 			// int64(file.CompressedSize64),
@@ -100,9 +100,7 @@ func CheckSum(b []byte, crc uint32) bool {
 	return true
 }
 
-func tryDecompressor(
-	r io.Reader, method uint16,
-) (io.ReadCloser, error) {
+func TryDecompressor(r io.Reader, method uint16) (io.ReadCloser, error) {
 	dcomp := decompressor(method)
 	if dcomp == nil {
 		return nil, ErrAlgorithm

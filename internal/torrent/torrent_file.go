@@ -16,9 +16,9 @@
 package torrent
 
 import (
-	"errors"
-	"fmt"
 	"math/bits"
+
+	"sci_hub_p2p/internal/convert"
 )
 
 const (
@@ -55,7 +55,7 @@ func (t torrentFile) toTorrent() (*Torrent, error) {
 	torrent.Announce = t.Announce
 	torrent.AnnounceList = t.AnnounceList
 
-	n, err := caseNodes(t.Nodes)
+	n, err := castNodes(t.Nodes)
 	if err != nil {
 		return nil, err
 	}
@@ -65,30 +65,16 @@ func (t torrentFile) toTorrent() (*Torrent, error) {
 	return &torrent, nil
 }
 
-var ErrorType = errors.New("can't not cast type")
-
-func caseNodes(i [][]interface{}) ([]Node, error) {
+func castNodes(i [][]interface{}) ([]Node, error) {
 	nodes := make([]Node, len(i))
 
 	for index, item := range i {
-		if len(item) != 2 {
-			return nil, fmt.Errorf("%w node %d has wrong value %v", ErrorType, index, item)
+		var n Node
+		err := convert.ScanSlice(item, &n)
+		if err != nil {
+			return nil, err
 		}
-
-		host, ok1 := item[0].(string)
-		if !ok1 {
-			return nil, fmt.Errorf("%w can't cast node[%d][0] to string, got %v",
-				ErrorType, index, item[0])
-		}
-
-		port, ok2 := item[1].(int64)
-		if !ok2 || port > MaxInt {
-			return nil, fmt.Errorf("%w can't cast node[%d][1] to int, got %v",
-				ErrorType, index, item[1])
-		}
-
-		nodes[index] = Node{host, int(port)}
+		nodes[index] = n
 	}
-
 	return nodes, nil
 }
