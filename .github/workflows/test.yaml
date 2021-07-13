@@ -44,3 +44,4 @@ jobs:
           GORACE: halt_on_error=1
 
       - run: bash <(curl -s https://codecov.io/bash) -F ${{ runner.os }}
+        shell: bash
