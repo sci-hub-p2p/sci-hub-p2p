@@ -120,7 +120,8 @@ func init() {
 	indexCmd.AddCommand(genCmd, genReadCmd)
 
 	genCmd.Flags().StringVarP(&zipFileName, "data", "d", "", "path to data file")
-	genCmd.Flags().StringVarP(&torrentPath, "torrent", "t", "", "torrentPath path of this data file")
+	genCmd.Flags().StringVarP(&torrentPath, "torrent", "t", "",
+		"torrentPath path of this data file")
 	genCmd.Flags().StringVarP(&out, "out", "o", "./out/", "output directory")
 
 	if err := MarkFlagsRequired(genCmd, "data", "torrent"); err != nil {

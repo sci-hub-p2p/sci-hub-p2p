@@ -22,9 +22,10 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:           "sci_hub",
-	Short:         "sci-hub-p2p is cli tool to fetch paper from p2p network.",
-	Long:          "Complete documentation is available at https://github.com/Trim21/sci-hub-p2p/wiki",
+	Use:   "sci_hub",
+	Short: "sci-hub-p2p is cli tool to fetch paper from p2p network.",
+	Long: "Complete documentation is available at" +
+		"https://github.com/Trim21/sci-hub-p2p/wiki",
 	SilenceUsage:  true,
 	SilenceErrors: false,
 	// RunE: func(cmd *cobra.Command, args []string) error {

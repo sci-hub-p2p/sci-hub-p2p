@@ -18,6 +18,8 @@ package torrent
 import (
 	"math/bits"
 
+	"github.com/pkg/errors"
+
 	"sci_hub_p2p/internal/convert"
 )
 
@@ -74,7 +76,7 @@ func castNodes(i [][]interface{}) ([]Node, error) {
 			err = convert.ScanSlice(item, &n)
 		)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "failed to convert from %s", item)
 		}
 
 		nodes[index] = n

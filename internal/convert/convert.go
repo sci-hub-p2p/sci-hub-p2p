@@ -17,7 +17,6 @@
 package convert
 
 import (
-	"fmt"
 	"reflect"
 	"strconv"
 
@@ -27,6 +26,7 @@ import (
 const tagName = "tuple"
 
 var errNotStruct = errors.New("can only scan slice in to ptr of struct")
+var errCantConvert = errors.New("can't convert type")
 
 // ScanSlice row should be omitted after passed to this function.
 func ScanSlice(row []interface{}, dest interface{}) (err error) {
@@ -84,7 +84,7 @@ func convert(name string, data interface{}, val reflect.Value) error {
 	case reflect.Slice:
 		err = convertToSlice(name, data, val)
 	default:
-		return fmt.Errorf(
+		return errors.Wrapf(errCantConvert,
 			"'%s' expected type '%s', got type '%s', value: '%v'\nmaybe it's not implymented yet",
 			name, val.Type(), k, data)
 	}
@@ -118,7 +118,7 @@ func convertToFloat32(name string, data interface{}, val reflect.Value) error {
 	case dataKind == reflect.Float32:
 		val.SetFloat(dataVal.Float())
 	default:
-		return fmt.Errorf(
+		return errors.Wrapf(errCantConvert,
 			"'%s' expected type '%s', got unconvertible type '%s', value: '%v'",
 			name, val.Type(), dataVal.Type(), data)
 	}
@@ -134,7 +134,7 @@ func convertToString(name string, data interface{}, val reflect.Value) error {
 	case dataKind == reflect.String:
 		val.SetString(dataVal.String())
 	default:
-		return fmt.Errorf(
+		return errors.Wrapf(errCantConvert,
 			"'%s' expected type '%s', got unconvertible type '%s', value: '%v'",
 			name, val.Type(), dataVal.Type(), data)
 	}
@@ -152,7 +152,7 @@ func convertToSlice(name string, data interface{}, val reflect.Value) error {
 
 	// If we have a non array/slice type then we first attempt to convert.
 	if dataValKind != reflect.Array && dataValKind != reflect.Slice {
-		return fmt.Errorf(
+		return errors.Wrapf(errCantConvert,
 			"'%s': source data must be an array or slice, got %s", name, dataValKind)
 	}
 
@@ -207,14 +207,14 @@ func convertToUInt(name string, data interface{}, val reflect.Value) error {
 	case reflect.Int:
 		i := dataVal.Int()
 		if i < 0 {
-			return fmt.Errorf("cannot parse '%s', %d overflows uint",
+			return errors.Wrapf(errCantConvert, "cannot parse '%s', %d overflows uint",
 				name, i)
 		}
 		val.SetUint(uint64(i))
 	case reflect.Uint:
 		val.SetUint(dataVal.Uint())
 	default:
-		return fmt.Errorf(
+		return errors.Wrapf(errCantConvert,
 			"'%s' expected type '%s', got unconvertible type '%s', value: '%v'",
 			name, val.Type(), dataVal.Type(), data)
 	}
@@ -232,7 +232,7 @@ func convertToInt(name string, data interface{}, val reflect.Value) error {
 	case reflect.Uint:
 		val.SetInt(int64(dataVal.Uint()))
 	default:
-		return fmt.Errorf(
+		return errors.Wrapf(errCantConvert,
 			"'%s' expected type '%s', got unconvertible type '%s', value: '%v'",
 			name, val.Type(), dataVal.Type(), data)
 	}
@@ -247,7 +247,7 @@ func convertToBool(name string, data interface{}, val reflect.Value) error {
 	case dataKind == reflect.Bool:
 		val.SetBool(dataVal.Bool())
 	default:
-		return fmt.Errorf(
+		return errors.Wrapf(errCantConvert,
 			"'%s' expected type '%s', got unconvertible type '%s', value: '%v'",
 			name, val.Type(), dataVal.Type(), data)
 	}

@@ -161,7 +161,12 @@ func (f File) writeJSON(w *zip.Writer) error {
 		return errors.Wrap(err, "can't write zip file")
 	}
 
-	return json.NewEncoder(j).Encode(f)
+	err = json.NewEncoder(j).Encode(f)
+	if err != nil {
+		return errors.Wrap(err, "can't serialize to json")
+	}
+
+	return nil
 }
 
 func (f File) writeHASH(w *zip.Writer) error {
@@ -177,7 +182,7 @@ func (f File) writeHASH(w *zip.Writer) error {
 	}
 
 	if _, err := s1.Write(f.Sha1); err != nil {
-		return errors.Wrap(err, "can't write zip file")
+		return errors.Wrap(err, "can't write to zip file")
 	}
 
 	s2, err := w.CreateHeader(&zip.FileHeader{
@@ -185,12 +190,12 @@ func (f File) writeHASH(w *zip.Writer) error {
 		Method: zip.Store,
 	})
 	if err != nil {
-		return errors.Wrap(err, "can't write zip file")
+		return errors.Wrap(err, "can't write to zip file")
 	}
 
 	_, err = s2.Write(f.Sha256)
 
-	return err
+	return errors.Wrap(err, "can't write to zip file")
 }
 
 func (f File) OutToFile(w io.Writer) error {
