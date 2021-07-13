@@ -27,8 +27,9 @@ type Torrent struct {
 	Announce     string
 	AnnounceList [][]string
 	CreationDate int
-	Nodes        []Node `json:"nodes"`
+	Nodes        []Node
 	InfoHash     string
+	Pieces       []byte
 }
 
 func (t Torrent) String() string {

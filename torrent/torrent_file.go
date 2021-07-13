@@ -51,7 +51,7 @@ func (t torrentFile) toTorrent() (*Torrent, error) {
 	torrent.Name = t.Info.Name
 	torrent.Files = t.Info.Files
 	torrent.PieceLength = t.Info.PieceLength
-	torrent.Pieces = t.Info.Pieces
+	torrent.Pieces = []byte(t.Info.Pieces)
 	torrent.Announce = t.Announce
 	torrent.AnnounceList = t.AnnounceList
 

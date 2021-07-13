@@ -20,15 +20,35 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"io"
+	"os"
 
+	bencodeMap "github.com/IncSW/go-bencode"
 	"github.com/jackpal/bencode-go"
 	"github.com/pkg/errors"
 )
 
-func ParseReader(reader io.Reader) (*Torrent, error) {
+func ParseFile(name string) (*Torrent, error) {
+	b, err := os.ReadFile(name)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't open file")
+	}
+
+	return ParseRaw(b)
+}
+
+func ParseReader(r io.Reader) (*Torrent, error) {
+	content, err := io.ReadAll(r)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't read from buffer")
+	}
+
+	return ParseRaw(content)
+}
+
+func ParseRaw(raw []byte) (*Torrent, error) {
 	t := &torrentFile{}
 
-	err := bencode.Unmarshal(reader, t)
+	err := bencode.Unmarshal(bytes.NewReader(raw), t)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't parse torrent")
 	}
@@ -38,7 +58,7 @@ func ParseReader(reader io.Reader) (*Torrent, error) {
 		return nil, err
 	}
 
-	infoHash, err := getInfoHash(t.Info)
+	infoHash, err := getInfoHash(raw)
 	if err != nil {
 		return nil, err
 	}
@@ -48,23 +68,26 @@ func ParseReader(reader io.Reader) (*Torrent, error) {
 	return tt, err
 }
 
-func ParseRaw(raw []byte) (*Torrent, error) {
-	return ParseReader(bytes.NewReader(raw))
-}
+func getInfoHash(content []byte) (string, error) {
+	// it's annoying but we have to decode it twice to calculate info-hash
+	data, err := bencodeMap.Unmarshal(content)
 
-func getInfoHash(info info) (string, error) {
-	var buf bytes.Buffer
-
-	if err := bencode.Marshal(&buf, info); err != nil {
-		return "", errors.Wrap(err, "can't marshal info to bytes")
+	m, ok := data.(map[string]interface{})
+	if !ok {
+		return "", errors.Wrap(err, "torrent data is not valid")
 	}
 
-	content, err := io.ReadAll(&buf)
+	info, ok := m["info"]
+	if !ok {
+		return "", errors.Wrap(err, "torrent missing `info` field")
+	}
+
+	s, err := bencodeMap.Marshal(info)
 	if err != nil {
-		return "", errors.Wrap(err, "can't read from buffer")
+		return "", errors.Wrap(err, "can't marshal torrent info")
 	}
 
-	return sha1Sum(content), nil
+	return sha1Sum(s), nil
 }
 
 func sha1Sum(b []byte) string {
