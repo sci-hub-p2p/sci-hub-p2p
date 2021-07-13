@@ -13,42 +13,36 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package main
+package cmd
 
 import (
 	"os"
-	"runtime/pprof"
 
-	"sci_hub_p2p/cmd"
+	"github.com/spf13/cobra"
 )
 
-func main() {
-	f, _ := os.Create("./profile")
-	_ = pprof.StartCPUProfile(f)
-	defer pprof.StopCPUProfile()
-	cmd.Execute()
-	// const torrentPath = "tests/fixtures/sm_83500000-83599999.torrent"
-	// content, err := os.ReadFile(torrentPath)
-	// if err != nil {
-	// 	return
-	// }
-	//
-	// data, err := bencode1.Unmarshal(content)
-	// if err != nil {
-	// 	return
-	// }
+var rootCmd = &cobra.Command{
+	Use:           "sci_hub",
+	Short:         "sci-hub-p2p is cli tool to fetch paper from p2p network.",
+	Long:          "Complete documentation is available at https://github.com/Trim21/sci-hub-p2p/wiki",
+	SilenceUsage:  true,
+	SilenceErrors: false,
+	// RunE: func(cmd *cobra.Command, args []string) error {
+	//	return nil
+	// },
+}
 
-	// file, err := os.Open(torrentPath)
-	// if err != nil {
-	// 	return
-	// }
-	//
-	// t, err := torrent.ParseReader(file)
-	// if err != nil {
-	// 	fmt.Println("error:", err)
-	//
-	// 	return
-	// }
-	//
-	// fmt.Println(t)
+var debug bool
+
+func Execute() {
+	rootCmd.AddCommand(
+		indexCmd,
+		// serverCmd,
+		// spiderCmd,
+		// cronCmd,
+	)
+	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug")
+	if err := rootCmd.Execute(); err != nil {
+		os.Exit(1)
+	}
 }

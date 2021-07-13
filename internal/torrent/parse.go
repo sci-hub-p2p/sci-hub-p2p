@@ -17,14 +17,14 @@ package torrent
 
 import (
 	"bytes"
-	"crypto/sha1"
-	"encoding/hex"
 	"io"
 	"os"
 
 	bencodeMap "github.com/IncSW/go-bencode"
 	"github.com/jackpal/bencode-go"
 	"github.com/pkg/errors"
+
+	"sci_hub_p2p/pkg/hash"
 )
 
 func ParseFile(name string) (*Torrent, error) {
@@ -87,13 +87,5 @@ func getInfoHash(content []byte) (string, error) {
 		return "", errors.Wrap(err, "can't marshal torrent info")
 	}
 
-	return sha1Sum(s), nil
-}
-
-func sha1Sum(b []byte) string {
-	h := sha1.New()
-	_, _ = h.Write(b)
-	sum := h.Sum(nil)
-
-	return hex.EncodeToString(sum)
+	return hash.Sha1Sum(s), nil
 }

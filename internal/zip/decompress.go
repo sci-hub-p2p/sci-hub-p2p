@@ -44,14 +44,10 @@ func Init() {
 	for _, file := range read.File {
 		dataOffset, err := file.DataOffset()
 		if err != nil {
-			log.Println(err)
-
 			continue
 		}
 
 		if _, err = buf.Seek(dataOffset, io.SeekStart); err != nil {
-			log.Println(err)
-
 			continue
 		}
 
@@ -59,8 +55,6 @@ func Init() {
 
 		if length, err := io.ReadFull(buf, compressed); err != nil ||
 			uint64(length) != file.CompressedSize64 {
-			log.Println(err)
-
 			continue
 		}
 

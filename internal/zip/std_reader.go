@@ -8,7 +8,6 @@ import (
 	"bufio"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"hash"
 	"hash/crc32"
 	"io"
@@ -221,7 +220,6 @@ func (r *checksumReader) Read(b []byte) (n int, err error) {
 	}
 	n, err = r.rc.Read(b)
 	r.hash.Write(b[:n])
-	fmt.Println(b[:n])
 	r.nread += uint64(n)
 	if err == nil {
 		return

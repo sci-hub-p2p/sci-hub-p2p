@@ -13,42 +13,47 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package main
+package hash
 
 import (
-	"os"
-	"runtime/pprof"
-
-	"sci_hub_p2p/cmd"
+	"crypto/sha1"
+	"crypto/sha256"
+	"encoding/hex"
+	"io"
 )
 
-func main() {
-	f, _ := os.Create("./profile")
-	_ = pprof.StartCPUProfile(f)
-	defer pprof.StopCPUProfile()
-	cmd.Execute()
-	// const torrentPath = "tests/fixtures/sm_83500000-83599999.torrent"
-	// content, err := os.ReadFile(torrentPath)
-	// if err != nil {
-	// 	return
-	// }
-	//
-	// data, err := bencode1.Unmarshal(content)
-	// if err != nil {
-	// 	return
-	// }
+func Sha1SumReader(r io.Reader) (string, error) {
+	h := sha1.New()
+	_, err := io.Copy(h, r)
+	if err != nil {
+		return "", err
+	}
+	sum := h.Sum(nil)
+	return hex.EncodeToString(sum), nil
+}
 
-	// file, err := os.Open(torrentPath)
-	// if err != nil {
-	// 	return
-	// }
-	//
-	// t, err := torrent.ParseReader(file)
-	// if err != nil {
-	// 	fmt.Println("error:", err)
-	//
-	// 	return
-	// }
-	//
-	// fmt.Println(t)
+func Sha256SumReader(r io.Reader) (string, error) {
+	h := sha256.New()
+	_, err := io.Copy(h, r)
+	if err != nil {
+		return "", err
+	}
+	sum := h.Sum(nil)
+	return hex.EncodeToString(sum), nil
+}
+
+func Sha1Sum(b []byte) string {
+	h := sha1.New()
+	_, _ = h.Write(b)
+	sum := h.Sum(nil)
+
+	return hex.EncodeToString(sum)
+}
+
+func Sha256Sum(b []byte) string {
+	h := sha256.New()
+	_, _ = h.Write(b)
+	sum := h.Sum(nil)
+
+	return hex.EncodeToString(sum)
 }

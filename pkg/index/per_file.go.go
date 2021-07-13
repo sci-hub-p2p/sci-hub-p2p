@@ -13,42 +13,20 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package main
+package index
 
-import (
-	"os"
-	"runtime/pprof"
+import "fmt"
 
-	"sci_hub_p2p/cmd"
-)
+type perFile struct {
+	FileName       string `json:"file_name"`
+	Offset         int64  `json:"offset"`
+	Method         uint16 `json:"method"`
+	Crc32          uint32 `json:"crc32"`
+	CompressedSize uint64 `json:"size"`
+	Sha1           string `json:"sha1"`
+	Sha256         string `json:"sha256"`
+}
 
-func main() {
-	f, _ := os.Create("./profile")
-	_ = pprof.StartCPUProfile(f)
-	defer pprof.StopCPUProfile()
-	cmd.Execute()
-	// const torrentPath = "tests/fixtures/sm_83500000-83599999.torrent"
-	// content, err := os.ReadFile(torrentPath)
-	// if err != nil {
-	// 	return
-	// }
-	//
-	// data, err := bencode1.Unmarshal(content)
-	// if err != nil {
-	// 	return
-	// }
-
-	// file, err := os.Open(torrentPath)
-	// if err != nil {
-	// 	return
-	// }
-	//
-	// t, err := torrent.ParseReader(file)
-	// if err != nil {
-	// 	fmt.Println("error:", err)
-	//
-	// 	return
-	// }
-	//
-	// fmt.Println(t)
+func (f perFile) String() string {
+	return fmt.Sprintf("perFile{name: %s, method: %d, offset: %d, size: %d}", f.FileName, f.Method, f.Offset, f.CompressedSize)
 }
