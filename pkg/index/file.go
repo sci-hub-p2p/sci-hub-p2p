@@ -24,8 +24,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 
+	"github.com/cheggaaa/pb/v3"
 	"github.com/pkg/errors"
 
 	"sci_hub_p2p/pkg/hash"
@@ -89,14 +89,18 @@ func FromZip(name string) (File, error) {
 
 	f := NewWithPre(len(r.File))
 
-	log.Println("start iter file")
 	var sha1Buffer bytes.Buffer
 	var sha256Buffer bytes.Buffer
+
+	fmt.Println("start iter file")
+
+	bar := pb.StartNew(len(r.File))
+	defer bar.Finish()
 	for _, file := range r.File {
+		bar.Increment()
 		if file == nil {
 			continue
 		}
-		log.Println("start iter file", file.Name)
 
 		if file.CompressedSize64 == 0 {
 			continue

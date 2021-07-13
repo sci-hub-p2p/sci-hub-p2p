@@ -16,39 +16,9 @@
 package main
 
 import (
-	"os"
-	"runtime/pprof"
-
 	"sci_hub_p2p/cmd"
 )
 
 func main() {
-	f, _ := os.Create("./profile")
-	_ = pprof.StartCPUProfile(f)
-	defer pprof.StopCPUProfile()
 	cmd.Execute()
-	// const torrentPath = "tests/fixtures/sm_83500000-83599999.torrent"
-	// content, err := os.ReadFile(torrentPath)
-	// if err != nil {
-	// 	return
-	// }
-	//
-	// data, err := bencode1.Unmarshal(content)
-	// if err != nil {
-	// 	return
-	// }
-
-	// file, err := os.Open(torrentPath)
-	// if err != nil {
-	// 	return
-	// }
-	//
-	// t, err := torrent.ParseReader(file)
-	// if err != nil {
-	// 	fmt.Println("error:", err)
-	//
-	// 	return
-	// }
-	//
-	// fmt.Println(t)
 }

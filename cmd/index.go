@@ -79,7 +79,7 @@ var genCmd = &cobra.Command{
 		}
 
 		zipPath := filepath.Join(out, index.InfoHash+".zip")
-		log.Println("save indexes to local file",zipPath)
+		log.Println("save indexes to local file", zipPath)
 		zipFile, err := os.Create(zipPath)
 		if err != nil {
 			return errors.Wrapf(err, "can't create file %s", zipPath)
