@@ -37,6 +37,13 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v2
+        if: "${{ github.event_name == 'pull_request'}}"
+        with:
+          fetch-depth: 2
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+        if: "${{ github.event_name != 'pull_request'}}"
         with:
           fetch-depth: 2
 
