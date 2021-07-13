@@ -18,8 +18,9 @@ package index
 
 import (
 	"bytes"
-	"errors"
 	"io"
+
+	"github.com/pkg/errors"
 
 	"sci_hub_p2p/internal/torrent"
 	"sci_hub_p2p/internal/zip"
@@ -50,12 +51,12 @@ func (i Index) DecompressFromPiece(pieces []byte) ([]byte, error) {
 func (i Index) Decompress(data []byte) ([]byte, error) {
 	var decompressed, err = zip.TryDecompressor(bytes.NewReader(data), i.CompressedMethod)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "can't decompress data")
 	}
 
 	content, err := io.ReadAll(decompressed)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "can't decompress data")
 	}
 
 	if !zip.CheckSum(content, i.Crc32) {

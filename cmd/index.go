@@ -32,6 +32,7 @@ var indexCmd = &cobra.Command{
 	Use: "index",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		fmt.Println("index command")
+
 		return cmd.Help()
 	},
 }
@@ -66,14 +67,14 @@ var genCmd = &cobra.Command{
 			return fmt.Errorf("output path is not a directory")
 		}
 
-		index, err := index.FromZip(data)
+		index, err := index.FromZip(zipFileName)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "can't generate indexes from file")
 		}
 		index.InfoHash = t.InfoHash
 
 		if debug {
-			fmt.Printf("data: %s\n", data)
+			fmt.Printf("data: %s\n", zipFileName)
 			fmt.Printf("torrent: %s\n", torrentPath)
 			fmt.Printf("out dir: %s\n", out)
 		}
@@ -106,18 +107,19 @@ var genReadCmd = &cobra.Command{
 
 		}
 		fmt.Println(f)
+
 		return nil
 	},
 }
 
-var data string
+var zipFileName string
 var torrentPath string
 var out string
 
 func init() {
 	indexCmd.AddCommand(genCmd, genReadCmd)
 
-	genCmd.Flags().StringVarP(&data, "data", "d", "", "path to data file")
+	genCmd.Flags().StringVarP(&zipFileName, "data", "d", "", "path to data file")
 	genCmd.Flags().StringVarP(&torrentPath, "torrent", "t", "", "torrentPath path of this data file")
 	genCmd.Flags().StringVarP(&out, "out", "o", "./out/", "output directory")
 

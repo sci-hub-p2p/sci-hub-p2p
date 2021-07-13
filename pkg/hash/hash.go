@@ -20,15 +20,18 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"io"
+
+	"github.com/pkg/errors"
 )
 
 func Sha1SumReader(r io.Reader) (string, error) {
 	h := sha1.New()
 	_, err := io.Copy(h, r)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "can't hash content")
 	}
 	sum := h.Sum(nil)
+
 	return hex.EncodeToString(sum), nil
 }
 
@@ -36,9 +39,10 @@ func Sha256SumReader(r io.Reader) (string, error) {
 	h := sha256.New()
 	_, err := io.Copy(h, r)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "can't hash content")
 	}
 	sum := h.Sum(nil)
+
 	return hex.EncodeToString(sum), nil
 }
 

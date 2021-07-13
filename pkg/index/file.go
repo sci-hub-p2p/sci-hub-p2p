@@ -60,11 +60,12 @@ func (f File) String() string {
 		buffer.WriteString(",\n")
 	}
 	buffer.WriteString("]")
+
 	return buffer.String()
 }
 
 func (f File) Files() []perFile {
-	var s = make([]perFile, len(f.FileNames), len(f.FileNames))
+	var s = make([]perFile, len(f.FileNames))
 
 	for i := 0; i < len(f.FileNames); i++ {
 		s[i] = perFile{
@@ -83,17 +84,15 @@ func (f File) Files() []perFile {
 func FromZip(name string) (File, error) {
 	r, err := zip.OpenReader(name)
 	if err != nil {
-		return File{}, err
+		return File{}, errors.Wrap(err, "can't open zip file")
 	}
 	defer r.Close()
 
 	f := NewWithPre(len(r.File))
-
 	var sha1Buffer bytes.Buffer
 	var sha256Buffer bytes.Buffer
 
 	fmt.Println("start iter file")
-
 	bar := pb.StartNew(len(r.File))
 	defer bar.Finish()
 	for _, file := range r.File {
@@ -108,12 +107,12 @@ func FromZip(name string) (File, error) {
 
 		offset, err := file.DataOffset()
 		if err != nil {
-			return File{}, err
+			return File{}, errors.Wrap(err, "zip file broken")
 		}
 
 		r, err := file.Open()
 		if err != nil {
-			return File{}, err
+			return File{}, errors.Wrap(err, "can't decompress zip file")
 		}
 		defer r.Close()
 
@@ -134,12 +133,12 @@ func FromZip(name string) (File, error) {
 
 	f.Sha1, err = io.ReadAll(&sha1Buffer)
 	if err != nil {
-		return File{}, err
+		return File{}, errors.Wrap(err, "can't hash files")
 	}
 
 	f.Sha256, err = io.ReadAll(&sha256Buffer)
 	if err != nil {
-		return File{}, err
+		return File{}, errors.Wrap(err, "can't hash files")
 	}
 
 	return f, nil
@@ -153,13 +152,15 @@ func NewWithPre(n int) File {
 		Crc32:           make([]uint32, 0, n),
 		CompressedSizes: make([]uint64, 0, n),
 	}
+
 	return f
 }
-func (f File) writeJson(w *zip.Writer) error {
+func (f File) writeJSON(w *zip.Writer) error {
 	j, err := w.Create(offsetFileName)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "can't write zip file")
 	}
+
 	return json.NewEncoder(j).Encode(f)
 }
 
@@ -172,11 +173,11 @@ func (f File) writeHASH(w *zip.Writer) error {
 		Method: zip.Store,
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "can't write zip file")
 	}
 
 	if _, err := s1.Write(f.Sha1); err != nil {
-		return err
+		return errors.Wrap(err, "can't write zip file")
 	}
 
 	s2, err := w.CreateHeader(&zip.FileHeader{
@@ -184,10 +185,11 @@ func (f File) writeHASH(w *zip.Writer) error {
 		Method: zip.Store,
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "can't write zip file")
 	}
 
 	_, err = s2.Write(f.Sha256)
+
 	return err
 }
 
@@ -195,13 +197,14 @@ func (f File) OutToFile(w io.Writer) error {
 	zipW := zip.NewWriter(w)
 	defer zipW.Close()
 
-	if err := f.writeJson(zipW); err != nil {
+	if err := f.writeJSON(zipW); err != nil {
 		return errors.Wrap(err, "can't write offset to zip file")
 	}
 
 	if err := f.writeHASH(zipW); err != nil {
 		return errors.Wrap(err, "can't write hash to zip file")
 	}
+
 	return nil
 }
 

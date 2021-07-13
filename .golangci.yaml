@@ -40,7 +40,7 @@ output:
   path-prefix: ""
 
   # sorts results by: filepath, line and column
-  sort-results: true
+  sort-results: false
 
 # all available settings of specific linters
 linters-settings:
@@ -210,7 +210,7 @@ issues:
   new: false
   fix: true
   exclude-rules:
-    - path: "torrent/*.go"
-      text: "weak cryptographic primitive"
-      linters:
-        - gosec
+    # Disable linters that are annoying in tests.
+    - path: 'cmd[/\\].*'
+      linters: [gochecknoglobals, gochecknoinits, goerr113, wrapcheck]
+  exclude-use-default: true

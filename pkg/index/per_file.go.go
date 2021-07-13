@@ -28,5 +28,6 @@ type perFile struct {
 }
 
 func (f perFile) String() string {
-	return fmt.Sprintf("perFile{name: %s, method: %d, offset: %d, size: %d}", f.FileName, f.Method, f.Offset, f.CompressedSize)
+	return fmt.Sprintf("perFile{name: %s, method: %d, offset: %d, size: %d}",
+		f.FileName, f.Method, f.Offset, f.CompressedSize)
 }
