@@ -44,8 +44,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
         if: "${{ github.event_name != 'pull_request'}}"
-        with:
-          fetch-depth: 2
 
       - name: Run tests
         run: go test -coverprofile coverage.out -covermode atomic ./...
