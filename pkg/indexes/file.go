@@ -24,15 +24,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
-	"path/filepath"
 
-	"github.com/cheggaaa/pb/v3"
 	"github.com/pkg/errors"
-
-	"sci_hub_p2p/internal/torrent"
-	"sci_hub_p2p/pkg/hash"
-	"sci_hub_p2p/pkg/logger"
 )
 
 const (
@@ -87,88 +80,7 @@ func (f File) Files() []perFile {
 
 var ErrTorrentDataBroken = errors.New("torrent data is broken")
 
-const filesPerTorrent = 10_0000 // 100k pdf per file
-
-func FromDataDir(dirName string, t *torrent.Torrent) (*File, error) {
-	f := NewWithPre(filesPerTorrent)
-	f.InfoHash = t.InfoHash
-
-	for _, file := range t.Files {
-		fs := filepath.Join(file.Path...)
-		s, err := os.Stat(filepath.Join(dirName, fs))
-		if err != nil {
-			return nil, fmt.Errorf("can't generate indexes, file %s is broken %w",
-				fs, ErrTorrentDataBroken)
-		}
-		if s.Size() != file.Length {
-			return nil, errors.Wrapf(ErrTorrentDataBroken,
-				"can't generate indexes, file %s has a wrong size, expected %d",
-				fs, file.Length)
-		}
-		logger.Debug("skip hash check here because files are too big, " +
-			"hopefully ew didn't generate indexes from wrong data")
-	}
-
-	r, err := zip.OpenReader(dirName)
-	if err != nil {
-		return nil, errors.Wrap(err, "can't open zip file")
-	}
-	defer r.Close()
-
-	var sha1Buffer bytes.Buffer
-	var sha256Buffer bytes.Buffer
-
-	logger.Info("start iter file")
-	bar := pb.StartNew(len(r.File))
-	defer bar.Finish()
-	for _, file := range r.File {
-		bar.Increment()
-		if file == nil {
-			continue
-		}
-
-		if file.CompressedSize64 == 0 {
-			continue
-		}
-
-		offset, err := file.DataOffset()
-		if err != nil {
-			return nil, errors.Wrap(err, "zip file broken")
-		}
-
-		r, err := file.Open()
-		if err != nil {
-			return nil, errors.Wrap(err, "can't decompress zip file")
-		}
-		defer r.Close()
-
-		sha1, sha256, err := hash.Sha1Sha256SumReader(r)
-		if err != nil {
-			return nil, errors.Wrapf(err, "can't hash file %s", file.Name)
-		}
-
-		f.FileNames = append(f.FileNames, file.Name)
-		f.Methods = append(f.Methods, file.Method)
-		f.Offset = append(f.Offset, offset)
-		f.CompressedSizes = append(f.CompressedSizes, file.CompressedSize64)
-		f.Crc32 = append(f.Crc32, file.CRC32)
-
-		sha1Buffer.Write(sha1)
-		sha256Buffer.Write(sha256)
-	}
-
-	f.Sha1, err = io.ReadAll(&sha1Buffer)
-	if err != nil {
-		return nil, errors.Wrap(err, "can't hash files")
-	}
-
-	f.Sha256, err = io.ReadAll(&sha256Buffer)
-	if err != nil {
-		return nil, errors.Wrap(err, "can't hash files")
-	}
-
-	return &f, nil
-}
+const filesPerTorrent = 100000 // 100k pdf per file
 
 func NewWithPre(n int) File {
 	var f = File{

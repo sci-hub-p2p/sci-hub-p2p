@@ -17,13 +17,11 @@
 package indexes
 
 import (
-	"bytes"
-	"io"
+	"archive/zip"
 
 	"github.com/pkg/errors"
 
 	"sci_hub_p2p/internal/torrent"
-	"sci_hub_p2p/internal/zip"
 )
 
 type Index struct {
@@ -49,21 +47,14 @@ func (i Index) DecompressFromPiece(pieces []byte) ([]byte, error) {
 
 // Decompress raw bytes data.
 func (i Index) Decompress(data []byte) ([]byte, error) {
-	var decompressed, err = zip.TryDecompressor(bytes.NewReader(data), i.CompressedMethod)
-	if err != nil {
-		return nil, errors.Wrap(err, "can't decompress data")
+	switch i.CompressedMethod {
+	case zip.Store:
+		// storage
+	case zip.Deflate:
+		// should decompress with deflate
 	}
 
-	content, err := io.ReadAll(decompressed)
-	if err != nil {
-		return nil, errors.Wrap(err, "can't decompress data")
-	}
-
-	if !zip.CheckSum(content, i.Crc32) {
-		return nil, ErrCheckSum
-	}
-
-	return content, nil
+	return nil, nil
 }
 
 // WantedPieces starts from 0.
