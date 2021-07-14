@@ -28,20 +28,12 @@ var rootCmd = &cobra.Command{
 		"https://github.com/Trim21/sci-hub-p2p/wiki",
 	SilenceUsage:  true,
 	SilenceErrors: false,
-	// RunE: func(cmd *cobra.Command, args []string) error {
-	//	return nil
-	// },
 }
 
 var debug bool
 
 func Execute() {
-	rootCmd.AddCommand(
-		indexCmd,
-		// serverCmd,
-		// spiderCmd,
-		// cronCmd,
-	)
+	rootCmd.AddCommand(indexCmd)
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug")
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
