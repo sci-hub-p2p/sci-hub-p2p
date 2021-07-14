@@ -26,11 +26,11 @@ import (
 
 func TestDumpLoad(t *testing.T) {
 	t.Parallel()
-	o := &indexes.IndexInDB{
+	o := &indexes.Record{
 		InfoHash: [20]byte{132, 56, 215, 195, 86, 34, 151, 137, 161,
 			218, 81, 62, 114, 68, 5, 245, 136, 178, 91, 97},
 		PieceStart:       11111,
-		DataOffset:       888137412,
+		OffsetInPiece:    888137412,
 		CompressedMethod: 8,
 		CompressedSize:   13241729341923,
 		Sha256: [32]byte{101, 51, 98, 48, 99, 52, 52, 50,
@@ -40,12 +40,11 @@ func TestDumpLoad(t *testing.T) {
 	}
 	b := o.Dump()
 
-	n := &indexes.IndexInDB{}
-	n.Load(b)
+	n := indexes.LoadRecord(b)
 
 	assert.Equal(t, hex.EncodeToString(o.InfoHash[:]), hex.EncodeToString(n.InfoHash[:]))
 	assert.Equal(t, o.PieceStart, n.PieceStart)
-	assert.Equal(t, o.DataOffset, n.DataOffset)
+	assert.Equal(t, o.OffsetInPiece, n.OffsetInPiece)
 	assert.Equal(t, o.CompressedMethod, n.CompressedMethod)
 	assert.Equal(t, o.CompressedSize, n.CompressedSize)
 	assert.Equal(t, hex.EncodeToString(o.Sha256[:]), hex.EncodeToString(n.Sha256[:]))

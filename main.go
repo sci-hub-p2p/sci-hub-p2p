@@ -15,7 +15,9 @@
 
 package main
 
-import "sci_hub_p2p/cmd"
+import (
+	"sci_hub_p2p/cmd"
+)
 
 func main() {
 	cmd.Execute()

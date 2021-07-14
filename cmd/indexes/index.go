@@ -20,7 +20,6 @@ import (
 	"log"
 	"os"
 
-
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
@@ -79,6 +78,7 @@ var genCmd = &cobra.Command{
 		logger.Debugf("data: %s\n", dataDir)
 		logger.Debugf("torrent: %s\n", torrentPath)
 		logger.Debugf("out dir: %s\n", out)
+
 		return err
 	},
 }

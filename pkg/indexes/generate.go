@@ -36,7 +36,7 @@ import (
 )
 
 type PDFFileOffSet struct {
-	IndexInDB
+	Record
 	DOI string
 }
 
@@ -47,7 +47,7 @@ func (f PDFFileOffSet) Key() []byte {
 // IndexZipFile is intended to be used in goroutine for parallel.
 func IndexZipFile(c chan *PDFFileOffSet, dataDir string, index int, t *torrent.Torrent) {
 	pieceLength := t.PieceLength
-	var currentZipOffset int64 = 0
+	var currentZipOffset int64
 	for i, file := range t.Files {
 		if i < index {
 			currentZipOffset += file.Length
@@ -68,29 +68,26 @@ func IndexZipFile(c chan *PDFFileOffSet, dataDir string, index int, t *torrent.T
 	for _, file := range r.File {
 		i := &PDFFileOffSet{
 			DOI: file.Name, // file name is just doi
-			IndexInDB: IndexInDB{
+			Record: Record{
 				InfoHash:         [20]byte{},
 				PieceStart:       0,
-				DataOffset:       0,
+				OffsetInPiece:    0,
 				CompressedMethod: 0,
 				CompressedSize:   0,
 				Sha256:           [32]byte{},
 			},
 		}
-		infoHash, err := hex.DecodeString(t.InfoHash)
-		if err != nil {
-			log.Fatal(err)
-		}
+		infoHash, _ := hex.DecodeString(t.InfoHash)
 		copy(i.InfoHash[:], infoHash)
 
 		offset, err := file.DataOffset()
 		if err != nil {
 			log.Fatalf("can't get file offset in zip %s: %s", abs, err)
 		}
-		// FIXME: this need to be convert to offset from first piece, not file start
-		i.DataOffset = uint32(offset)
 
-		i.PieceStart = uint32((int64(i.DataOffset) + currentZipOffset) / int64(pieceLength))
+		i.PieceStart = uint32((offset + currentZipOffset) / int64(pieceLength))
+		i.OffsetInPiece = uint32((offset + currentZipOffset) % int64(pieceLength))
+
 		i.CompressedMethod = file.Method
 		i.CompressedSize = file.CompressedSize64
 		f, err := file.Open()
@@ -104,8 +101,6 @@ func IndexZipFile(c chan *PDFFileOffSet, dataDir string, index int, t *torrent.T
 		copy(i.Sha256[:], sha256)
 		c <- i
 	}
-
-	return
 }
 
 func Generate(dirName, outDir string, t *torrent.Torrent) error {
@@ -158,19 +153,22 @@ func collectResult(c chan *PDFFileOffSet, outDir string, t *torrent.Torrent) {
 	bar := pb.StartNew(filesPerTorrent)
 	defer bar.Finish()
 
-	db.Update(func(tx *bbolt.Tx) error {
-		b, err := tx.CreateBucket([]byte("paper-v0"))
-		if err != nil {
-			return fmt.Errorf("create bucket: %s", err)
-		}
+	err = db.Batch(func(tx *bbolt.Tx) error {
 		for i := range c {
 			bar.Increment()
+			b, err := tx.CreateBucketIfNotExists([]byte("paper-v0"))
+			if err != nil {
+				log.Fatalln("create bucket:", err)
+			}
 			err = b.Put(i.Key(), i.Dump())
 			if err != nil {
-				logger.Error(err)
+				log.Fatalln("can't write record:", err)
 			}
 		}
 
 		return nil
 	})
+	if err != nil {
+		log.Fatalln("can't write indexes:", err)
+	}
 }

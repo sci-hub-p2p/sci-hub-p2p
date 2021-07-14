@@ -26,21 +26,21 @@ import (
 	"sci_hub_p2p/internal/torrent"
 )
 
-type IndexInDB struct {
+type Record struct {
 	InfoHash         [20]byte // This can be empty when indexing data from same torrent.
 	PieceStart       uint32   // 4 bytes
-	DataOffset       uint32   // should be uint32 I think
+	OffsetInPiece    uint32   // should be uint32 I think
 	CompressedMethod uint16   // 2 bytes
 	CompressedSize   uint64   // 8 bytes
 	Sha256           [32]byte // For IPFS, not vary necessarily
 }
 
-func (i IndexInDB) Dump() []byte {
+func (i Record) Dump() []byte {
 	var buf bytes.Buffer
 	// buffer.Write won't return a err
 	_ = binary.Write(&buf, binary.LittleEndian, i.InfoHash)
 	_ = binary.Write(&buf, binary.LittleEndian, i.PieceStart)
-	_ = binary.Write(&buf, binary.LittleEndian, i.DataOffset)
+	_ = binary.Write(&buf, binary.LittleEndian, i.OffsetInPiece)
 	_ = binary.Write(&buf, binary.LittleEndian, i.CompressedMethod)
 	_ = binary.Write(&buf, binary.LittleEndian, i.CompressedSize)
 	_ = binary.Write(&buf, binary.LittleEndian, i.Sha256)
@@ -48,14 +48,17 @@ func (i IndexInDB) Dump() []byte {
 	return buf.Bytes()
 }
 
-func (i *IndexInDB) Load(p []byte) {
+func LoadRecord(p []byte) *Record {
+	var i = &Record{}
 	var buf = bytes.NewBuffer(p)
 	_ = binary.Read(buf, binary.LittleEndian, i.InfoHash[:])
 	_ = binary.Read(buf, binary.LittleEndian, &i.PieceStart)
-	_ = binary.Read(buf, binary.LittleEndian, &i.DataOffset)
+	_ = binary.Read(buf, binary.LittleEndian, &i.OffsetInPiece)
 	_ = binary.Read(buf, binary.LittleEndian, &i.CompressedMethod)
 	_ = binary.Read(buf, binary.LittleEndian, &i.CompressedSize)
 	_ = binary.Read(buf, binary.LittleEndian, i.Sha256[:])
+
+	return i
 }
 
 type Index struct {
