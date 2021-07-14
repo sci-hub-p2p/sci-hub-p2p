@@ -159,7 +159,7 @@ func collectResult(c chan *PDFFileOffSet, outDir string, t *torrent.Torrent) {
 	defer bar.Finish()
 
 	db.Update(func(tx *bbolt.Tx) error {
-		b, err := tx.CreateBucket([]byte("paper"))
+		b, err := tx.CreateBucket([]byte("paper-v0"))
 		if err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}

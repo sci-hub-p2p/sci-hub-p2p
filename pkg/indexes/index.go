@@ -18,6 +18,7 @@ package indexes
 
 import (
 	"archive/zip"
+	"bytes"
 	"encoding/binary"
 
 	"github.com/pkg/errors"
@@ -35,26 +36,26 @@ type IndexInDB struct {
 }
 
 func (i IndexInDB) Dump() []byte {
-	// TODO: use binary.Write
-	var p = make([]byte, 20+4+4+2+8+32)
-	copy(p, i.InfoHash[:])
-	binary.LittleEndian.PutUint32(p[20:], i.PieceStart)
-	binary.LittleEndian.PutUint32(p[20+4:], i.DataOffset)
-	binary.LittleEndian.PutUint16(p[20+4+4:], i.CompressedMethod)
-	binary.LittleEndian.PutUint64(p[20+4+4+2:], i.CompressedSize)
-	copy(p[20+4+4+2+8:], i.Sha256[:])
+	var buf bytes.Buffer
+	// buffer.Write won't return a err
+	_ = binary.Write(&buf, binary.LittleEndian, i.InfoHash)
+	_ = binary.Write(&buf, binary.LittleEndian, i.PieceStart)
+	_ = binary.Write(&buf, binary.LittleEndian, i.DataOffset)
+	_ = binary.Write(&buf, binary.LittleEndian, i.CompressedMethod)
+	_ = binary.Write(&buf, binary.LittleEndian, i.CompressedSize)
+	_ = binary.Write(&buf, binary.LittleEndian, i.Sha256)
 
-	return p
+	return buf.Bytes()
 }
 
 func (i *IndexInDB) Load(p []byte) {
-	// TODO: use binary.Read
-	copy(i.InfoHash[:], p)
-	i.PieceStart = binary.LittleEndian.Uint32(p[20:])
-	i.DataOffset = binary.LittleEndian.Uint32(p[20+4:])
-	i.CompressedMethod = binary.LittleEndian.Uint16(p[20+4+4:])
-	i.CompressedSize = binary.LittleEndian.Uint64(p[20+4+4+2:])
-	copy(i.Sha256[:], p[20+4+4+2+8:])
+	var buf = bytes.NewBuffer(p)
+	_ = binary.Read(buf, binary.LittleEndian, i.InfoHash[:])
+	_ = binary.Read(buf, binary.LittleEndian, &i.PieceStart)
+	_ = binary.Read(buf, binary.LittleEndian, &i.DataOffset)
+	_ = binary.Read(buf, binary.LittleEndian, &i.CompressedMethod)
+	_ = binary.Read(buf, binary.LittleEndian, &i.CompressedSize)
+	_ = binary.Read(buf, binary.LittleEndian, i.Sha256[:])
 }
 
 type Index struct {
