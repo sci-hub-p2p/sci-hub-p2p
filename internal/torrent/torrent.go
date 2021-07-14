@@ -78,7 +78,7 @@ func (t Torrent) Piece(i int) []byte {
 	return s
 }
 
-func (t Torrent) SetFiles(files []file) {
+func (t *Torrent) SetFiles(files []file) {
 	t.Files = make([]File, len(files))
 	for i, f := range files {
 		t.Files[i] = File{

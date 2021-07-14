@@ -31,17 +31,14 @@ import (
 	"sci_hub_p2p/pkg/logger"
 )
 
-func indexZipFile(name string, f *File) (err error) {
-	r, err := zip.OpenReader(name)
-	if err != nil {
-		return errors.Wrap(err, "can't open zip file")
-	}
-	defer r.Close()
-
+func indexZipFile(r *zip.ReadCloser, f *File) (err error) {
 	var sha1Buffer bytes.Buffer
 	var sha256Buffer bytes.Buffer
 
+	bar := pb.StartNew(len(r.File))
+	defer bar.Finish()
 	for _, file := range r.File {
+		bar.Increment()
 		if file == nil {
 			continue
 		}
@@ -49,7 +46,6 @@ func indexZipFile(name string, f *File) (err error) {
 		if file.CompressedSize64 == 0 {
 			continue
 		}
-
 		offset, err := file.DataOffset()
 		if err != nil {
 			return errors.Wrap(err, "zip file broken")
@@ -95,12 +91,10 @@ func FromDataDir(dirName string, t *torrent.Torrent) (*File, error) {
 	f := NewWithPre(filesPerTorrent)
 	f.InfoHash = t.InfoHash
 
-	logger.Info("start iter file")
-	bar := pb.StartNew(len(t.Files))
-	defer bar.Finish()
-	for _, file := range t.Files {
-		bar.Increment()
-
+	fmt.Println("start generate indexes")
+	totalZipFiles := len(t.Files)
+	for i, file := range t.Files {
+		fmt.Printf("\nIndexing file %d/%d\n", i+1, totalZipFiles)
 		fs := filepath.Join(file.Path...)
 		abs := filepath.Join(dirName, fs)
 		s, err := os.Stat(abs)
@@ -116,10 +110,21 @@ func FromDataDir(dirName string, t *torrent.Torrent) (*File, error) {
 		logger.Debug("skip hash check here because files are too big, " +
 			"hopefully ew didn't generate indexes from wrong data")
 
-		err = indexZipFile(abs, &f)
+		r, err := zip.OpenReader(abs)
 		if err != nil {
+			_ = r.Close()
+
+			return nil, errors.Wrap(err, "can't open zip file")
+		}
+		err = indexZipFile(r, &f)
+		// should close file right after index, don't use defer
+		if err != nil {
+			_ = r.Close()
+
 			return nil, err
 		}
+		// we don't write data, just omit error
+		_ = r.Close()
 	}
 
 	return &f, nil

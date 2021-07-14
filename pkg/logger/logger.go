@@ -25,9 +25,25 @@ func Setup(debug bool) error {
 	if debug {
 		log.SetLevel(log.DebugLevel)
 	}
+	log.SetFormatter(&log.TextFormatter{
+		ForceQuote:       true,
+		TimestampFormat:  "2006-01-02 15:04:05",
+		DisableSorting:   true,
+		PadLevelText:     true,
+		QuoteEmptyFields: true,
+	})
 
 	return nil
 }
+
+func WithField(key string, value interface{}) *log.Entry {
+	return log.WithField(key, value)
+}
+
+func Infof(format string, args ...interface{}) {
+	log.Infof(format, args...)
+}
+
 func Info(args ...interface{}) {
 	log.Infoln(args...)
 }
