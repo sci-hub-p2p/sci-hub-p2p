@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
+
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -70,24 +70,16 @@ var genCmd = &cobra.Command{
 			return fmt.Errorf("output path is not a directory")
 		}
 
-		index, err := indexes.FromDataDir(dataDir, t)
+		err = indexes.Generate(dataDir, out, t)
+
 		if err != nil {
 			return errors.Wrap(err, "can't generate indexes from file")
 		}
-		index.InfoHash = t.InfoHash
 
 		logger.Debugf("data: %s\n", dataDir)
 		logger.Debugf("torrent: %s\n", torrentPath)
 		logger.Debugf("out dir: %s\n", out)
-		zipPath := filepath.Join(out, index.InfoHash+".zip")
-		log.Println("save indexes to local file", zipPath)
-		zipFile, err := os.Create(zipPath)
-		if err != nil {
-			return errors.Wrapf(err, "can't create file %s", zipPath)
-		}
-		defer zipFile.Close()
-
-		return index.OutToFile(zipFile)
+		return err
 	},
 }
 

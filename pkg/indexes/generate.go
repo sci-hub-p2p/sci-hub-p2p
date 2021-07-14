@@ -17,114 +17,160 @@ package indexes
 
 import (
 	"archive/zip"
-	"bytes"
+	"encoding/hex"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/cheggaaa/pb/v3"
-	"github.com/pkg/errors"
+	"github.com/nozzle/throttler"
+	log "github.com/sirupsen/logrus"
+	"go.etcd.io/bbolt"
 
+	"sci_hub_p2p/cmd/flag"
 	"sci_hub_p2p/internal/torrent"
 	"sci_hub_p2p/pkg/hash"
 	"sci_hub_p2p/pkg/logger"
 )
 
-func indexZipFile(r *zip.ReadCloser, f *File) (err error) {
-	var sha1Buffer bytes.Buffer
-	var sha256Buffer bytes.Buffer
+type PDFFileOffSet struct {
+	IndexInDB
+	DOI string
+}
 
-	bar := pb.StartNew(len(r.File))
-	defer bar.Finish()
+func (f PDFFileOffSet) Key() []byte {
+	return []byte(f.DOI)
+}
+
+// IndexZipFile is intended to be used in goroutine for parallel.
+func IndexZipFile(c chan *PDFFileOffSet, dataDir string, index int, t *torrent.Torrent) {
+	pieceLength := t.PieceLength
+	var currentZipOffset int64 = 0
+	for i, file := range t.Files {
+		if i < index {
+			currentZipOffset += file.Length
+		} else {
+			break
+		}
+	}
+	torrentFile := t.Files[index]
+	fs := filepath.Join(torrentFile.Path...)
+	abs := filepath.Join(dataDir, fs)
+	r, err := zip.OpenReader(abs)
+	if err != nil {
+		log.Fatalf("can't open file %s: %s", abs, err)
+	}
+
+	defer r.Close()
+
 	for _, file := range r.File {
-		bar.Increment()
-		if file == nil {
-			continue
+		i := &PDFFileOffSet{
+			DOI: file.Name, // file name is just doi
+			IndexInDB: IndexInDB{
+				InfoHash:         [20]byte{},
+				PieceStart:       0,
+				DataOffset:       0,
+				CompressedMethod: 0,
+				CompressedSize:   0,
+				Sha256:           [32]byte{},
+			},
 		}
+		infoHash, err := hex.DecodeString(t.InfoHash)
+		if err != nil {
+			log.Fatal(err)
+		}
+		copy(i.InfoHash[:], infoHash)
 
-		if file.CompressedSize64 == 0 {
-			continue
-		}
 		offset, err := file.DataOffset()
 		if err != nil {
-			return errors.Wrap(err, "zip file broken")
+			log.Fatalf("can't get file offset in zip %s: %s", abs, err)
 		}
+		// FIXME: this need to be convert to offset from first piece, not file start
+		i.DataOffset = uint32(offset)
 
-		r, err := file.Open()
+		i.PieceStart = uint32((int64(i.DataOffset) + currentZipOffset) / int64(pieceLength))
+		i.CompressedMethod = file.Method
+		i.CompressedSize = file.CompressedSize64
+		f, err := file.Open()
 		if err != nil {
-			return errors.Wrap(err, "can't decompress zip file")
+			log.Fatalf("can't decompress file %s in zip %s: %s", file.Name, abs, err)
 		}
-		defer r.Close()
-
-		sha1, sha256, err := hash.Sha1Sha256SumReader(r)
+		sha256, err := hash.Sha256SumReader(f)
 		if err != nil {
-			return errors.Wrapf(err, "can't hash file %s", file.Name)
+			log.Fatalf("can't decompress file %s in zip %s: %s", file.Name, abs, err)
 		}
-
-		f.FileNames = append(f.FileNames, file.Name)
-		f.Methods = append(f.Methods, file.Method)
-		f.Offset = append(f.Offset, offset)
-		f.CompressedSizes = append(f.CompressedSizes, file.CompressedSize64)
-		f.Crc32 = append(f.Crc32, file.CRC32)
-
-		sha1Buffer.Write(sha1)
-		sha256Buffer.Write(sha256)
+		copy(i.Sha256[:], sha256)
+		c <- i
 	}
 
-	sha1, err := io.ReadAll(&sha1Buffer)
-	if err != nil {
-		return errors.Wrap(err, "can't hash files")
-	}
-	f.Sha1 = append(f.Sha1, sha1...)
+	return
+}
 
-	sha256, err := io.ReadAll(&sha256Buffer)
-	if err != nil {
-		return errors.Wrap(err, "can't hash files")
+func Generate(dirName, outDir string, t *torrent.Torrent) error {
+	fmt.Println("start generate indexes")
+	c := make(chan *PDFFileOffSet, flag.Parallel)
+	th := throttler.New(flag.Parallel, len(t.Files))
+
+	go collectResult(c, outDir, t)
+
+	for i, file := range t.Files {
+		logger.Debug("skip hash check here because files are too big, " +
+			"hopefully ew didn't generate indexes from wrong data")
+
+		go func(index int, file torrent.File) {
+			fs := filepath.Join(file.Path...)
+			if !strings.HasSuffix(fs, ".zip") {
+				th.Done(nil)
+
+				return
+			}
+			abs := filepath.Join(dirName, fs)
+			s, err := os.Stat(abs)
+			if err != nil {
+				th.Done(err)
+				log.Fatalf("can't generate indexes, file %s is broken", fs)
+			}
+			if s.Size() != file.Length {
+				log.Fatalf(
+					"can't generate indexes, file %s has a wrong size, expected %d",
+					fs, file.Length)
+			}
+			IndexZipFile(c, dirName, index, t)
+			th.Done(nil)
+		}(i, file)
+		th.Throttle()
 	}
-	f.Sha256 = append(f.Sha256, sha256...)
 
 	return nil
 }
 
-func FromDataDir(dirName string, t *torrent.Torrent) (*File, error) {
-	f := NewWithPre(filesPerTorrent)
-	f.InfoHash = t.InfoHash
-	fmt.Println("start generate indexes")
-	totalZipFiles := len(t.Files)
-	for i, file := range t.Files {
-		fmt.Printf("\nIndexing file %d/%d\n", i+1, totalZipFiles)
-		fs := filepath.Join(file.Path...)
-		abs := filepath.Join(dirName, fs)
-		s, err := os.Stat(abs)
-		if err != nil {
-			return nil, fmt.Errorf("can't generate indexes, file %s is broken %w",
-				fs, ErrTorrentDataBroken)
-		}
-		if s.Size() != file.Length {
-			return nil, errors.Wrapf(ErrTorrentDataBroken,
-				"can't generate indexes, file %s has a wrong size, expected %d",
-				fs, file.Length)
-		}
-		logger.Debug("skip hash check here because files are too big, " +
-			"hopefully ew didn't generate indexes from wrong data")
-
-		r, err := zip.OpenReader(abs)
-		if err != nil {
-			_ = r.Close()
-
-			return nil, errors.Wrap(err, "can't open zip file")
-		}
-		err = indexZipFile(r, &f)
-		// should close file right after index, don't use defer
-		if err != nil {
-			_ = r.Close()
-
-			return nil, err
-		}
-		// we don't write data, just omit error
-		_ = r.Close()
+func collectResult(c chan *PDFFileOffSet, outDir string, t *torrent.Torrent) {
+	var defaultFileMode os.FileMode = 0644
+	out := filepath.Join(outDir, t.InfoHash+".indexes")
+	db, err := bbolt.Open(out, defaultFileMode, &bbolt.Options{Timeout: 1 * time.Second})
+	if err != nil {
+		log.Fatalf("can't open %s to write indexes: %s", out, err)
 	}
+	defer db.Close()
 
-	return &f, nil
+	bar := pb.StartNew(filesPerTorrent)
+	defer bar.Finish()
+
+	db.Update(func(tx *bbolt.Tx) error {
+		b, err := tx.CreateBucket([]byte("paper"))
+		if err != nil {
+			return fmt.Errorf("create bucket: %s", err)
+		}
+		for i := range c {
+			bar.Increment()
+			err = b.Put(i.Key(), i.Dump())
+			if err != nil {
+				logger.Error(err)
+			}
+		}
+
+		return nil
+	})
 }

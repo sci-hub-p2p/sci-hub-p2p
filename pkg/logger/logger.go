@@ -57,3 +57,7 @@ func Debugf(format string, args ...interface{}) {
 func Debug(args ...interface{}) {
 	log.Debug(args...)
 }
+
+func Error(args ...interface{}) {
+	log.Error(args...)
+}

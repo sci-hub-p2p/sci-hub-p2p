@@ -18,6 +18,7 @@ package indexes
 
 import (
 	"archive/zip"
+	"encoding/binary"
 
 	"github.com/pkg/errors"
 
@@ -26,19 +27,34 @@ import (
 
 type IndexInDB struct {
 	InfoHash         [20]byte // This can be empty when indexing data from same torrent.
-	PieceStart       int32
-	DataOffset       int64
-	CompressedMethod uint16
-	CompressedSize   int64
+	PieceStart       uint32   // 4 bytes
+	DataOffset       uint32   // should be uint32 I think
+	CompressedMethod uint16   // 2 bytes
+	CompressedSize   uint64   // 8 bytes
 	Sha256           [32]byte // For IPFS, not vary necessarily
 }
 
 func (i IndexInDB) Dump() []byte {
-	return nil
+	// TODO: use binary.Write
+	var p = make([]byte, 20+4+4+2+8+32)
+	copy(p, i.InfoHash[:])
+	binary.LittleEndian.PutUint32(p[20:], i.PieceStart)
+	binary.LittleEndian.PutUint32(p[20+4:], i.DataOffset)
+	binary.LittleEndian.PutUint16(p[20+4+4:], i.CompressedMethod)
+	binary.LittleEndian.PutUint64(p[20+4+4+2:], i.CompressedSize)
+	copy(p[20+4+4+2+8:], i.Sha256[:])
+
+	return p
 }
 
-func (i IndexInDB) Load([]byte) error {
-	return nil
+func (i *IndexInDB) Load(p []byte) {
+	// TODO: use binary.Read
+	copy(i.InfoHash[:], p)
+	i.PieceStart = binary.LittleEndian.Uint32(p[20:])
+	i.DataOffset = binary.LittleEndian.Uint32(p[20+4:])
+	i.CompressedMethod = binary.LittleEndian.Uint16(p[20+4+4:])
+	i.CompressedSize = binary.LittleEndian.Uint64(p[20+4+4+2:])
+	copy(i.Sha256[:], p[20+4+4+2+8:])
 }
 
 type Index struct {
