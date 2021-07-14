@@ -13,39 +13,4 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package cmd
-
-import (
-	"fmt"
-	"os"
-
-	"github.com/spf13/cobra"
-
-	"sci_hub_p2p/cmd/indexes"
-	"sci_hub_p2p/pkg/logger"
-)
-
-var rootCmd = &cobra.Command{
-	Use:   "sci-hub",
-	Short: "sci-hub-p2p is cli tool to fetch paper from p2p network.",
-	Long: "Complete documentation is available at" +
-		"https://github.com/Trim21/sci-hub-p2p/wiki",
-	SilenceUsage:  true,
-	SilenceErrors: false,
-}
-
-var debug bool
-
-func Execute() {
-	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug")
-	err := logger.Setup(debug)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Can't setup logger", err)
-		os.Exit(2)
-	}
-
-	rootCmd.AddCommand(indexes.IndexCmd)
-	if err := rootCmd.Execute(); err != nil {
-		os.Exit(1)
-	}
-}
+package indexes

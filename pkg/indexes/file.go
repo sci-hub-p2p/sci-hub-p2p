@@ -13,8 +13,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-// Package index zip file index
-package index
+// Package indexes zip file indexes
+package indexes
 
 import (
 	"archive/zip"
@@ -24,20 +24,24 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 
 	"github.com/cheggaaa/pb/v3"
 	"github.com/pkg/errors"
 
+	"sci_hub_p2p/internal/torrent"
 	"sci_hub_p2p/pkg/hash"
+	"sci_hub_p2p/pkg/logger"
 )
 
 const (
-	offsetFileName = "index.json"
+	offsetFileName = "indexes.json"
 	sha1FileName   = "hash.sha1"
 	sha256FileName = "hash.sha256"
 )
 
-// File describe the struct of index file.
+// File describe the struct of indexes file.
 type File struct {
 	InfoHash        string   `json:"info_hash"`
 	FileNames       []string `json:"file_names"`
@@ -81,18 +85,36 @@ func (f File) Files() []perFile {
 	return s
 }
 
-func FromZip(name string) (File, error) {
-	r, err := zip.OpenReader(name)
+var ErrTorrentDataBroken = errors.New("torrent data is broken")
+
+const filesPerTorrent = 10_0000 // 100k pdf per file
+
+func FromDataDir(dirName string, t *torrent.Torrent) (*File, error) {
+	f := NewWithPre(filesPerTorrent)
+	f.InfoHash = t.InfoHash
+
+	for _, file := range t.Files {
+		fs := filepath.Join(file.Path...)
+		s, err := os.Stat(filepath.Join(dirName, fs))
+		if err != nil {
+			return nil, fmt.Errorf("can't generate indexes, file %s is broken %w", fs, ErrTorrentDataBroken)
+		}
+		if s.Size() != file.Length {
+			return nil, errors.Wrapf(ErrTorrentDataBroken, "can't generate indexes, file %s has a wrong size, expected %d", fs, file.Length)
+		}
+		logger.Debug("skip hash check here because files are too big, hopefully ew didn't generate indexes from wrong data")
+	}
+
+	r, err := zip.OpenReader(dirName)
 	if err != nil {
-		return File{}, errors.Wrap(err, "can't open zip file")
+		return nil, errors.Wrap(err, "can't open zip file")
 	}
 	defer r.Close()
 
-	f := NewWithPre(len(r.File))
 	var sha1Buffer bytes.Buffer
 	var sha256Buffer bytes.Buffer
 
-	fmt.Println("start iter file")
+	logger.Info("start iter file")
 	bar := pb.StartNew(len(r.File))
 	defer bar.Finish()
 	for _, file := range r.File {
@@ -107,18 +129,18 @@ func FromZip(name string) (File, error) {
 
 		offset, err := file.DataOffset()
 		if err != nil {
-			return File{}, errors.Wrap(err, "zip file broken")
+			return nil, errors.Wrap(err, "zip file broken")
 		}
 
 		r, err := file.Open()
 		if err != nil {
-			return File{}, errors.Wrap(err, "can't decompress zip file")
+			return nil, errors.Wrap(err, "can't decompress zip file")
 		}
 		defer r.Close()
 
 		sha1, sha256, err := hash.Sha1Sha256SumReader(r)
 		if err != nil {
-			return File{}, errors.Wrapf(err, "can't hash file %s", file.Name)
+			return nil, errors.Wrapf(err, "can't hash file %s", file.Name)
 		}
 
 		f.FileNames = append(f.FileNames, file.Name)
@@ -133,15 +155,15 @@ func FromZip(name string) (File, error) {
 
 	f.Sha1, err = io.ReadAll(&sha1Buffer)
 	if err != nil {
-		return File{}, errors.Wrap(err, "can't hash files")
+		return nil, errors.Wrap(err, "can't hash files")
 	}
 
 	f.Sha256, err = io.ReadAll(&sha256Buffer)
 	if err != nil {
-		return File{}, errors.Wrap(err, "can't hash files")
+		return nil, errors.Wrap(err, "can't hash files")
 	}
 
-	return f, nil
+	return &f, nil
 }
 
 func NewWithPre(n int) File {

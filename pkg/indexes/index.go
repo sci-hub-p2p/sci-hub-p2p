@@ -13,8 +13,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-// Package index zip file index
-package index
+// Package indexes zip file indexes
+package indexes
 
 import (
 	"bytes"

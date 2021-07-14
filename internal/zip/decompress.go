@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-// Package zip generate a index from downloaded zip file and decompress from
+// Package zip generate a indexes from downloaded zip file and decompress from
 // fetched data.
 package zip
 

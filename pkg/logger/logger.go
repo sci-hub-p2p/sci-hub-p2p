@@ -13,21 +13,28 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package index
+package logger
 
-import "fmt"
+import (
+	"fmt"
 
-type perFile struct {
-	FileName       string `json:"file_name"`
-	Offset         int64  `json:"offset"`
-	Method         uint16 `json:"method"`
-	Crc32          uint32 `json:"crc32"`
-	CompressedSize uint64 `json:"size"`
-	Sha1           string `json:"sha1"`
-	Sha256         string `json:"sha256"`
+	log "github.com/sirupsen/logrus"
+)
+
+func Setup(debug bool) error {
+	if debug {
+		log.SetLevel(log.DebugLevel)
+	}
+	return nil
+}
+func Info(args ...interface{}) {
+	log.Infoln(args...)
 }
 
-func (f perFile) String() string {
-	return fmt.Sprintf("perFile{name: %s, method: %d, offset: %d, size: %d}",
-		f.FileName, f.Method, f.Offset, f.CompressedSize)
+func Debugf(format string, args ...interface{}) {
+	log.Debug(fmt.Sprintf(format, args))
+}
+
+func Debug(args ...interface{}) {
+	log.Debug(args)
 }

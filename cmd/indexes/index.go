@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package cmd
+package indexes
 
 import (
 	"fmt"
@@ -24,14 +24,17 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
+	"sci_hub_p2p/cmd/util"
 	"sci_hub_p2p/internal/torrent"
-	"sci_hub_p2p/pkg/index"
+	"sci_hub_p2p/pkg/indexes"
+	"sci_hub_p2p/pkg/logger"
 )
 
-var indexCmd = &cobra.Command{
-	Use: "index",
+var IndexCmd = &cobra.Command{
+	Use:   "indexes",
+	Short: "Generate or load indexes",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("index command")
+		fmt.Println("indexes command")
 
 		return cmd.Help()
 	},
@@ -39,8 +42,8 @@ var indexCmd = &cobra.Command{
 
 var genCmd = &cobra.Command{
 	Use:     "gen",
-	Short:   "generate index from a data file.",
-	Example: "index gen -t /path/to/torrentPath -f /path/to/data",
+	Short:   "Generate indexes from a data file.",
+	Example: "indexes gen -t /path/to/torrentPath -f /path/to/data",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		torrentFile, err := os.Open(torrentPath)
 		if err != nil {
@@ -67,17 +70,15 @@ var genCmd = &cobra.Command{
 			return fmt.Errorf("output path is not a directory")
 		}
 
-		index, err := index.FromZip(zipFileName)
+		index, err := indexes.FromDataDir(dataDir, t)
 		if err != nil {
 			return errors.Wrap(err, "can't generate indexes from file")
 		}
 		index.InfoHash = t.InfoHash
 
-		if debug {
-			fmt.Printf("data: %s\n", zipFileName)
-			fmt.Printf("torrent: %s\n", torrentPath)
-			fmt.Printf("out dir: %s\n", out)
-		}
+		logger.Debugf("data: %s\n", dataDir)
+		logger.Debugf("torrent: %s\n", torrentPath)
+		logger.Debugf("out dir: %s\n", out)
 
 		zipPath := filepath.Join(out, index.InfoHash+".zip")
 		log.Println("save indexes to local file", zipPath)
@@ -93,7 +94,7 @@ var genCmd = &cobra.Command{
 
 var genReadCmd = &cobra.Command{
 	Use:     "read",
-	Example: "index read ./path/to/index.json.gz",
+	Example: "indexes read ./path/to/indexes.json.gz",
 	Args:    cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		r, err := os.Open(args[0])
@@ -101,7 +102,7 @@ var genReadCmd = &cobra.Command{
 			return errors.Wrapf(err, "can't open file %s", args[0])
 		}
 		defer r.Close()
-		f, err := index.Read(r)
+		f, err := indexes.Read(r)
 		if err != nil {
 			return errors.Wrapf(err, "can't parse file %s", args[0])
 
@@ -112,19 +113,19 @@ var genReadCmd = &cobra.Command{
 	},
 }
 
-var zipFileName string
+var dataDir string
 var torrentPath string
 var out string
 
 func init() {
-	indexCmd.AddCommand(genCmd, genReadCmd)
+	IndexCmd.AddCommand(genCmd, genReadCmd)
 
-	genCmd.Flags().StringVarP(&zipFileName, "data", "d", "", "path to data file")
+	genCmd.Flags().StringVarP(&dataDir, "data", "d", "", "Path to data directory")
 	genCmd.Flags().StringVarP(&torrentPath, "torrent", "t", "",
-		"torrentPath path of this data file")
-	genCmd.Flags().StringVarP(&out, "out", "o", "./out/", "output directory")
+		"TorrentPath path of this data file")
+	genCmd.Flags().StringVarP(&out, "out", "o", "./out/", "Output directory")
 
-	if err := MarkFlagsRequired(genCmd, "data", "torrent"); err != nil {
+	if err := util.MarkFlagsRequired(genCmd, "data", "torrent"); err != nil {
 		log.Fatalln(err)
 	}
 	if err := genCmd.MarkFlagFilename("torrent", "torrentPath"); err != nil {

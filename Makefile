@@ -1,14 +1,19 @@
-build: windows linux macos
+build: Windows Linux macOS
 
-windows: ./dist/sci_hub_p2p_windows_64.exe
-linux: ./dist/sci_hub_p2p_linux_64
-macos: ./dist/sci_hub_p2p_macos_64
+Windows: ./dist/sci-hub_windows_64.exe
+Linux: ./dist/sci-hub_linux_64
+macOS: ./dist/sci-hub_macos_64
 
-./dist/sci_hub_p2p_macos_64:
+./dist/sci-hub_macos_64:
 	env GOOS=darwin GOARCH=amd64 go build -ldflags "-s -w" -o $@
 
-./dist/sci_hub_p2p_linux_64:
+./dist/sci-hub_linux_64:
 	env GOOS=linux GOARCH=amd64 go build -ldflags "-s -w" -o $@
 
-./dist/sci_hub_p2p_windows_64.exe:
+./dist/sci-hub_windows_64.exe:
 	env GOOS=windows GOARCH=amd64 go build -ldflags "-s -w" -o $@
+
+clean:
+	rm dist -rf
+
+
