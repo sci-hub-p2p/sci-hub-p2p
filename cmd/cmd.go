@@ -43,9 +43,15 @@ const (
 
 func Execute() {
 	rootCmd.PersistentFlags().BoolVar(&flag.Debug, "Debug", false, "enable Debug")
-	var defaultParallel = runtime.NumCPU() - 2
+
+	var defaultParallel = runtime.NumCPU()/2 - 1
+	if defaultParallel <= 0 {
+		defaultParallel = 1
+	}
+
 	rootCmd.PersistentFlags().IntVarP(&flag.Parallel, "parallel", "n",
 		defaultParallel, "how many CPU will be used")
+
 	err := logger.Setup()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Can't setup logger", err)
