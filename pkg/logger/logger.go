@@ -19,10 +19,12 @@ import (
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
+
+	"sci_hub_p2p/cmd/flag"
 )
 
-func Setup(debug bool) error {
-	if debug {
+func Setup() error {
+	if flag.Debug {
 		log.SetLevel(log.DebugLevel)
 	}
 	log.SetFormatter(&log.TextFormatter{

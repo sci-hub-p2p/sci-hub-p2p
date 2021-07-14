@@ -18,9 +18,11 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"runtime"
 
 	"github.com/spf13/cobra"
 
+	"sci_hub_p2p/cmd/flag"
 	"sci_hub_p2p/cmd/indexes"
 	"sci_hub_p2p/pkg/logger"
 )
@@ -34,16 +36,17 @@ var rootCmd = &cobra.Command{
 	SilenceErrors: false,
 }
 
-var debug bool
-
 const (
 	exitCode2 = 2
 	exitCode1 = 1
 )
 
 func Execute() {
-	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug")
-	err := logger.Setup(debug)
+	rootCmd.PersistentFlags().BoolVar(&flag.Debug, "Debug", false, "enable Debug")
+	var defaultParallel = runtime.NumCPU() - 2
+	rootCmd.PersistentFlags().IntVarP(&flag.Parallel, "parallel", "n",
+		defaultParallel, "how many CPU will be used")
+	err := logger.Setup()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Can't setup logger", err)
 		os.Exit(exitCode2)

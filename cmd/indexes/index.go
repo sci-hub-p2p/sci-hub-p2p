@@ -79,7 +79,6 @@ var genCmd = &cobra.Command{
 		logger.Debugf("data: %s\n", dataDir)
 		logger.Debugf("torrent: %s\n", torrentPath)
 		logger.Debugf("out dir: %s\n", out)
-
 		zipPath := filepath.Join(out, index.InfoHash+".zip")
 		log.Println("save indexes to local file", zipPath)
 		zipFile, err := os.Create(zipPath)

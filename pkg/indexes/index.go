@@ -24,9 +24,26 @@ import (
 	"sci_hub_p2p/internal/torrent"
 )
 
+type IndexInDB struct {
+	InfoHash         [20]byte // This can be empty when indexing data from same torrent.
+	PieceStart       int32
+	DataOffset       int64
+	CompressedMethod uint16
+	CompressedSize   int64
+	Sha256           [32]byte // For IPFS, not vary necessarily
+}
+
+func (i IndexInDB) Dump() []byte {
+	return nil
+}
+
+func (i IndexInDB) Load([]byte) error {
+	return nil
+}
+
 type Index struct {
-	Name       string
 	Doi        string
+	Name       string
 	DataOffset int64
 	// compressed data length
 	CompressedSize   int64

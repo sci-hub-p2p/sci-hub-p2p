@@ -90,7 +90,6 @@ func indexZipFile(r *zip.ReadCloser, f *File) (err error) {
 func FromDataDir(dirName string, t *torrent.Torrent) (*File, error) {
 	f := NewWithPre(filesPerTorrent)
 	f.InfoHash = t.InfoHash
-
 	fmt.Println("start generate indexes")
 	totalZipFiles := len(t.Files)
 	for i, file := range t.Files {
