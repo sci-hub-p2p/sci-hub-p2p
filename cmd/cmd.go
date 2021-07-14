@@ -36,16 +36,21 @@ var rootCmd = &cobra.Command{
 
 var debug bool
 
+const (
+	exitCode2 = 2
+	exitCode1 = 1
+)
+
 func Execute() {
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug")
 	err := logger.Setup(debug)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Can't setup logger", err)
-		os.Exit(2)
+		os.Exit(exitCode2)
 	}
 
 	rootCmd.AddCommand(indexes.IndexCmd)
 	if err := rootCmd.Execute(); err != nil {
-		os.Exit(1)
+		os.Exit(exitCode1)
 	}
 }

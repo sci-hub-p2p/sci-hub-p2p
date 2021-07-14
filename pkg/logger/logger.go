@@ -25,6 +25,7 @@ func Setup(debug bool) error {
 	if debug {
 		log.SetLevel(log.DebugLevel)
 	}
+
 	return nil
 }
 func Info(args ...interface{}) {
@@ -32,9 +33,9 @@ func Info(args ...interface{}) {
 }
 
 func Debugf(format string, args ...interface{}) {
-	log.Debug(fmt.Sprintf(format, args))
+	log.Debug(fmt.Sprintf(format, args...))
 }
 
 func Debug(args ...interface{}) {
-	log.Debug(args)
+	log.Debug(args...)
 }

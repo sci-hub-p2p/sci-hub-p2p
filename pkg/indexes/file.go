@@ -97,12 +97,16 @@ func FromDataDir(dirName string, t *torrent.Torrent) (*File, error) {
 		fs := filepath.Join(file.Path...)
 		s, err := os.Stat(filepath.Join(dirName, fs))
 		if err != nil {
-			return nil, fmt.Errorf("can't generate indexes, file %s is broken %w", fs, ErrTorrentDataBroken)
+			return nil, fmt.Errorf("can't generate indexes, file %s is broken %w",
+				fs, ErrTorrentDataBroken)
 		}
 		if s.Size() != file.Length {
-			return nil, errors.Wrapf(ErrTorrentDataBroken, "can't generate indexes, file %s has a wrong size, expected %d", fs, file.Length)
+			return nil, errors.Wrapf(ErrTorrentDataBroken,
+				"can't generate indexes, file %s has a wrong size, expected %d",
+				fs, file.Length)
 		}
-		logger.Debug("skip hash check here because files are too big, hopefully ew didn't generate indexes from wrong data")
+		logger.Debug("skip hash check here because files are too big, " +
+			"hopefully ew didn't generate indexes from wrong data")
 	}
 
 	r, err := zip.OpenReader(dirName)
