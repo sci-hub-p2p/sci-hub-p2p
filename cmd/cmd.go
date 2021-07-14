@@ -16,10 +16,10 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"runtime"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	"sci_hub_p2p/cmd/flag"
@@ -34,15 +34,20 @@ var rootCmd = &cobra.Command{
 		"https://github.com/Trim21/sci-hub-p2p/wiki",
 	SilenceUsage:  true,
 	SilenceErrors: false,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		err := logger.Setup()
+		if err != nil {
+			return errors.Wrap(err, "Can't setup logger")
+		}
+
+		return nil
+	},
 }
 
-const (
-	exitCode2 = 2
-	exitCode1 = 1
-)
-
 func Execute() {
-	rootCmd.PersistentFlags().BoolVar(&flag.Debug, "Debug", false, "enable Debug")
+	rootCmd.AddCommand(indexes.IndexCmd)
+
+	rootCmd.PersistentFlags().BoolVar(&flag.Debug, "debug", false, "enable Debug")
 
 	var defaultParallel = runtime.NumCPU()/2 - 1
 	if defaultParallel <= 0 {
@@ -52,14 +57,7 @@ func Execute() {
 	rootCmd.PersistentFlags().IntVarP(&flag.Parallel, "parallel", "n",
 		defaultParallel, "how many CPU will be used")
 
-	err := logger.Setup()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Can't setup logger", err)
-		os.Exit(exitCode2)
-	}
-
-	rootCmd.AddCommand(indexes.IndexCmd)
 	if err := rootCmd.Execute(); err != nil {
-		os.Exit(exitCode1)
+		os.Exit(1)
 	}
 }

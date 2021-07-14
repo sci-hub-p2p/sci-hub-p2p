@@ -29,7 +29,7 @@ func Setup() error {
 	}
 	log.SetFormatter(&log.TextFormatter{
 		ForceQuote:       true,
-		TimestampFormat:  "2006-01-02 15:04:05",
+		TimestampFormat:  "2006-01-02 15:04:05.000",
 		DisableSorting:   true,
 		PadLevelText:     true,
 		QuoteEmptyFields: true,

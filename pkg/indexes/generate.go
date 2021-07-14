@@ -66,6 +66,10 @@ func IndexZipFile(c chan *PDFFileOffSet, dataDir string, index int, t *torrent.T
 	defer r.Close()
 
 	for _, file := range r.File {
+		if file.CompressedSize64 == 0 {
+			continue
+		}
+
 		i := &PDFFileOffSet{
 			DOI: file.Name, // file name is just doi
 			Record: Record{
@@ -106,9 +110,10 @@ func IndexZipFile(c chan *PDFFileOffSet, dataDir string, index int, t *torrent.T
 func Generate(dirName, outDir string, t *torrent.Torrent) error {
 	fmt.Println("start generate indexes")
 	c := make(chan *PDFFileOffSet, flag.Parallel)
+	done := make(chan int)
 	th := throttler.New(flag.Parallel, len(t.Files))
 
-	go collectResult(c, outDir, t)
+	go collectResult(c, outDir, t, done)
 
 	for i, file := range t.Files {
 		logger.Debug("skip hash check here because files are too big, " +
@@ -137,38 +142,65 @@ func Generate(dirName, outDir string, t *torrent.Torrent) error {
 		}(i, file)
 		th.Throttle()
 	}
+	for len(c) > 0 {
+		time.Sleep(time.Second)
+	}
+	close(c)
+	<-done
 
 	return nil
 }
 
-func collectResult(c chan *PDFFileOffSet, outDir string, t *torrent.Torrent) {
+func collectResult(c chan *PDFFileOffSet, outDir string, t *torrent.Torrent, done chan int) {
 	var defaultFileMode os.FileMode = 0644
 	out := filepath.Join(outDir, t.InfoHash+".indexes")
 	db, err := bbolt.Open(out, defaultFileMode, &bbolt.Options{Timeout: 1 * time.Second})
 	if err != nil {
 		log.Fatalf("can't open %s to write indexes: %s", out, err)
 	}
-	defer db.Close()
+	defer func(db *bbolt.DB) {
+		err := db.Close()
+		if err != nil {
+			logger.Error(err)
+		}
+	}(db)
 
 	bar := pb.StartNew(filesPerTorrent)
 	defer bar.Finish()
 
 	err = db.Batch(func(tx *bbolt.Tx) error {
+		b, err := tx.CreateBucketIfNotExists([]byte("paper-v0"))
+		if err != nil {
+			return err
+		}
 		for i := range c {
 			bar.Increment()
-			b, err := tx.CreateBucketIfNotExists([]byte("paper-v0"))
-			if err != nil {
-				log.Fatalln("create bucket:", err)
-			}
 			err = b.Put(i.Key(), i.Dump())
 			if err != nil {
-				log.Fatalln("can't write record:", err)
+				log.Fatalln("can't save record:", err)
 			}
 		}
 
 		return nil
 	})
 	if err != nil {
-		log.Fatalln("can't write indexes:", err)
+		fmt.Println("can't write indexes:", err)
+		os.Exit(1)
 	}
+	err = db.View(func(tx *bbolt.Tx) error {
+		f, err := os.Create("./out/a.indexes")
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		_, err = tx.WriteTo(f)
+
+		return err
+	})
+	if err != nil {
+		logger.Error(err)
+	}
+	logger.Debug("sync database")
+	db.Sync()
+	done <- 1
 }
