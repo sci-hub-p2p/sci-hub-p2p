@@ -1,4 +1,4 @@
-name: run tests
+name: build
 
 on:
   push:
@@ -29,5 +29,5 @@ jobs:
 
       - uses: actions/upload-artifact@v2
         with:
-          name: nightly
+          name: ${{ runner.os }}
           path: ./dist/
