@@ -28,15 +28,33 @@ const (
 )
 
 type file struct {
-	Length int64    `json:"length" bencode:"length"`
-	Path   []string `json:"path" bencode:"path"`
+	Length   int64    `json:"length" bencode:"length"`
+	Path     []string `json:"path" bencode:"path"`
+	PathUTF8 []string `bencode:"path.utf-8,omitempty"`
+}
+
+func (f file) GetPath() []string {
+	if f.PathUTF8 != nil {
+		return f.PathUTF8
+	}
+
+	return f.Path
 }
 
 type info struct {
 	Files       []file `json:"files" bencode:"files"`
 	Name        string `json:"name" bencode:"name"`
+	NameUTF8    string `bencode:"name.utf-8,omitempty"`
 	PieceLength int    `json:"piece length" bencode:"piece length"`
 	Pieces      string `json:"pieces" bencode:"pieces"`
+}
+
+func (i info) GetName() string {
+	if i.NameUTF8 != "" {
+		return i.NameUTF8
+	}
+
+	return i.Name
 }
 
 type torrentFile struct {
@@ -50,12 +68,15 @@ type torrentFile struct {
 
 func (t torrentFile) toTorrent() (*Torrent, error) {
 	var torrent Torrent
-	torrent.Name = t.Info.Name
-	torrent.Files = t.Info.Files
+	torrent.Name = t.Info.GetName()
 	torrent.PieceLength = t.Info.PieceLength
-	torrent.Pieces = []byte(t.Info.Pieces)
+	err := torrent.SetPieces(t.Info.Pieces)
+	if err != nil {
+		return nil, err
+	}
 	torrent.Announce = t.Announce
 	torrent.AnnounceList = t.AnnounceList
+	torrent.SetFiles(t.Info.Files)
 
 	n, err := castNodes(t.Nodes)
 	if err != nil {
