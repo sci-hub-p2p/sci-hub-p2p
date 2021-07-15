@@ -27,10 +27,8 @@ jobs:
         with:
           fetch-depth: 2
 
-      - run: bash ./fetch.bash
-
       - name: Run tests
-        run: go test -coverprofile coverage.out -covermode atomic ./...
+        run: make coverage
         env:
           GORACE: halt_on_error=1
 
