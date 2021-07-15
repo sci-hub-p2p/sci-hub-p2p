@@ -17,11 +17,9 @@
 package indexes
 
 import (
-	"archive/zip"
 	"bytes"
 	"encoding/binary"
-
-	"github.com/pkg/errors"
+	"encoding/hex"
 
 	"sci_hub_p2p/internal/torrent"
 )
@@ -35,20 +33,20 @@ type Record struct {
 	Sha256           [32]byte // For IPFS, not vary necessarily
 }
 
-func (i Record) Dump() []byte {
+func (r Record) DumpV0() []byte {
 	var buf bytes.Buffer
 	// buffer.Write won't return a err
-	_ = binary.Write(&buf, binary.LittleEndian, i.InfoHash)
-	_ = binary.Write(&buf, binary.LittleEndian, i.PieceStart)
-	_ = binary.Write(&buf, binary.LittleEndian, i.OffsetInPiece)
-	_ = binary.Write(&buf, binary.LittleEndian, i.CompressedMethod)
-	_ = binary.Write(&buf, binary.LittleEndian, i.CompressedSize)
-	_ = binary.Write(&buf, binary.LittleEndian, i.Sha256)
+	_ = binary.Write(&buf, binary.LittleEndian, r.InfoHash)
+	_ = binary.Write(&buf, binary.LittleEndian, r.PieceStart)
+	_ = binary.Write(&buf, binary.LittleEndian, r.OffsetInPiece)
+	_ = binary.Write(&buf, binary.LittleEndian, r.CompressedMethod)
+	_ = binary.Write(&buf, binary.LittleEndian, r.CompressedSize)
+	_ = binary.Write(&buf, binary.LittleEndian, r.Sha256)
 
 	return buf.Bytes()
 }
 
-func LoadRecord(p []byte) *Record {
+func LoadRecordV0(p []byte) *Record {
 	var i = &Record{}
 	var buf = bytes.NewBuffer(p)
 	_ = binary.Read(buf, binary.LittleEndian, i.InfoHash[:])
@@ -61,48 +59,38 @@ func LoadRecord(p []byte) *Record {
 	return i
 }
 
-type Index struct {
-	Doi        string
-	Name       string
-	DataOffset int64
-	// compressed data length
-	CompressedSize   int64
-	CompressedMethod uint16
-	Crc32            uint32
-	Torrent          torrent.Torrent
-}
+func (r Record) Build(doi string, t *torrent.Torrent) PerFile {
+	var pieceOffset = int64(t.PieceLength) * int64(r.PieceStart)
+	var currentZipOffset int64
+	var fileStart int64 = -1
+	var f torrent.File
+	// var fileIndex int
+	for _, file := range t.Files {
+		if currentZipOffset+file.Length > pieceOffset {
+			fileStart = currentZipOffset
+			// i = fileIndex
+			f = file
 
-var ErrCheckSum = errors.New("checksum mismatch")
-
-// DecompressFromPiece combine all wanted pieces first.
-func (i Index) DecompressFromPiece(pieces []byte) ([]byte, error) {
-	offset := int(i.DataOffset % int64(i.Torrent.PieceLength))
-	compressed := pieces[offset : int64(offset)+i.CompressedSize]
-
-	return i.Decompress(compressed)
-}
-
-// Decompress raw bytes data.
-func (i Index) Decompress(data []byte) ([]byte, error) {
-	switch i.CompressedMethod {
-	case zip.Store:
-		// storage
-	case zip.Deflate:
-		// should decompress with deflate
+			break
+		}
+		currentZipOffset += file.Length
 	}
 
-	return nil, nil
-}
+	var p = PerFile{
+		Doi:             doi,
+		CompressMethod:  r.CompressedMethod,
+		CompressedSize:  int64(r.CompressedSize),
+		FileName:        f.Name(),
+		Sha256:          hex.EncodeToString(r.Sha256[:]),
+		Pieces:          makeRange(int(r.PieceStart), int(r.PieceStart)+int(int64(r.CompressedSize)/int64(t.PieceLength))),
+		PieceLength:     t.PieceLength,
+		OffsetFromZip:   int64(r.OffsetInPiece) + int64(r.PieceStart)*int64(t.PieceLength) - fileStart,
+		OffsetFromPiece: r.OffsetInPiece,
+		File:            f.Copy(),
+		Torrent:         t.Copy(),
+	}
 
-// WantedPieces starts from 0.
-func (i Index) WantedPieces() []int {
-	t := i.Torrent
-
-	// 应该不可能会溢出吧
-	start := int(i.DataOffset / int64(t.PieceLength))
-	end := int((i.DataOffset + i.CompressedSize) / int64(t.PieceLength))
-
-	return makeRange(start, end)
+	return p
 }
 
 func makeRange(min, max int) []int {

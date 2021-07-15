@@ -16,8 +16,6 @@
 package logger
 
 import (
-	"fmt"
-
 	log "github.com/sirupsen/logrus"
 
 	"sci_hub_p2p/cmd/flag"
@@ -46,16 +44,20 @@ func Infof(format string, args ...interface{}) {
 	log.Infof(format, args...)
 }
 
-func Info(args ...interface{}) {
-	log.Infoln(args...)
+func Info(msg ...interface{}) {
+	log.Infoln(msg...)
 }
 
 func Debugf(format string, args ...interface{}) {
-	log.Debug(fmt.Sprintf(format, args...))
+	log.Debugf(format, args...)
 }
 
 func Debug(args ...interface{}) {
-	log.Debug(args...)
+	log.Debugln(args...)
+}
+
+func Fatal(args ...interface{}) {
+	log.Fatalln(args...)
 }
 
 func Error(args ...interface{}) {

@@ -34,12 +34,21 @@ func Sha1SumReader(r io.Reader) (string, error) {
 	return hex.EncodeToString(sum), nil
 }
 
-func Sha256SumReader(r io.Reader) (string, error) {
+func Sha256SumReaderBytes(r io.Reader) ([]byte, error) {
 	h := sha256.New()
 	if _, err := io.Copy(h, r); err != nil {
-		return "", errors.Wrap(err, "can't hash content")
+		return nil, errors.Wrap(err, "can't hash content")
 	}
 	sum := h.Sum(nil)
+
+	return sum, nil
+}
+
+func Sha256SumReader(r io.Reader) (string, error) {
+	sum, err := Sha256SumReaderBytes(r)
+	if err != nil {
+		return "", err
+	}
 
 	return hex.EncodeToString(sum), nil
 }

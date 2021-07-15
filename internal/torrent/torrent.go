@@ -19,6 +19,7 @@ package torrent
 import (
 	"encoding/hex"
 	"fmt"
+	"path"
 
 	"github.com/pkg/errors"
 )
@@ -33,6 +34,17 @@ type Node struct {
 type File struct {
 	Length int64
 	Path   []string
+}
+
+func (f File) Name() string {
+	return path.Join(f.Path...)
+}
+
+func (f File) Copy() File {
+	var n = f
+	copy(n.Path, f.Path)
+
+	return n
 }
 
 type Torrent struct {
@@ -90,4 +102,20 @@ func (t *Torrent) SetFiles(files []file) {
 
 func (t Torrent) String() string {
 	return fmt.Sprintf("Torrent{Name=%s, info_hash=%s}", t.Name, t.InfoHash)
+}
+
+func (t *Torrent) Copy() Torrent {
+	n := Torrent{
+		Announce:     t.Announce,
+		Name:         t.Name,
+		PieceLength:  t.PieceLength,
+		CreationDate: t.CreationDate,
+		InfoHash:     t.InfoHash,
+	}
+
+	copy(n.pieces, t.pieces)
+	copy(n.Nodes, t.Nodes)
+	copy(n.Files, t.Files)
+
+	return n
 }

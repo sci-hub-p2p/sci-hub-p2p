@@ -13,4 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package indexes
+package debug
+
+const Filename = "10.1080/18324460.1913.10439103.pdf"
+const Sha256 = "2378d7bf113fb4f617a679eff0c33e1e63ed8edccbce8ffebdb0f078f503fccb"

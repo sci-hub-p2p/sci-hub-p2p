@@ -17,7 +17,6 @@ package cmd
 
 import (
 	"os"
-	"runtime"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -49,10 +48,7 @@ func Execute() {
 
 	rootCmd.PersistentFlags().BoolVar(&flag.Debug, "debug", false, "enable Debug")
 
-	var defaultParallel = runtime.NumCPU()/2 - 1
-	if defaultParallel <= 0 {
-		defaultParallel = 1
-	}
+	var defaultParallel = 3
 
 	rootCmd.PersistentFlags().IntVarP(&flag.Parallel, "parallel", "n",
 		defaultParallel, "how many CPU will be used")

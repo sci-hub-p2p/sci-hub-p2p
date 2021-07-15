@@ -15,19 +15,60 @@
 
 package indexes
 
-import "fmt"
+import (
+	"fmt"
 
-type perFile struct {
-	FileName       string `json:"file_name"`
-	Offset         int64  `json:"offset"`
-	Method         uint16 `json:"method"`
-	Crc32          uint32 `json:"crc32"`
-	CompressedSize uint64 `json:"size"`
-	Sha1           string `json:"sha1"`
-	Sha256         string `json:"sha256"`
+	"sci_hub_p2p/internal/torrent"
+)
+
+type PerFile struct {
+	Doi string `json:"doi"`
+
+	FileName        string `json:"file_name"` // duplicated with doi maybe
+	CompressMethod  uint16 `json:"method"`    // seems that almost all files are just store in zip without compress.
+	CompressedSize  int64  `json:"size"`
+	Sha256          string `json:"sha256"`
+	OffsetFromZip   int64  `json:"offset_from_zip"`
+	OffsetFromPiece uint32 `json:"offset_from_piece"`
+	Pieces          []int  `json:"pieces"`
+	PieceLength     int    `json:"piece_length"`
+	Torrent         torrent.Torrent
+	File            torrent.File
 }
 
-func (f perFile) String() string {
-	return fmt.Sprintf("perFile{name: %s, method: %d, offset: %d, size: %d}",
-		f.FileName, f.Method, f.Offset, f.CompressedSize)
+func (f PerFile) String() string {
+	return fmt.Sprintf("PerFile{name: %s, method: %d, size: %d, OffsetFromZip: %d}",
+		f.FileName, f.CompressMethod, f.CompressedSize, f.OffsetFromZip)
 }
+
+//
+// // DecompressFromPiece combine all wanted pieces first.
+// func (i PerFile) DecompressFromPiece(pieces []byte) ([]byte, error) {
+// 	offset := int(i.DataOffset % int64(i.Torrent.PieceLength))
+// 	compressed := pieces[offset : int64(offset)+i.CompressedSize]
+//
+// 	return i.Decompress(compressed)
+// }
+
+// // Decompress raw bytes data.
+// func (i PerFile) Decompress(data []byte) ([]byte, error) {
+// 	switch i.CompressedMethod {
+// 	case zip.Store:
+// 		// storage
+// 	case zip.Deflate:
+// 		// should decompress with deflate
+// 	}
+//
+// 	return nil, nil
+// }
+//
+// // WantedPieces starts from 0.
+// func (i PerFile) WantedPieces() []int {
+// 	t := i.Torrent
+//
+// 	// 应该不可能会溢出吧
+// 	start := int(i.DataOffset / int64(t.PieceLength))
+// 	end := int((i.DataOffset + i.CompressedSize) / int64(t.PieceLength))
+//
+// 	return makeRange(start, end)
+// }

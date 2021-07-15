@@ -17,6 +17,7 @@ package indexes_test
 
 import (
 	"encoding/hex"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,6 +27,7 @@ import (
 
 func TestDumpLoad(t *testing.T) {
 	t.Parallel()
+
 	o := &indexes.Record{
 		InfoHash: [20]byte{132, 56, 215, 195, 86, 34, 151, 137, 161,
 			218, 81, 62, 114, 68, 5, 245, 136, 178, 91, 97},
@@ -38,9 +40,10 @@ func TestDumpLoad(t *testing.T) {
 			57, 97, 102, 98, 102, 52, 99, 56,
 			57, 57, 54, 102, 98, 57, 50, 52},
 	}
-	b := o.Dump()
+	b := o.DumpV0()
+	fmt.Println(hex.EncodeToString(o.Sha256[:]))
 
-	n := indexes.LoadRecord(b)
+	n := indexes.LoadRecordV0(b)
 
 	assert.Equal(t, hex.EncodeToString(o.InfoHash[:]), hex.EncodeToString(n.InfoHash[:]))
 	assert.Equal(t, o.PieceStart, n.PieceStart)

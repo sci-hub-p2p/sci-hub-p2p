@@ -84,21 +84,10 @@ var genCmd = &cobra.Command{
 }
 
 var genReadCmd = &cobra.Command{
-	Use:     "read",
-	Example: "indexes read ./path/to/indexes.json.gz",
+	Use:     "load",
+	Example: "indexes read ./path/to/{info hash}.indexes",
 	Args:    cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		r, err := os.Open(args[0])
-		if err != nil {
-			return errors.Wrapf(err, "can't open file %s", args[0])
-		}
-		defer r.Close()
-		f, err := indexes.Read(r)
-		if err != nil {
-			return errors.Wrapf(err, "can't parse file %s", args[0])
-
-		}
-		fmt.Println(f)
 
 		return nil
 	},
