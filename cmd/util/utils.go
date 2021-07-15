@@ -13,12 +13,20 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package main
+package util
 
 import (
-	"sci_hub_p2p/cmd"
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 )
 
-func main() {
-	cmd.Execute()
+func MarkFlagsRequired(c *cobra.Command, flags ...string) error {
+	for _, flag := range flags {
+		err := c.MarkFlagRequired(flag)
+		if err != nil {
+			return errors.Wrap(err, "failed to mark flag as required")
+		}
+	}
+
+	return nil
 }

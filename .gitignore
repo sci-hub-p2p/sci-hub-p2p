@@ -1,6 +1,10 @@
+.vscode/
 .idea/
 .vscode/
 *.torrent
 coverage*
 *.exe
 sci_hub_p2p
+*.json.gz
+out/
+dist/

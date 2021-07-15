@@ -13,25 +13,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package torrent
+package flag
 
-import "fmt"
-
-type Node struct {
-	host string
-	port int
-}
-
-type Torrent struct {
-	info
-	Announce     string
-	AnnounceList [][]string
-	CreationDate int
-	Nodes        []Node
-	InfoHash     string
-	Pieces       []byte
-}
-
-func (t Torrent) String() string {
-	return fmt.Sprintf("Torrent{Name=%s, info_hash=%s}", t.Name, t.InfoHash)
-}
+var (
+	Parallel int
+	Debug    bool
+)

@@ -13,4 +13,30 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package torrent_test
+package indexes
+
+import (
+	"fmt"
+
+	"sci_hub_p2p/internal/torrent"
+)
+
+type PerFile struct {
+	Doi string `json:"doi"`
+
+	FileName        string // duplicated with doi maybe
+	CompressMethod  uint16 // seems that almost all files are just store in zip without compress.
+	CompressedSize  int64
+	Sha256          string
+	OffsetFromZip   int64
+	OffsetFromPiece uint32
+	Pieces          []int
+	PieceLength     int
+	Torrent         torrent.Torrent
+	File            torrent.File
+}
+
+func (f PerFile) String() string {
+	return fmt.Sprintf("PerFile{name: %s, method: %d, size: %d, OffsetFromZip: %d}",
+		f.FileName, f.CompressMethod, f.CompressedSize, f.OffsetFromZip)
+}

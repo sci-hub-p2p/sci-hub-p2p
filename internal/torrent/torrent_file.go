@@ -16,9 +16,11 @@
 package torrent
 
 import (
-	"errors"
-	"fmt"
 	"math/bits"
+
+	"github.com/pkg/errors"
+
+	"sci_hub_p2p/internal/convert"
 )
 
 const (
@@ -26,15 +28,33 @@ const (
 )
 
 type file struct {
-	Length int64    `json:"length" bencode:"length"`
-	Path   []string `json:"path" bencode:"path"`
+	Length   int64    `json:"length" bencode:"length"`
+	Path     []string `json:"path" bencode:"path"`
+	PathUTF8 []string `bencode:"path.utf-8,omitempty"`
+}
+
+func (f file) GetPath() []string {
+	if f.PathUTF8 != nil {
+		return f.PathUTF8
+	}
+
+	return f.Path
 }
 
 type info struct {
 	Files       []file `json:"files" bencode:"files"`
 	Name        string `json:"name" bencode:"name"`
+	NameUTF8    string `bencode:"name.utf-8,omitempty"`
 	PieceLength int    `json:"piece length" bencode:"piece length"`
 	Pieces      string `json:"pieces" bencode:"pieces"`
+}
+
+func (i info) GetName() string {
+	if i.NameUTF8 != "" {
+		return i.NameUTF8
+	}
+
+	return i.Name
 }
 
 type torrentFile struct {
@@ -48,14 +68,17 @@ type torrentFile struct {
 
 func (t torrentFile) toTorrent() (*Torrent, error) {
 	var torrent Torrent
-	torrent.Name = t.Info.Name
-	torrent.Files = t.Info.Files
+	torrent.Name = t.Info.GetName()
 	torrent.PieceLength = t.Info.PieceLength
-	torrent.Pieces = []byte(t.Info.Pieces)
+	err := torrent.SetPieces(t.Info.Pieces)
+	if err != nil {
+		return nil, err
+	}
 	torrent.Announce = t.Announce
 	torrent.AnnounceList = t.AnnounceList
+	torrent.SetFiles(t.Info.Files)
 
-	n, err := caseNodes(t.Nodes)
+	n, err := castNodes(t.Nodes)
 	if err != nil {
 		return nil, err
 	}
@@ -65,29 +88,19 @@ func (t torrentFile) toTorrent() (*Torrent, error) {
 	return &torrent, nil
 }
 
-var ErrorType = errors.New("can't not cast type")
-
-func caseNodes(i [][]interface{}) ([]Node, error) {
+func castNodes(i [][]interface{}) ([]Node, error) {
 	nodes := make([]Node, len(i))
 
 	for index, item := range i {
-		if len(item) != 2 {
-			return nil, fmt.Errorf("%w node %d has wrong value %v", ErrorType, index, item)
+		var (
+			n   Node
+			err = convert.ScanSlice(item, &n)
+		)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to convert from %s", item)
 		}
 
-		host, ok1 := item[0].(string)
-		if !ok1 {
-			return nil, fmt.Errorf("%w can't cast node[%d][0] to string, got %v",
-				ErrorType, index, item[0])
-		}
-
-		port, ok2 := item[1].(int64)
-		if !ok2 || port > MaxInt {
-			return nil, fmt.Errorf("%w can't cast node[%d][1] to int, got %v",
-				ErrorType, index, item[1])
-		}
-
-		nodes[index] = Node{host, int(port)}
+		nodes[index] = n
 	}
 
 	return nodes, nil

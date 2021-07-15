@@ -1,4 +1,4 @@
-name: Test
+name: Build
 
 on:
   push:
@@ -11,9 +11,7 @@ on:
 jobs:
   test:
     strategy:
-      fail-fast: false
       matrix:
-        go-version: [1.16.x]
         platform: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.platform }}
     steps:
@@ -21,17 +19,15 @@ jobs:
         if: success()
         uses: actions/setup-go@v2
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version: 1.16.x
 
       - name: Checkout code
         uses: actions/checkout@v2
+
+      - name: build
+        run: make ${{ runner.os }}
+
+      - uses: actions/upload-artifact@v2
         with:
-          fetch-depth: 2
-
-      - name: Run tests
-        run: make coverage
-        env:
-          GORACE: halt_on_error=1
-
-      - run: bash <(curl -s https://codecov.io/bash) -F ${{ runner.os }}
-        shell: bash
+          name: ${{ runner.os }}
+          path: ./dist/
