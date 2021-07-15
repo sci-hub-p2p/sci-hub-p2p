@@ -26,7 +26,9 @@ coverage: coverage.out
 
 clean:
 	rm dist -rf
-	rm -f ./internal/torrent/testdata/sm_00900000-00999999.torrent \
-		  ./coverage.out
+	rm -rf ./dist \
+		  ./internal/torrent/testdata/sm_00900000-00999999.torrent \
+		  ./coverage.out \
+		  ./out
 
 .PHONY: Windows Linux macOS test coverage clean

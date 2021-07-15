@@ -63,10 +63,10 @@ var genCmd = &cobra.Command{
 					return errors.Wrapf(err, "Can't create output dir %s", out)
 				}
 			}
-		}
-
-		if !s.IsDir() {
-			return fmt.Errorf("output path is not a directory")
+		} else {
+			if !s.IsDir() {
+				return fmt.Errorf("output path is not a directory")
+			}
 		}
 
 		err = indexes.Generate(dataDir, out, t)
