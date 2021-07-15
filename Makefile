@@ -1,8 +1,8 @@
 build: Windows Linux macOS
 
-Windows: ./dist/sci-hub_windows_64.exe
-Linux: ./dist/sci-hub_linux_64
-macOS: ./dist/sci-hub_macos_64
+Windows: dist/sci-hub_windows_64.exe
+Linux: dist/sci-hub_linux_64
+macOS: dist/sci-hub_macos_64
 
 
 dist/sci-hub_macos_64:
@@ -18,7 +18,7 @@ internal/torrent/testdata/sm_00900000-00999999.torrent:
 	bash ./fetch.bash
 
 
-test: ./internal/torrent/testdata/sm_00900000-00999999.torrent
+test: internal/torrent/testdata/sm_00900000-00999999.torrent
 	go test -covermode=atomic -coverprofile=coverage.out ./...
 
 coverage.out: test
