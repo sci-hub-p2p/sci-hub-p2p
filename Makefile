@@ -1,3 +1,4 @@
+MAKEFLAGS += --no-builtin-rules
 build: Windows Linux macOS
 
 Windows: dist/sci-hub_windows_64.exe
@@ -33,4 +34,3 @@ clean:
 		  ./out
 
 .PHONY: Windows Linux macOS test coverage clean
-MAKEFLAGS += --no-builtin-rules
