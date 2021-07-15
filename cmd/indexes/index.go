@@ -83,22 +83,12 @@ var genCmd = &cobra.Command{
 	},
 }
 
-var genReadCmd = &cobra.Command{
-	Use:     "load",
-	Example: "indexes read ./path/to/{info hash}.indexes",
-	Args:    cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-
-		return nil
-	},
-}
-
 var dataDir string
 var torrentPath string
 var out string
 
 func init() {
-	IndexCmd.AddCommand(genCmd, genReadCmd)
+	IndexCmd.AddCommand(genCmd)
 
 	genCmd.Flags().StringVarP(&dataDir, "data", "d", "", "Path to data directory")
 	genCmd.Flags().StringVarP(&torrentPath, "torrent", "t", "",
