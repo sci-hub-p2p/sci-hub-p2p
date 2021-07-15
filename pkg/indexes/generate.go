@@ -215,7 +215,7 @@ func collectResult(c chan *PDFFileOffSet, outDir string, t *torrent.Torrent, don
 	}
 
 	err = db.View(func(tx *bbolt.Tx) error {
-		return dumpToFile(tx, fmt.Sprintf("./out/%s.indexes.gz", t.InfoHash))
+		return dumpToFile(tx, filepath.Join(outDir, fmt.Sprintf("%s.indexes.gz", t.InfoHash)))
 	})
 
 	if err != nil {
