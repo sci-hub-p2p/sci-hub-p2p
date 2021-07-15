@@ -33,3 +33,4 @@ clean:
 		  ./out
 
 .PHONY: Windows Linux macOS test coverage clean
+MAKEFLAGS += --no-builtin-rules
