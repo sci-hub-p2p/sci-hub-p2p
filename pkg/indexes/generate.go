@@ -18,7 +18,6 @@ package indexes
 import (
 	"archive/zip"
 	"compress/gzip"
-	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -50,7 +49,6 @@ func (f PDFFileOffSet) Key() []byte {
 
 // IndexZipFile is intended to be used in goroutine for parallel.
 func IndexZipFile(c chan *PDFFileOffSet, dataDir string, index int, t *torrent.Torrent) {
-	pieceLength := t.PieceLength
 	var currentZipOffset int64
 	for i, file := range t.Files {
 		if i < index {
@@ -64,7 +62,9 @@ func IndexZipFile(c chan *PDFFileOffSet, dataDir string, index int, t *torrent.T
 	abs := filepath.Join(dataDir, t.Name, fs)
 	r, err := zip.OpenReader(abs)
 	if err != nil {
-		log.Fatalf("can't open file %s: %s", abs, err)
+		log.Errorf("can't open file %s: %s", abs, err)
+
+		return
 	}
 
 	defer r.Close()
@@ -73,51 +73,60 @@ func IndexZipFile(c chan *PDFFileOffSet, dataDir string, index int, t *torrent.T
 		if file.CompressedSize64 == 0 {
 			continue
 		}
-
-		i := &PDFFileOffSet{
-			DOI: file.Name, // file name is just doi
-			Record: Record{
-				InfoHash:         [20]byte{},
-				CompressedMethod: file.Method,
-				CompressedSize:   file.CompressedSize64,
-				Sha256:           [32]byte{},
-			},
-		}
-		infoHash, _ := hex.DecodeString(t.InfoHash)
-		copy(i.InfoHash[:], infoHash)
-
-		offset, err := file.DataOffset()
+		i, err := zipFileToRecord(file, currentZipOffset, t.PieceLength)
 		if err != nil {
-			r.Close()
-			log.Fatalf("can't offset in zip %s: %s, maybe file is broken", abs, err)
+			logger.Error(err)
+
+			return
 		}
-
-		i.PieceStart = uint32((offset + currentZipOffset) / int64(pieceLength))
-		i.OffsetInPiece = uint32((offset + currentZipOffset) % int64(pieceLength))
-
-		f, err := file.Open()
-		if err != nil {
-			log.Fatalf("can't decompress file %s in zip %s: %s", file.Name, abs, err)
-		}
-		defer f.Close()
-
-		sha256, err := hash.Sha256SumReaderBytes(f)
-		if err != nil {
-			log.Fatalf("can't decompress file %s in zip %s: %s", file.Name, abs, err)
-		}
-
-		copy(i.Sha256[:], sha256)
-
+		copy(i.InfoHash[:], t.RawInfoHash())
 		c <- i
 	}
 }
 
+func zipFileToRecord(file *zip.File, currentZipOffset int64, pieceLength int) (*PDFFileOffSet, error) {
+	i := &PDFFileOffSet{
+		DOI: file.Name, // file name is just doi
+		Record: Record{
+			InfoHash:         [20]byte{},
+			CompressedMethod: file.Method,
+			CompressedSize:   file.CompressedSize64,
+			Sha256:           [32]byte{},
+		},
+	}
+
+	offset, err := file.DataOffset()
+	if err != nil {
+		return nil, errors.Wrapf(err, "can't offset in zip %s: maybe zip file is broken", file.Name)
+	}
+
+	i.PieceStart = uint32((offset + currentZipOffset) / int64(pieceLength))
+	i.OffsetInPiece = uint32((offset + currentZipOffset) % int64(pieceLength))
+
+	f, err := file.Open()
+	if err != nil {
+		return nil, errors.Wrapf(err, "can't decompress file %s", file.Name)
+	}
+	defer f.Close()
+
+	sha256, err := hash.Sha256SumReaderBytes(f)
+	if err != nil {
+		return nil, errors.Wrapf(err, "can't decompress file %s", file.Name)
+	}
+	copy(i.Sha256[:], sha256)
+
+	return i, nil
+}
+
 func Generate(dirName, outDir string, t *torrent.Torrent) error {
-	fmt.Println("start generate indexes")
 	c := make(chan *PDFFileOffSet, flag.Parallel)
+	defer close(c)
 
 	done := make(chan int)
+	defer close(done)
+
 	in := make(chan int)
+	defer close(in)
 
 	var wg sync.WaitGroup
 	wg.Add(flag.Parallel)
@@ -145,12 +154,10 @@ func Generate(dirName, outDir string, t *torrent.Torrent) error {
 		}
 		s, err := os.Stat(abs)
 		if err != nil {
-			log.Fatalf("can't generate indexes, file %s is broken", fs)
+			return errors.Wrapf(err, "can't generate indexes, file %s is broken", fs)
 		}
 		if s.Size() != file.Length {
-			log.Fatalf(
-				"can't generate indexes, file %s has a wrong size, expected %d",
-				fs, file.Length)
+			return errors.Wrapf(err, "can't generate indexes, file %s has a wrong size, expected %d", fs, file.Length)
 		}
 		in <- i
 	}
@@ -158,7 +165,6 @@ func Generate(dirName, outDir string, t *torrent.Torrent) error {
 	for len(in) > 0 {
 		time.Sleep(time.Second)
 	}
-	close(in)
 	wg.Wait()
 	close(c)
 	<-done
@@ -171,7 +177,9 @@ func collectResult(c chan *PDFFileOffSet, outDir string, t *torrent.Torrent, don
 	out := filepath.Join(outDir, t.InfoHash+".indexes")
 	db, err := bbolt.Open(out, defaultFileMode, &bbolt.Options{Timeout: 1 * time.Second})
 	if err != nil {
-		log.Fatalf("can't open %s to write indexes: %s", out, err)
+		log.Errorf("can't open %s to write indexes: %s", out, err)
+
+		return
 	}
 	defer func(db *bbolt.DB) {
 		err := db.Close()
@@ -193,7 +201,7 @@ func collectResult(c chan *PDFFileOffSet, outDir string, t *torrent.Torrent, don
 			d := i.DumpV0()
 			err = b.Put(i.Key(), d)
 			if err != nil {
-				log.Fatalln("can't save record:", err)
+				return errors.Wrap(err, "can't save record")
 			}
 		}
 
@@ -201,27 +209,17 @@ func collectResult(c chan *PDFFileOffSet, outDir string, t *torrent.Torrent, don
 	})
 
 	if err != nil {
-		logger.Fatal("can't write indexes:", err)
+		logger.Error("can't save indexes:", err)
+
+		return
 	}
 
 	err = db.View(func(tx *bbolt.Tx) error {
-		fs := fmt.Sprintf("./out/%s.indexes.gz", t.InfoHash)
-		f, err := os.Create(fs)
-		if err != nil {
-			return errors.Wrapf(err, "can't create file %s", fs)
-		}
-		r, err := gzip.NewWriterLevel(f, gzip.BestCompression)
-		if err != nil {
-			return errors.Wrap(err, "can't compress indexes")
-		}
-		defer f.Close()
-		_, err = tx.WriteTo(r)
-
-		return errors.Wrap(err, "can't dump indexes to file")
+		return dumpToFile(tx, fmt.Sprintf("./out/%s.indexes.gz", t.InfoHash))
 	})
 
 	if err != nil {
-		logger.Error(err)
+		logger.Error("can't dump database", err)
 	}
 
 	logger.Debug("sync database")
@@ -229,4 +227,22 @@ func collectResult(c chan *PDFFileOffSet, outDir string, t *torrent.Torrent, don
 		logger.Error(err)
 	}
 	done <- 1
+}
+
+func dumpToFile(tx *bbolt.Tx, name string) error {
+	f, err := os.Create(name)
+	if err != nil {
+		return errors.Wrapf(err, "can't create file %s", name)
+	}
+	r, err := gzip.NewWriterLevel(f, gzip.BestCompression)
+	if err != nil {
+		return errors.Wrap(err, "can't compress indexes")
+	}
+	defer f.Close()
+	_, err = tx.WriteTo(r)
+	if err != nil {
+		return errors.Wrap(err, "can't dump indexes to file")
+	}
+
+	return nil
 }

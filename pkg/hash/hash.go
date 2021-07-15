@@ -53,12 +53,16 @@ func Sha256SumReader(r io.Reader) (string, error) {
 	return hex.EncodeToString(sum), nil
 }
 
-func Sha1Sum(b []byte) string {
+func Sha1SumBytes(b []byte) []byte {
 	h := sha1.New()
 	_, _ = h.Write(b)
 	sum := h.Sum(nil)
 
-	return hex.EncodeToString(sum)
+	return sum
+}
+
+func Sha1Sum(b []byte) string {
+	return hex.EncodeToString(Sha1SumBytes(b))
 }
 
 func Sha256Sum(b []byte) string {

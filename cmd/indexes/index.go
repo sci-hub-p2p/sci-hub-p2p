@@ -69,6 +69,7 @@ var genCmd = &cobra.Command{
 			}
 		}
 
+		fmt.Println("start generate indexes")
 		err = indexes.Generate(dataDir, out, t)
 
 		if err != nil {

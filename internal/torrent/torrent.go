@@ -50,6 +50,7 @@ func (f File) Copy() File {
 type Torrent struct {
 	Announce     string
 	Files        []File
+	infoHash     []byte
 	Name         string
 	PieceLength  int
 	AnnounceList [][]string
@@ -61,6 +62,15 @@ type Torrent struct {
 }
 
 var ErrWrongPieces = errors.New("The length of the pieces can't be divided by 20")
+
+func (t *Torrent) RawInfoHash() []byte {
+	return t.infoHash
+}
+
+func (t *Torrent) SetInfoHash(p []byte) {
+	copy(t.infoHash, p)
+	t.InfoHash = hex.EncodeToString(p)
+}
 
 func (t *Torrent) SetPieces(s string) error {
 	p := []byte(s)
@@ -111,6 +121,7 @@ func (t *Torrent) Copy() Torrent {
 		PieceLength:  t.PieceLength,
 		CreationDate: t.CreationDate,
 		InfoHash:     t.InfoHash,
+		infoHash:     t.infoHash,
 	}
 
 	copy(n.pieces, t.pieces)

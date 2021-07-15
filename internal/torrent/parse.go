@@ -63,29 +63,29 @@ func ParseRaw(raw []byte) (*Torrent, error) {
 		return nil, err
 	}
 
-	tt.InfoHash = infoHash
+	tt.SetInfoHash(infoHash)
 
-	return tt, err
+	return tt, nil
 }
 
-func getInfoHash(content []byte) (string, error) {
+func getInfoHash(content []byte) ([]byte, error) {
 	// it's annoying but we have to decode it twice to calculate info-hash
 	data, err := bencodeMap.Unmarshal(content)
 
 	m, ok := data.(map[string]interface{})
 	if !ok {
-		return "", errors.Wrap(err, "torrent data is not valid")
+		return nil, errors.Wrap(err, "torrent data is not valid")
 	}
 
 	info, ok := m["info"]
 	if !ok {
-		return "", errors.Wrap(err, "torrent missing `info` field")
+		return nil, errors.Wrap(err, "torrent missing `info` field")
 	}
 
 	s, err := bencodeMap.Marshal(info)
 	if err != nil {
-		return "", errors.Wrap(err, "can't marshal torrent info")
+		return nil, errors.Wrap(err, "can't marshal torrent info")
 	}
 
-	return hash.Sha1Sum(s), nil
+	return hash.Sha1SumBytes(s), nil
 }
