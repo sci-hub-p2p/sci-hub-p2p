@@ -6,21 +6,22 @@ macOS: ./dist/sci-hub_macos_64
 test: ./internal/torrent/testdata/sm_00900000-00999999.torrent
 	go test -covermode=atomic -coverprofile=coverage.out ./...
 
-coverage: coverage.out
 
-./dist/sci-hub_macos_64:
+dist/sci-hub_macos_64:
 	env GOOS=darwin GOARCH=amd64 go build -ldflags "-s -w" -o $@
 
-./dist/sci-hub_linux_64:
+dist/sci-hub_linux_64:
 	env GOOS=linux GOARCH=amd64 go build -ldflags "-s -w" -o $@
 
-./dist/sci-hub_windows_64.exe:
+dist/sci-hub_windows_64.exe:
 	env GOOS=windows GOARCH=amd64 go build -ldflags "-s -w" -o $@
 
-./internal/torrent/testdata/sm_00900000-00999999.torrent:
+internal/torrent/testdata/sm_00900000-00999999.torrent:
 	bash ./fetch.bash
 
-./coverage.out: test
+coverage.out: test
+
+coverage: coverage.out
 
 clean:
 	rm dist -rf
