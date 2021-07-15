@@ -14,3 +14,21 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 package torrent_test
+
+import (
+	"path/filepath"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"sci_hub_p2p/internal/torrent"
+)
+
+func TestParseFile(t *testing.T) {
+	t.Parallel()
+	f, err := filepath.Abs("./testdata/sm_00900000-00999999.torrent")
+	assert.Nil(t, err)
+	tor, err := torrent.ParseFile(f)
+	assert.Nil(t, err)
+	assert.Equal(t, []string{"libgen.scimag00900000-00900999.zip"}, tor.Files[0].Path)
+}
