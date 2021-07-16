@@ -29,7 +29,7 @@ import (
 	"sci_hub_p2p/pkg/constants"
 	"sci_hub_p2p/pkg/constants/size"
 	"sci_hub_p2p/pkg/logger"
-	"sci_hub_p2p/pkg/persistent"
+	"sci_hub_p2p/pkg/persist"
 	"sci_hub_p2p/pkg/variable"
 )
 
@@ -96,7 +96,7 @@ var loadCmd = &cobra.Command{
 				if err != nil {
 					return err
 				}
-				err = persistent.PutTorrent(b, f)
+				err = persist.PutTorrent(b, f)
 				if err != nil {
 					return err
 				}
@@ -150,7 +150,7 @@ var getCmd = &cobra.Command{
 			if b == nil {
 				return fmt.Errorf("can't find data in database")
 			}
-			t, err := persistent.GetTorrent(b, p)
+			t, err := persist.GetTorrent(b, p)
 			if err != nil {
 				return err
 			}
