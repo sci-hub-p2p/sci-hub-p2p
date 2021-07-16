@@ -21,8 +21,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	_ "sci_hub_p2p/internal/testing"
 	"sci_hub_p2p/internal/torrent"
-	_ "sci_hub_p2p/testing"
 )
 
 func TestParseFile(t *testing.T) {

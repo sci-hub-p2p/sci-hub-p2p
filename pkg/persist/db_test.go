@@ -22,10 +22,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.etcd.io/bbolt"
 
+	_ "sci_hub_p2p/internal/testing"
 	"sci_hub_p2p/internal/torrent"
 	"sci_hub_p2p/pkg/constants"
 	"sci_hub_p2p/pkg/persist"
-	_ "sci_hub_p2p/testing"
 )
 
 func TestSaveTorrent(t *testing.T) {
