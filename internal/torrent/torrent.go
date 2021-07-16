@@ -62,7 +62,7 @@ type Torrent struct {
 	Pieces [][]byte
 }
 
-var ErrWrongPieces = errors.New("The length of the Pieces can't be divided by 20")
+var ErrWrongPieces = errors.New("The length of the pieces can't be divided by 20")
 
 func (t *Torrent) RawInfoHash() []byte {
 	return t.infoHash
