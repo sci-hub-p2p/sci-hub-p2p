@@ -215,7 +215,7 @@ issues:
     - path: 'cmd[/\\].*'
       linters: [gochecknoglobals, gochecknoinits, goerr113, wrapcheck]
 
-    - path: 'testing[/\\].*'
+    - path: 'internal[/\\]testing[/\\].*'
       linters: [dogsled, gochecknoinits]
 
     - path: 'variable[/\\].*'
