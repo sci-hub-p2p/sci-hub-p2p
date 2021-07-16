@@ -23,8 +23,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"sci_hub_p2p/cmd/util"
 	"sci_hub_p2p/internal/torrent"
+	"sci_hub_p2p/internal/utils"
 	"sci_hub_p2p/pkg/indexes"
 	"sci_hub_p2p/pkg/logger"
 )
@@ -96,7 +96,7 @@ func init() {
 		"TorrentPath path of this data file")
 	genCmd.Flags().StringVarP(&out, "out", "o", "./out/", "Output directory")
 
-	if err := util.MarkFlagsRequired(genCmd, "data", "torrent"); err != nil {
+	if err := utils.MarkFlagsRequired(genCmd, "data", "torrent"); err != nil {
 		log.Fatalln(err)
 	}
 	if err := genCmd.MarkFlagFilename("torrent", "torrentPath"); err != nil {

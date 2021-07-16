@@ -13,9 +13,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package util
+package utils
 
 import (
+	"os"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -29,4 +31,27 @@ func MarkFlagsRequired(c *cobra.Command, flags ...string) error {
 	}
 
 	return nil
+}
+
+func EnsureDir(name string) func(cmd *cobra.Command, args []string) error {
+	return func(cmd *cobra.Command, args []string) error {
+		s, err := os.Stat(name)
+		if err != nil {
+			if os.IsNotExist(err) {
+				err := os.MkdirAll(name, os.ModeDir)
+				if err != nil {
+					return errors.Wrapf(err, "can't create app base dir %s", name)
+				}
+
+				return nil
+			}
+
+			return errors.Wrap(err, "unexpected error")
+		}
+		if !s.IsDir() {
+			return errors.Wrapf(err, "app base dir %s is not a dir", name)
+		}
+
+		return nil
+	}
 }

@@ -13,10 +13,33 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package main
+package utils
 
-import "sci_hub_p2p/cmd"
+import (
+	"io"
+	"os"
+)
 
-func main() {
-	cmd.Execute()
+// Copy the src file to dst. Any existing file will be overwritten and will not
+// copy file attributes.
+func Copy(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+
+	_, err = io.Copy(out, in)
+	if err != nil {
+		_ = out.Close()
+
+		return err
+	}
+
+	return out.Close()
 }

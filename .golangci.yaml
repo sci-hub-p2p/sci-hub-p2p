@@ -191,6 +191,7 @@ linters-settings:
     # switch
     default-signifies-exhaustive: true
 
+
 linters:
   enable-all: true
   disable:
@@ -220,3 +221,6 @@ issues:
 
     - path: 'pkg[/\\]variable[/\\].*'
       linters: [gochecknoglobals]
+
+    - path: 'internal[/\\]utils[/\\]copyfile\.go'
+      linters: [wrapcheck]

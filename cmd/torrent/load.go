@@ -27,6 +27,7 @@ import (
 	"go.etcd.io/bbolt"
 
 	"sci_hub_p2p/internal/torrent"
+	utils2 "sci_hub_p2p/internal/utils"
 	"sci_hub_p2p/pkg/constants"
 	"sci_hub_p2p/pkg/constants/size"
 	"sci_hub_p2p/pkg/logger"
@@ -35,40 +36,23 @@ import (
 )
 
 var Cmd = &cobra.Command{
-	Use: "torrent",
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		s, err := os.Stat(variable.GetAppBaseDir())
-		if err != nil {
-			if os.IsNotExist(err) {
-				err := os.MkdirAll(variable.GetAppBaseDir(), os.ModeDir)
-				if err != nil {
-					return errors.Wrapf(err, "can't create app base dir %s", variable.GetAppBaseDir())
-				}
-
-				return nil
-			}
-
-			return err
-		}
-		if !s.IsDir() {
-			return errors.Wrapf(err, "app base dir %s is not a dir", variable.GetAppBaseDir())
-		}
-
-		return nil
-	},
-	SilenceErrors: false,
+	Use:               "torrent",
+	PersistentPreRunE: utils2.EnsureDir(variable.GetAppBaseDir()),
+	SilenceErrors:     false,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		fmt.Println("indexes command")
 
 		return cmd.Help()
 	},
 }
+var torrentSavePath = filepath.Join(variable.GetAppBaseDir(), "torrents")
 
 var loadCmd = &cobra.Command{
-	Use:           "load",
-	Short:         "Load torrents into database.",
-	Example:       "torrent load /path/to/*.torrents [-g '/path/to/data/*.torrents']",
-	SilenceErrors: false,
+	Use:               "load",
+	Short:             "Load torrents into database.",
+	Example:           "torrent load /path/to/*.torrents [-g '/path/to/data/*.torrents']",
+	SilenceErrors:     false,
+	PersistentPreRunE: utils2.EnsureDir(torrentSavePath),
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		var s []string
 		if glob != "" {
@@ -116,6 +100,11 @@ var loadCmd = &cobra.Command{
 				err = persist.PutTorrent(b, f)
 				if err != nil {
 					return err
+				}
+				dst := filepath.Join(torrentSavePath, f.InfoHash+".torrent")
+				err = utils2.Copy(file, dst)
+				if err != nil {
+					return errors.Wrapf(err, "can't copy torrent file to %s", dst)
 				}
 			}
 
