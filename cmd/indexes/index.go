@@ -29,7 +29,7 @@ import (
 	"sci_hub_p2p/pkg/logger"
 )
 
-var IndexCmd = &cobra.Command{
+var Cmd = &cobra.Command{
 	Use:   "indexes",
 	Short: "Generate or load indexes",
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -89,7 +89,7 @@ var torrentPath string
 var out string
 
 func init() {
-	IndexCmd.AddCommand(genCmd)
+	Cmd.AddCommand(genCmd)
 
 	genCmd.Flags().StringVarP(&dataDir, "data", "d", "", "Path to data directory")
 	genCmd.Flags().StringVarP(&torrentPath, "torrent", "t", "",

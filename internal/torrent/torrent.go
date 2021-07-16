@@ -68,7 +68,8 @@ func (t *Torrent) RawInfoHash() []byte {
 }
 
 func (t *Torrent) SetInfoHash(p []byte) {
-	copy(t.infoHash, p)
+	t.infoHash = make([]byte, 20)
+	copy(t.infoHash[:], p)
 	t.InfoHash = hex.EncodeToString(p)
 }
 

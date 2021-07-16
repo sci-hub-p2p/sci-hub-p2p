@@ -18,6 +18,7 @@ package indexes
 import (
 	"archive/zip"
 	"compress/gzip"
+	"encoding/base64"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -26,8 +27,8 @@ import (
 	"time"
 
 	"github.com/cheggaaa/pb/v3"
+	"github.com/itchio/lzma"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"go.etcd.io/bbolt"
 
 	"sci_hub_p2p/cmd/flag"
@@ -48,7 +49,7 @@ func (f PDFFileOffSet) Key() []byte {
 }
 
 // IndexZipFile is intended to be used in goroutine for parallel.
-func IndexZipFile(c chan *PDFFileOffSet, dataDir string, index int, t *torrent.Torrent) {
+func IndexZipFile(c chan *PDFFileOffSet, dataDir string, index int, t *torrent.Torrent) error {
 	var currentZipOffset int64
 	for i, file := range t.Files {
 		if i < index {
@@ -62,12 +63,13 @@ func IndexZipFile(c chan *PDFFileOffSet, dataDir string, index int, t *torrent.T
 	abs := filepath.Join(dataDir, t.Name, fs)
 	r, err := zip.OpenReader(abs)
 	if err != nil {
-		log.Errorf("can't open file %s: %s", abs, err)
-
-		return
+		return err
 	}
 
 	defer r.Close()
+
+	var infoHash [20]byte
+	copy(infoHash[:], t.RawInfoHash())
 
 	for _, file := range r.File {
 		if file.CompressedSize64 == 0 {
@@ -75,13 +77,12 @@ func IndexZipFile(c chan *PDFFileOffSet, dataDir string, index int, t *torrent.T
 		}
 		i, err := zipFileToRecord(file, currentZipOffset, t.PieceLength)
 		if err != nil {
-			logger.Error(err)
-
-			return
+			return err
 		}
-		copy(i.InfoHash[:], t.RawInfoHash())
+		i.InfoHash = infoHash
 		c <- i
 	}
+	return nil
 }
 
 func zipFileToRecord(file *zip.File, currentZipOffset int64, pieceLength int) (*PDFFileOffSet, error) {
@@ -120,26 +121,36 @@ func zipFileToRecord(file *zip.File, currentZipOffset int64, pieceLength int) (*
 
 func Generate(dirName, outDir string, t *torrent.Torrent) error {
 	c := make(chan *PDFFileOffSet, flag.Parallel)
-	defer close(c)
 
 	done := make(chan int)
 	defer close(done)
 
 	in := make(chan int)
-	defer close(in)
 
 	var wg sync.WaitGroup
 	wg.Add(flag.Parallel)
 
-	go collectResult(c, outDir, t, done)
+	var defaultFileMode os.FileMode = 0644
+	out := filepath.Join(outDir, t.InfoHash+".indexes")
+	db, err := bbolt.Open(out, defaultFileMode, &bbolt.Options{Timeout: 1 * time.Second})
+	if err != nil {
+		return errors.Wrapf(err, "can't open %s to write indexes", out)
+	}
+	defer db.Close()
+	go collectResult(c, outDir, t, done, db)
 
 	for i := 0; i < flag.Parallel; i++ {
-		go func() {
+		go func(index int) {
 			for i := range in {
-				IndexZipFile(c, dirName, i, t)
+				err := IndexZipFile(c, dirName, i, t)
+				if err != nil {
+					logger.Error(err)
+					break
+				}
 			}
+			logger.Debugf("exit worker %d", index+1)
 			wg.Done()
-		}()
+		}(i)
 	}
 
 	logger.Debug("skip hash check here because files are too big,",
@@ -162,36 +173,26 @@ func Generate(dirName, outDir string, t *torrent.Torrent) error {
 		in <- i
 	}
 
+	logger.Debug("wait for all zip file to be indexed")
 	for len(in) > 0 {
 		time.Sleep(time.Second)
 	}
+	close(in)
+	logger.Debug("wait all worker exit")
 	wg.Wait()
+
 	close(c)
+	logger.Debug("wait closing write db worker")
 	<-done
 
 	return nil
 }
 
-func collectResult(c chan *PDFFileOffSet, outDir string, t *torrent.Torrent, done chan int) {
-	var defaultFileMode os.FileMode = 0644
-	out := filepath.Join(outDir, t.InfoHash+".indexes")
-	db, err := bbolt.Open(out, defaultFileMode, &bbolt.Options{Timeout: 1 * time.Second})
-	if err != nil {
-		log.Errorf("can't open %s to write indexes: %s", out, err)
-
-		return
-	}
-	defer func(db *bbolt.DB) {
-		err := db.Close()
-		if err != nil {
-			logger.Error(err)
-		}
-	}(db)
-
+func collectResult(c chan *PDFFileOffSet, outDir string, t *torrent.Torrent, done chan int, db *bbolt.DB) {
 	bar := pb.StartNew(filesPerTorrent)
 	defer bar.Finish()
 
-	err = db.Batch(func(tx *bbolt.Tx) error {
+	err := db.Batch(func(tx *bbolt.Tx) error {
 		b, err := tx.CreateBucketIfNotExists([]byte("paper-v0"))
 		if err != nil {
 			return errors.Wrap(err, "can't create bucket, maybe indexes file is not writeable")
@@ -214,6 +215,7 @@ func collectResult(c chan *PDFFileOffSet, outDir string, t *torrent.Torrent, don
 		return
 	}
 
+	fmt.Println("start dumping data to file")
 	err = db.View(func(tx *bbolt.Tx) error {
 		return dumpToFile(tx, filepath.Join(outDir, fmt.Sprintf("%s.indexes.gz", t.InfoHash)))
 	})
@@ -242,6 +244,28 @@ func dumpToFile(tx *bbolt.Tx, name string) error {
 	_, err = tx.WriteTo(r)
 	if err != nil {
 		return errors.Wrap(err, "can't dump indexes to file")
+	}
+
+	t, err := os.Create(name + ".jsonlines.lzma")
+	if err != nil {
+		return err
+	}
+	defer t.Close()
+
+	// Assume bucket exists and has keys
+	b := tx.Bucket([]byte("paper-v0"))
+
+	c := b.Cursor()
+
+	w := lzma.NewWriterLevel(t, lzma.BestCompression)
+	defer w.Close()
+	for k, v := c.First(); k != nil; k, v = c.Next() {
+		b64 := base64.StdEncoding.EncodeToString(v)
+		_, err := fmt.Fprintf(w, "[\"%s\", \"%s\"]\n", k, b64)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
 	}
 
 	return nil

@@ -44,7 +44,7 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
-	rootCmd.AddCommand(indexes.IndexCmd)
+	rootCmd.AddCommand(indexes.Cmd)
 
 	rootCmd.PersistentFlags().BoolVar(&flag.Debug, "debug", false, "enable Debug")
 

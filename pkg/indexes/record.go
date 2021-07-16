@@ -33,6 +33,10 @@ type Record struct {
 	Sha256           [32]byte // For IPFS, not vary necessarily
 }
 
+func (r Record) HexInfoHash() string {
+	return hex.EncodeToString(r.InfoHash[:])
+}
+
 func (r Record) DumpV0() []byte {
 	var buf bytes.Buffer
 	// buffer.Write won't return a err
