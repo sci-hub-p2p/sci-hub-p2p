@@ -13,8 +13,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package constants
+package size
 
-func BucketPaper() []byte { return []byte("paper-v0") }
-
-func TorrentBucket() []byte { return []byte("torrent-v0") }
+const (
+	Sha1Bytes = 20
+)

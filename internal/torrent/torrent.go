@@ -23,10 +23,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"sci_hub_p2p/pkg/constants"
+	"sci_hub_p2p/pkg/constants/size"
 )
-
-const SizeOfSha1 = 20
 
 type Node struct {
 	Host string `tuple:"0"`
@@ -70,26 +68,27 @@ func (t *Torrent) RawInfoHash() []byte {
 }
 
 func (t *Torrent) SetInfoHash(p []byte) {
-	t.infoHash = make([]byte, constants.SizeInfoHashBytes)
+	t.infoHash = make([]byte, size.Sha1Bytes)
 	copy(t.infoHash, p)
 	t.InfoHash = hex.EncodeToString(p)
 }
 
 func (t *Torrent) SetPieces(s string) error {
+	sizeOfSha1 := size.Sha1Bytes
 	p := []byte(s)
-	if len(p)%SizeOfSha1 != 0 {
+	if len(p)%sizeOfSha1 != 0 {
 		return ErrWrongPieces
 	}
-	t.pieces = make([][]byte, len(p)/SizeOfSha1)
-	for i := 0; i < len(p)/SizeOfSha1; i++ {
-		t.pieces[i] = p[i*SizeOfSha1 : (i+1)*SizeOfSha1]
+	t.pieces = make([][]byte, len(p)/sizeOfSha1)
+	for i := 0; i < len(p)/sizeOfSha1; i++ {
+		t.pieces[i] = p[i*sizeOfSha1 : (i+1)*sizeOfSha1]
 	}
 
 	return nil
 }
 
 func (t Torrent) PieceCount() int {
-	return len(t.pieces) / SizeOfSha1
+	return len(t.pieces) / size.Sha1Bytes
 }
 
 func (t Torrent) Hex(i int) string {
@@ -97,7 +96,7 @@ func (t Torrent) Hex(i int) string {
 }
 
 func (t Torrent) Piece(i int) []byte {
-	var s = make([]byte, SizeOfSha1)
+	var s = make([]byte, size.Sha1Bytes)
 	copy(s, t.pieces[i])
 
 	return s
