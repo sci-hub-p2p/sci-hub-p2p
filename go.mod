@@ -12,5 +12,4 @@ require (
 	github.com/spf13/cobra v1.2.1
 	github.com/stretchr/testify v1.7.0
 	go.etcd.io/bbolt v1.3.6
-	golang.org/x/sys v0.0.0-20210510120138-977fb7262007
 )

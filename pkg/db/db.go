@@ -26,9 +26,15 @@ import (
 var ErrNotFound = errors.New("not found in database")
 
 func GetTorrent(tx *bbolt.Tx, hash []byte) (*torrent.Torrent, error) {
-	t := tx.Bucket(constants.TorrentBucket()).Get(hash)
-	if t != nil {
+	raw := tx.Bucket(constants.TorrentBucket()).Get(hash)
+	if raw != nil {
 		return nil, ErrNotFound
 	}
-	return torrent.ParseRaw(t)
+
+	t, err := torrent.ParseRaw(raw)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't parse torrent")
+	}
+
+	return t, nil
 }
