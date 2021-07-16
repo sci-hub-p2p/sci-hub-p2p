@@ -23,7 +23,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"sci_hub_p2p/pkg/size"
+	"sci_hub_p2p/pkg/constants"
 )
 
 const SizeOfSha1 = 20
@@ -70,7 +70,7 @@ func (t *Torrent) RawInfoHash() []byte {
 }
 
 func (t *Torrent) SetInfoHash(p []byte) {
-	t.infoHash = make([]byte, size.InfoHashBytes)
+	t.infoHash = make([]byte, constants.SizeInfoHashBytes)
 	copy(t.infoHash, p)
 	t.InfoHash = hex.EncodeToString(p)
 }

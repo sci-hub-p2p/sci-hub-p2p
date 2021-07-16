@@ -32,6 +32,7 @@ import (
 
 	"sci_hub_p2p/cmd/flag"
 	"sci_hub_p2p/internal/torrent"
+	"sci_hub_p2p/pkg/constants"
 	"sci_hub_p2p/pkg/hash"
 	"sci_hub_p2p/pkg/logger"
 )
@@ -193,7 +194,7 @@ func collectResult(c chan *PDFFileOffSet, outDir string, t *torrent.Torrent, don
 	defer bar.Finish()
 
 	err := db.Batch(func(tx *bbolt.Tx) error {
-		b, err := tx.CreateBucketIfNotExists([]byte("paper-v0"))
+		b, err := tx.CreateBucketIfNotExists(constants.BucketPaper())
 		if err != nil {
 			return errors.Wrap(err, "can't create bucket, maybe indexes file is not writeable")
 		}
@@ -239,7 +240,7 @@ func dumpToFile(tx *bbolt.Tx, name string) error {
 	defer t.Close()
 
 	// Assume bucket exists and has keys
-	b := tx.Bucket([]byte("paper-v0"))
+	b := tx.Bucket(constants.BucketPaper())
 
 	c := b.Cursor()
 

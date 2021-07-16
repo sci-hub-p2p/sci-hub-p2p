@@ -13,9 +13,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-// package size reduce magic number
-package size
+package constants
+
+func BucketPaper() []byte { return []byte("paper-v0") }
+
+func TorrentBucket() []byte { return []byte("torrent-v0") }
 
 const (
-	InfoHashBytes = 20
+	SizeInfoHashBytes = 20
 )
