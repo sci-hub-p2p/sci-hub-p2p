@@ -15,11 +15,12 @@ dist/sci-hub_linux_64:
 dist/sci-hub_windows_64.exe:
 	env GOOS=windows GOARCH=amd64 go build -ldflags "-s -w" -o $@
 
-internal/torrent/testdata/sm_00900000-00999999.torrent:
+testdata/sm_00900000-00999999.torrent:
 	bash ./fetch.bash
 
+testdata: testdata/sm_00900000-00999999.torrent
 
-test: internal/torrent/testdata/sm_00900000-00999999.torrent
+test: testdata
 	go test -covermode=atomic -coverprofile=coverage.out ./...
 
 coverage.out: test
@@ -29,8 +30,8 @@ coverage: coverage.out
 clean:
 	rm dist -rf
 	rm -rf ./dist \
-		  ./internal/torrent/testdata/sm_00900000-00999999.torrent \
+		  ./testdata/sm_00900000-00999999.torrent \
 		  ./coverage.out \
 		  ./out
 
-.PHONY: Windows Linux macOS test coverage clean
+.PHONY: Windows Linux macOS test coverage clean testdata

@@ -13,23 +13,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package torrent_test
+package constants
 
-import (
-	"path/filepath"
-	"testing"
+import "os"
 
-	"github.com/stretchr/testify/assert"
+func PaperBucket() []byte { return []byte("paper-v0") }
 
-	_ "sci_hub_p2p/internal/testing"
-	"sci_hub_p2p/internal/torrent"
-)
+func TorrentBucket() []byte { return []byte("torrent-v0") }
 
-func TestParseFile(t *testing.T) {
-	t.Parallel()
-	f, err := filepath.Abs("./testdata/sm_00900000-00999999.torrent")
-	assert.Nil(t, err)
-	tor, err := torrent.ParseFile(f)
-	assert.Nil(t, err)
-	assert.Equal(t, []string{"libgen.scimag00900000-00900999.zip"}, tor.Files[0].Path)
-}
+const DefaultFileMode os.FileMode = 0644

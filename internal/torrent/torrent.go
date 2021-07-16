@@ -18,15 +18,14 @@ package torrent
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"path"
 
 	"github.com/pkg/errors"
 
-	"sci_hub_p2p/pkg/size"
+	"sci_hub_p2p/pkg/constants/size"
 )
-
-const SizeOfSha1 = 20
 
 type Node struct {
 	Host string `tuple:"0"`
@@ -60,7 +59,7 @@ type Torrent struct {
 	Nodes        []Node
 	InfoHash     string
 	// avoid change, only return copy
-	pieces [][]byte
+	Pieces [][]byte
 }
 
 var ErrWrongPieces = errors.New("The length of the pieces can't be divided by 20")
@@ -70,35 +69,36 @@ func (t *Torrent) RawInfoHash() []byte {
 }
 
 func (t *Torrent) SetInfoHash(p []byte) {
-	t.infoHash = make([]byte, size.InfoHashBytes)
+	t.infoHash = make([]byte, size.Sha1Bytes)
 	copy(t.infoHash, p)
 	t.InfoHash = hex.EncodeToString(p)
 }
 
 func (t *Torrent) SetPieces(s string) error {
+	sizeOfSha1 := size.Sha1Bytes
 	p := []byte(s)
-	if len(p)%SizeOfSha1 != 0 {
+	if len(p)%sizeOfSha1 != 0 {
 		return ErrWrongPieces
 	}
-	t.pieces = make([][]byte, len(p)/SizeOfSha1)
-	for i := 0; i < len(p)/SizeOfSha1; i++ {
-		t.pieces[i] = p[i*SizeOfSha1 : (i+1)*SizeOfSha1]
+	t.Pieces = make([][]byte, len(p)/sizeOfSha1)
+	for i := 0; i < len(p)/sizeOfSha1; i++ {
+		t.Pieces[i] = p[i*sizeOfSha1 : (i+1)*sizeOfSha1]
 	}
 
 	return nil
 }
 
 func (t Torrent) PieceCount() int {
-	return len(t.pieces) / SizeOfSha1
+	return len(t.Pieces) / size.Sha1Bytes
 }
 
 func (t Torrent) Hex(i int) string {
-	return hex.EncodeToString(t.pieces[i])
+	return hex.EncodeToString(t.Pieces[i])
 }
 
 func (t Torrent) Piece(i int) []byte {
-	var s = make([]byte, SizeOfSha1)
-	copy(s, t.pieces[i])
+	var s = make([]byte, size.Sha1Bytes)
+	copy(s, t.Pieces[i])
 
 	return s
 }
@@ -127,9 +127,48 @@ func (t *Torrent) Copy() Torrent {
 		infoHash:     t.infoHash,
 	}
 
-	copy(n.pieces, t.pieces)
+	copy(n.Pieces, t.Pieces)
 	copy(n.Nodes, t.Nodes)
 	copy(n.Files, t.Files)
 
 	return n
+}
+
+func (t *Torrent) Dump() ([]byte, error) {
+	v, err := json.Marshal(t)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't encode torrent to JSON format")
+	}
+
+	return v, nil
+}
+
+func (t *Torrent) DumpIndent() (string, error) {
+	var m = make(map[string]interface{})
+	m["Files"] = t.Files
+	m["InfoHash"] = t.InfoHash
+	m["Name"] = t.Name
+	m["PieceLength"] = t.PieceLength
+	m["..."] = "..."
+	v, err := json.MarshalIndent(m, "", "  ")
+	if err != nil {
+		return "", errors.Wrap(err, "can't encode torrent to JSON format")
+	}
+
+	return string(v), nil
+}
+
+func Load(p []byte) (*Torrent, error) {
+	var t = &Torrent{}
+	if err := json.Unmarshal(p, t); err != nil {
+		return nil, errors.Wrap(err, "can't decode torrent from JSON format")
+	}
+	v, err := hex.DecodeString(t.InfoHash)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't decode InfoHash, maybe data broken, you need to reload this torrent")
+	}
+
+	t.SetInfoHash(v)
+
+	return t, nil
 }

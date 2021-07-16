@@ -13,23 +13,40 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package torrent_test
+package persist
 
 import (
-	"path/filepath"
-	"testing"
+	"github.com/pkg/errors"
+	"go.etcd.io/bbolt"
 
-	"github.com/stretchr/testify/assert"
-
-	_ "sci_hub_p2p/internal/testing"
 	"sci_hub_p2p/internal/torrent"
 )
 
-func TestParseFile(t *testing.T) {
-	t.Parallel()
-	f, err := filepath.Abs("./testdata/sm_00900000-00999999.torrent")
-	assert.Nil(t, err)
-	tor, err := torrent.ParseFile(f)
-	assert.Nil(t, err)
-	assert.Equal(t, []string{"libgen.scimag00900000-00900999.zip"}, tor.Files[0].Path)
+var ErrNotFound = errors.New("not found in database")
+
+func GetTorrent(b *bbolt.Bucket, hash []byte) (*torrent.Torrent, error) {
+	raw := b.Get(hash)
+	if raw == nil {
+		return nil, ErrNotFound
+	}
+
+	t, err := torrent.Load(raw)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't parse torrent")
+	}
+
+	return t, nil
+}
+
+func PutTorrent(b *bbolt.Bucket, t *torrent.Torrent) error {
+	d, err := t.Dump()
+	if err != nil {
+		return errors.Wrap(err, "can't dump torrent to bytes")
+	}
+	err = b.Put(t.RawInfoHash(), d)
+	if err != nil {
+		return errors.Wrap(err, "can't save torrent to database")
+	}
+
+	return nil
 }
