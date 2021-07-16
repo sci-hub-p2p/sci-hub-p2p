@@ -17,7 +17,6 @@ package indexes
 
 import (
 	"archive/zip"
-	"compress/gzip"
 	"encoding/base64"
 	"fmt"
 	"os"
@@ -233,20 +232,6 @@ func collectResult(c chan *PDFFileOffSet, outDir string, t *torrent.Torrent, don
 }
 
 func dumpToFile(tx *bbolt.Tx, name string) error {
-	f, err := os.Create(name + ".indexes.gz")
-	if err != nil {
-		return errors.Wrapf(err, "can't create file %s", name)
-	}
-	r, err := gzip.NewWriterLevel(f, gzip.BestCompression)
-	if err != nil {
-		return errors.Wrap(err, "can't compress indexes")
-	}
-	defer f.Close()
-	_, err = tx.WriteTo(r)
-	if err != nil {
-		return errors.Wrap(err, "can't dump indexes to file")
-	}
-
 	t, err := os.Create(name + ".jsonlines.lzma")
 	if err != nil {
 		return errors.Wrap(err, "can't create lzma file to save indexes")
