@@ -38,6 +38,7 @@ import (
 )
 
 const filesPerTorrent = 100_000
+const defaultFileMode os.FileMode = 0644
 
 type PDFFileOffSet struct {
 	Record
@@ -51,6 +52,21 @@ func (f PDFFileOffSet) Key() []byte {
 // IndexZipFile is intended to be used in goroutine for parallel.
 func IndexZipFile(c chan *PDFFileOffSet, dataDir string, index int, t *torrent.Torrent) error {
 	var currentZipOffset int64
+	file := t.Files[index]
+	fs := filepath.Join(file.Path...)
+	abs := filepath.Join(dataDir, t.Name, fs)
+
+	if !strings.HasSuffix(fs, ".zip") {
+		return nil
+	}
+	s, err := os.Stat(abs)
+	if err != nil {
+		return errors.Wrapf(err, "can't generate indexes, file %s is broken", fs)
+	}
+	if s.Size() != file.Length {
+		return errors.Wrapf(err, "can't generate indexes, file %s has a wrong size, expected %d", fs, file.Length)
+	}
+
 	for i, file := range t.Files {
 		if i < index {
 			currentZipOffset += file.Length
@@ -58,12 +74,10 @@ func IndexZipFile(c chan *PDFFileOffSet, dataDir string, index int, t *torrent.T
 			break
 		}
 	}
-	torrentFile := t.Files[index]
-	fs := filepath.Join(torrentFile.Path...)
-	abs := filepath.Join(dataDir, t.Name, fs)
+
 	r, err := zip.OpenReader(abs)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "can't open zip f "+abs)
 	}
 
 	defer r.Close()
@@ -71,17 +85,18 @@ func IndexZipFile(c chan *PDFFileOffSet, dataDir string, index int, t *torrent.T
 	var infoHash [20]byte
 	copy(infoHash[:], t.RawInfoHash())
 
-	for _, file := range r.File {
-		if file.CompressedSize64 == 0 {
+	for _, f := range r.File {
+		if f.CompressedSize64 == 0 {
 			continue
 		}
-		i, err := zipFileToRecord(file, currentZipOffset, t.PieceLength)
+		i, err := zipFileToRecord(f, currentZipOffset, t.PieceLength)
 		if err != nil {
 			return err
 		}
 		i.InfoHash = infoHash
 		c <- i
 	}
+
 	return nil
 }
 
@@ -120,18 +135,15 @@ func zipFileToRecord(file *zip.File, currentZipOffset int64, pieceLength int) (*
 }
 
 func Generate(dirName, outDir string, t *torrent.Torrent) error {
-	c := make(chan *PDFFileOffSet, flag.Parallel)
-
-	done := make(chan int)
-	defer close(done)
-
-	in := make(chan int)
-
+	var c = make(chan *PDFFileOffSet, flag.Parallel)
+	var done = make(chan int)
+	var in = make(chan int)
 	var wg sync.WaitGroup
+	var out = filepath.Join(outDir, t.InfoHash+".indexes")
+
+	defer close(done)
 	wg.Add(flag.Parallel)
 
-	var defaultFileMode os.FileMode = 0644
-	out := filepath.Join(outDir, t.InfoHash+".indexes")
 	db, err := bbolt.Open(out, defaultFileMode, &bbolt.Options{Timeout: 1 * time.Second})
 	if err != nil {
 		return errors.Wrapf(err, "can't open %s to write indexes", out)
@@ -140,36 +152,24 @@ func Generate(dirName, outDir string, t *torrent.Torrent) error {
 	go collectResult(c, outDir, t, done, db)
 
 	for i := 0; i < flag.Parallel; i++ {
-		go func(index int) {
+		go func(index int, t *torrent.Torrent) {
 			for i := range in {
 				err := IndexZipFile(c, dirName, i, t)
 				if err != nil {
 					logger.Error(err)
+
 					break
 				}
 			}
 			logger.Debugf("exit worker %d", index+1)
 			wg.Done()
-		}(i)
+		}(i, t)
 	}
 
 	logger.Debug("skip hash check here because files are too big,",
 		"hopefully we didn't generate indexes from wrong data")
 
-	for i, file := range t.Files {
-		fs := filepath.Join(file.Path...)
-		abs := filepath.Join(dirName, t.Name, fs)
-		logger.Debug(abs, fs)
-		if !strings.HasSuffix(fs, ".zip") {
-			continue
-		}
-		s, err := os.Stat(abs)
-		if err != nil {
-			return errors.Wrapf(err, "can't generate indexes, file %s is broken", fs)
-		}
-		if s.Size() != file.Length {
-			return errors.Wrapf(err, "can't generate indexes, file %s has a wrong size, expected %d", fs, file.Length)
-		}
+	for i := range t.Files {
 		in <- i
 	}
 
@@ -178,6 +178,7 @@ func Generate(dirName, outDir string, t *torrent.Torrent) error {
 		time.Sleep(time.Second)
 	}
 	close(in)
+
 	logger.Debug("wait all worker exit")
 	wg.Wait()
 
@@ -217,7 +218,7 @@ func collectResult(c chan *PDFFileOffSet, outDir string, t *torrent.Torrent, don
 
 	fmt.Println("start dumping data to file")
 	err = db.View(func(tx *bbolt.Tx) error {
-		return dumpToFile(tx, filepath.Join(outDir, fmt.Sprintf("%s.indexes.gz", t.InfoHash)))
+		return dumpToFile(tx, filepath.Join(outDir, t.InfoHash))
 	})
 
 	if err != nil {
@@ -232,7 +233,7 @@ func collectResult(c chan *PDFFileOffSet, outDir string, t *torrent.Torrent, don
 }
 
 func dumpToFile(tx *bbolt.Tx, name string) error {
-	f, err := os.Create(name)
+	f, err := os.Create(name + ".indexes.gz")
 	if err != nil {
 		return errors.Wrapf(err, "can't create file %s", name)
 	}
@@ -248,7 +249,7 @@ func dumpToFile(tx *bbolt.Tx, name string) error {
 
 	t, err := os.Create(name + ".jsonlines.lzma")
 	if err != nil {
-		return err
+		return errors.Wrap(err, "can't create lzma file to save indexes")
 	}
 	defer t.Close()
 
@@ -263,8 +264,7 @@ func dumpToFile(tx *bbolt.Tx, name string) error {
 		b64 := base64.StdEncoding.EncodeToString(v)
 		_, err := fmt.Fprintf(w, "[\"%s\", \"%s\"]\n", k, b64)
 		if err != nil {
-			logger.Error(err)
-			return err
+			return errors.Wrap(err, "can't write to compressed file")
 		}
 	}
 
