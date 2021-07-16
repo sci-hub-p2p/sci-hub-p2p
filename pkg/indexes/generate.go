@@ -190,8 +190,6 @@ func Generate(dirName, outDir string, t *torrent.Torrent) error {
 
 func collectResult(c chan *PDFFileOffSet, outDir string, t *torrent.Torrent, done chan int, db *bbolt.DB) {
 	bar := pb.StartNew(filesPerTorrent)
-	defer bar.Finish()
-
 	err := db.Batch(func(tx *bbolt.Tx) error {
 		b, err := tx.CreateBucketIfNotExists(constants.PaperBucket())
 		if err != nil {
@@ -208,6 +206,7 @@ func collectResult(c chan *PDFFileOffSet, outDir string, t *torrent.Torrent, don
 
 		return nil
 	})
+	bar.Finish()
 
 	if err != nil {
 		logger.Error("can't save indexes:", err)
