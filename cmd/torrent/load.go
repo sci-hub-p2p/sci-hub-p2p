@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -71,6 +72,14 @@ var loadCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		var s []string
 		if glob != "" {
+			if strings.Contains(glob, "~") {
+				homedir, err := os.UserHomeDir()
+				if err != nil {
+					return errors.Wrap(err, "can't determine homedir to expand ~")
+				}
+
+				glob = strings.ReplaceAll(glob, "~", homedir)
+			}
 			s, err = filepath.Glob(glob)
 			if err != nil {
 				return errors.Wrapf(err, "can't search torrents with glob '%s'", glob)
@@ -82,10 +91,18 @@ var loadCmd = &cobra.Command{
 			return errors.Wrap(err, "cant' open database file, maybe another process is running?")
 		}
 		defer func(db *bbolt.DB) {
-			err = db.Close()
+			if e := db.Close(); e != nil {
+				if err == nil {
+					err = e
+				} else {
+					logger.Error(e)
+				}
+			}
 		}(db)
 		s = append(args, s...)
-
+		if len(s) == 0 {
+			return fmt.Errorf("cant' find any torrent file to load")
+		}
 		err = db.Batch(func(tx *bbolt.Tx) error {
 			b, err := tx.CreateBucketIfNotExists(constants.TorrentBucket())
 			if err != nil {
