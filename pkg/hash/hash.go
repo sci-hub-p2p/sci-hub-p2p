@@ -65,7 +65,7 @@ func Sha1Sum(b []byte) string {
 	return hex.EncodeToString(Sha1SumBytes(b))
 }
 
-func Sha256Sum(b []byte) string {
+func Sha256SumHex(b []byte) string {
 	h := sha256.New()
 	_, _ = h.Write(b)
 	sum := h.Sum(nil)

@@ -99,7 +99,7 @@ func IndexZipFile(c chan *PDFFileOffSet, dataDir string, index int, t *torrent.T
 	return nil
 }
 
-func zipFileToRecord(file *zip.File, currentZipOffset int64, pieceLength int) (*PDFFileOffSet, error) {
+func zipFileToRecord(file *zip.File, currentZipOffset int64, pieceLength int64) (*PDFFileOffSet, error) {
 	i := &PDFFileOffSet{
 		DOI: file.Name, // file name is just doi
 		Record: Record{
@@ -115,8 +115,8 @@ func zipFileToRecord(file *zip.File, currentZipOffset int64, pieceLength int) (*
 		return nil, errors.Wrapf(err, "can't offset in zip %s: maybe zip file is broken", file.Name)
 	}
 
-	i.PieceStart = uint32((offset + currentZipOffset) / int64(pieceLength))
-	i.OffsetInPiece = uint32((offset + currentZipOffset) % int64(pieceLength))
+	i.PieceStart = uint32((offset + currentZipOffset) / pieceLength)
+	i.OffsetInPiece = (offset + currentZipOffset) % pieceLength
 
 	f, err := file.Open()
 	if err != nil {

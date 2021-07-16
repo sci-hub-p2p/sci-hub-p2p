@@ -45,7 +45,7 @@ type info struct {
 	Files       []file `json:"files" bencode:"files"`
 	Name        string `json:"name" bencode:"name"`
 	NameUTF8    string `bencode:"name.utf-8,omitempty"`
-	PieceLength int    `json:"piece length" bencode:"piece length"`
+	PieceLength int64  `json:"piece length" bencode:"piece length"`
 	Pieces      string `json:"pieces" bencode:"pieces"`
 }
 

@@ -53,7 +53,7 @@ type Torrent struct {
 	Files        []File
 	infoHash     []byte
 	Name         string
-	PieceLength  int
+	PieceLength  int64
 	AnnounceList [][]string
 	CreationDate int
 	Nodes        []Node

@@ -27,7 +27,7 @@ import (
 type Record struct {
 	InfoHash         [20]byte // This can be empty when indexing data from same torrent.
 	PieceStart       uint32   // 4 bytes
-	OffsetInPiece    uint32   // should be uint32 I think
+	OffsetInPiece    int64    // should be uint32 I think
 	CompressedMethod uint16   // 2 bytes
 	CompressedSize   uint64   // 8 bytes
 	Sha256           [32]byte // For IPFS, not vary necessarily
@@ -64,7 +64,7 @@ func LoadRecordV0(p []byte) *Record {
 }
 
 func (r Record) Build(doi string, t *torrent.Torrent) PerFile {
-	var pieceOffset = int64(t.PieceLength) * int64(r.PieceStart)
+	var pieceOffset = t.PieceLength * int64(r.PieceStart)
 	var currentZipOffset int64
 	var fileStart int64 = -1
 	var f torrent.File
@@ -86,9 +86,11 @@ func (r Record) Build(doi string, t *torrent.Torrent) PerFile {
 		CompressedSize:  int64(r.CompressedSize),
 		FileName:        f.Name(),
 		Sha256:          hex.EncodeToString(r.Sha256[:]),
-		Pieces:          makeRange(int(r.PieceStart), int(r.PieceStart)+int(int64(r.CompressedSize)/int64(t.PieceLength))),
+		Pieces:          makeRange(int(r.PieceStart), int(r.PieceStart)+int(int64(r.CompressedSize)/t.PieceLength)),
+		PieceStart:      int(r.PieceStart),
+		PieceEnd:        int(r.PieceStart) + int(int64(r.CompressedSize)/t.PieceLength),
 		PieceLength:     t.PieceLength,
-		OffsetFromZip:   int64(r.OffsetInPiece) + int64(r.PieceStart)*int64(t.PieceLength) - fileStart,
+		OffsetFromZip:   r.OffsetInPiece + int64(r.PieceStart)*t.PieceLength - fileStart,
 		OffsetFromPiece: r.OffsetInPiece,
 		File:            f.Copy(),
 		Torrent:         t.Copy(),

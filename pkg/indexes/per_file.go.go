@@ -29,14 +29,16 @@ type PerFile struct {
 	CompressedSize  int64
 	Sha256          string
 	OffsetFromZip   int64
-	OffsetFromPiece uint32
+	OffsetFromPiece int64
 	Pieces          []int
-	PieceLength     int
+	PieceStart      int
+	PieceEnd        int
+	PieceLength     int64
 	Torrent         torrent.Torrent
 	File            torrent.File
 }
 
 func (f PerFile) String() string {
-	return fmt.Sprintf("PerFile{name: %s, method: %d, size: %d, OffsetFromZip: %d}",
-		f.FileName, f.CompressMethod, f.CompressedSize, f.OffsetFromZip)
+	return fmt.Sprintf("PerFile{name: %s, method: %d, size: %d, OffsetFromZip: %d, pieceStart: %d, pieceEnd: %d}",
+		f.FileName, f.CompressMethod, f.CompressedSize, f.OffsetFromZip, f.PieceStart, f.PieceEnd)
 }
