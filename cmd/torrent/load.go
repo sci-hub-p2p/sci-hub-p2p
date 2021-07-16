@@ -154,7 +154,13 @@ var getCmd = &cobra.Command{
 			if err != nil {
 				return err
 			}
-			fmt.Println(t.DumpIndent())
+
+			s, err := t.DumpIndent()
+			if err != nil {
+				return errors.Wrap(err, "can't dump torrent data into json format")
+			}
+
+			fmt.Println(s)
 
 			return nil
 		})
