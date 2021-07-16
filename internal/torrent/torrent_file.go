@@ -46,7 +46,7 @@ type info struct {
 	Name        string `json:"name" bencode:"name"`
 	NameUTF8    string `bencode:"name.utf-8,omitempty"`
 	PieceLength int    `json:"piece length" bencode:"piece length"`
-	Pieces      string `json:"pieces" bencode:"pieces"`
+	Pieces      string `json:"Pieces" bencode:"Pieces"`
 }
 
 func (i info) GetName() string {

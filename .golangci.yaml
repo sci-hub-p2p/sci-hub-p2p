@@ -209,8 +209,11 @@ linters:
 issues:
   new: false
   fix: true
+  exclude-use-default: true
   exclude-rules:
     # Disable linters that are annoying in tests.
     - path: 'cmd[/\\].*'
       linters: [gochecknoglobals, gochecknoinits, goerr113, wrapcheck]
-  exclude-use-default: true
+
+    - path: 'variable[/\\].*'
+      linters: [gochecknoglobals]

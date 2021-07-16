@@ -13,9 +13,17 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package size
+package variable
 
-const (
-	Sha1Bytes = 20
-	Sha1Hex   = 40
-)
+import "os"
+
+var appBaseDir string
+
+func GetAppBaseDir() string {
+	if appBaseDir != "" {
+		return appBaseDir
+	}
+	appBaseDir = os.ExpandEnv("$HOME/.sci-hub-p2p")
+
+	return appBaseDir
+}

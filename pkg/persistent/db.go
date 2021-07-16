@@ -13,28 +13,40 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package db
+package persistent
 
 import (
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
 
 	"sci_hub_p2p/internal/torrent"
-	"sci_hub_p2p/pkg/constants"
 )
 
 var ErrNotFound = errors.New("not found in database")
 
-func GetTorrent(tx *bbolt.Tx, hash []byte) (*torrent.Torrent, error) {
-	raw := tx.Bucket(constants.TorrentBucket()).Get(hash)
-	if raw != nil {
+func GetTorrent(b *bbolt.Bucket, hash []byte) (*torrent.Torrent, error) {
+	raw := b.Get(hash)
+	if raw == nil {
 		return nil, ErrNotFound
 	}
 
-	t, err := torrent.ParseRaw(raw)
+	t, err := torrent.Load(raw)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't parse torrent")
 	}
 
 	return t, nil
+}
+
+func PutTorrent(b *bbolt.Bucket, t *torrent.Torrent) error {
+	d, err := t.Dump()
+	if err != nil {
+		return errors.Wrap(err, "can't dump torrent to bytes")
+	}
+	err = b.Put(t.RawInfoHash(), d)
+	if err != nil {
+		return errors.Wrap(err, "can't save torrent to database")
+	}
+
+	return nil
 }

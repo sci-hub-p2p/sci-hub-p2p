@@ -15,6 +15,10 @@
 
 package constants
 
-func BucketPaper() []byte { return []byte("paper-v0") }
+import "os"
+
+func PaperBucket() []byte { return []byte("paper-v0") }
 
 func TorrentBucket() []byte { return []byte("torrent-v0") }
+
+const DefaultFileMode os.FileMode = 0644
