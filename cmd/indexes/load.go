@@ -52,7 +52,7 @@ var loadCmd = &cobra.Command{
 		db, err := bbolt.Open(filepath.Join(variable.GetAppBaseDir(), "papers.bolt"),
 			constants.DefaultFileMode, bbolt.DefaultOptions)
 		if err != nil {
-			return errors.Wrap(err, "cant' open database file, maybe another process is running?")
+			return errors.Wrap(err, "cant' open database file, maybe another process is running")
 		}
 		defer func(db *bbolt.DB) {
 			if e := db.Close(); e != nil {
