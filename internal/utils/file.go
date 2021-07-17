@@ -16,9 +16,12 @@
 package utils
 
 import (
-	"errors"
 	"io"
 	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/pkg/errors"
 )
 
 // Copy the src file to dst. Any existing file will be overwritten and will not
@@ -43,6 +46,20 @@ func Copy(src, dst string) error {
 	}
 
 	return out.Close()
+}
+
+func GlobWithExpand(glob string) ([]string, error) {
+	if strings.Contains(glob, "~") {
+		homedir, err := os.UserHomeDir()
+		if err != nil {
+			return nil, errors.Wrap(err, "can't determine homedir to expand ~")
+		}
+
+		glob = strings.ReplaceAll(glob, "~", homedir)
+	}
+	s, err := filepath.Glob(glob)
+
+	return s, err
 }
 
 var ErrNotAFile = errors.New("not a file")
