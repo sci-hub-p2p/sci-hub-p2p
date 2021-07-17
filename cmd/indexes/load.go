@@ -67,7 +67,7 @@ var loadCmd = &cobra.Command{
 
 		s = append(args, s...)
 		if len(s) == 0 {
-			return fmt.Errorf("cant' find any torrent file to load")
+			return fmt.Errorf("cant' find any index file to load")
 		}
 		err = db.Batch(func(tx *bbolt.Tx) error {
 			b, err := tx.CreateBucketIfNotExists(constants.PaperBucket())
