@@ -28,6 +28,7 @@ func TestUnique(t *testing.T) {
 	t.Parallel()
 
 	assert.ElementsMatch(t, utils.Unique(strings.Split("123212", "")), strings.Split("123", ""))
+	assert.ElementsMatch(t, utils.Unique(strings.Split("213212", "")), strings.Split("213", ""))
 }
 
 func TestGlob(t *testing.T) {
