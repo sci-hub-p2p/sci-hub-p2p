@@ -27,5 +27,12 @@ import (
 func TestUnique(t *testing.T) {
 	t.Parallel()
 
-	assert.EqualValues(t, utils.Unique(strings.Split("123", "")), strings.Split("123", ""))
+	assert.ElementsMatch(t, utils.Unique(strings.Split("123212", "")), strings.Split("123", ""))
+}
+
+func TestGlob(t *testing.T) {
+	t.Parallel()
+	v, err := utils.GlobWithExpand("./cli_*.go")
+	assert.Nil(t, err)
+	assert.ElementsMatch(t, v, []string{"cli_test.go"})
 }
