@@ -16,15 +16,17 @@
 package client
 
 import (
+	"bytes"
 	"fmt"
 	"io"
-	"os"
 
+	"github.com/anacrolix/log"
 	"github.com/anacrolix/torrent"
+	"github.com/anacrolix/torrent/metainfo"
 	"github.com/anacrolix/torrent/storage"
+	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
 
-	torrent2 "sci_hub_p2p/internal/torrent"
 	"sci_hub_p2p/pkg/constants"
 	"sci_hub_p2p/pkg/hash"
 	"sci_hub_p2p/pkg/indexes"
@@ -33,78 +35,85 @@ import (
 	"sci_hub_p2p/pkg/variable"
 )
 
-func checkErr(err error) {
+func Fetch(doi string) ([]byte, error) {
+	db, err := bbolt.Open(variable.GetPaperBoltPath(), constants.DefaultFileMode, bbolt.DefaultOptions)
 	if err != nil {
-		panic(err)
+		return nil, errors.Wrap(err, "can't open indexes database file")
 	}
-}
+	var p *indexes.PerFile
+	var raw []byte
+	err = db.View(func(tx *bbolt.Tx) error {
+		b := tx.Bucket(constants.PaperBucket())
+		var err error
+		p, raw, err = persist.GetPerFileAndRawTorrent(b, doi)
+		if err != nil {
+			return errors.Wrap(err, "can't get file indexes")
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
 
-func Fetch(doi string) {
 	c, err := getClient()
 	if err != nil {
 		logger.Fatal(err)
 	}
 	defer c.Close()
-	torrentPath := "./out/d57b1013eee9138a8906bcd274d727b5d7e8a307.torrent"
-	myT, err := torrent2.ParseFile(torrentPath)
-	checkErr(err)
-	t, err := c.AddTorrentFromFile(torrentPath)
-	checkErr(err)
+	mi, err := metainfo.Load(bytes.NewReader(raw))
+	if err != nil {
+		return nil, errors.Wrap(err, "can't parse torrent file")
+	}
 
-	extract("10.1002/%28sici%291096-9098%28199710%2966%3A2%3C110%3A%3Aaid-jso7%3E3.0.co%3B2-g.pdf", t, myT)
+	t, err := c.AddTorrent(mi)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't add torrent to BT client")
+	}
 
+	b, err := extract(t, p)
+	return b, err
 }
 
-func getRecord(doi string, t *torrent2.Torrent) (indexes.PerFile, error) {
-	db, err := bbolt.Open("./out/"+t.InfoHash+".indexes", constants.DefaultFileMode, bbolt.DefaultOptions)
-	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
-	var raw []byte
-	err = db.View(func(tx *bbolt.Tx) error {
-		b := tx.Bucket(constants.PaperBucket())
-		raw = b.Get([]byte(doi))
-		if raw == nil {
-			return persist.ErrNotFound
-		}
-		return nil
-	})
-	if err != nil {
-		return indexes.PerFile{}, err
-	}
-	return indexes.LoadRecordV0(raw).Build(doi, t), nil
+type nilLogger struct {
+}
+
+func (l nilLogger) Log(_ log.Msg) {
+
 }
 
 func getClient() (*torrent.Client, error) {
 	cfg := torrent.NewDefaultClientConfig()
-	cfg.DefaultStorage = storage.NewBoltDB(variable.GetAppBaseDir())
+	cfg.DefaultStorage = storage.NewBoltDB(variable.GetAppTmpDir())
 	cfg.Bep20 = "-GT0003-"
+	cfg.Logger = log.Logger{LoggerImpl: nilLogger{}}
+	cfg.DisableUTP = true
 	c, err := torrent.NewClient(cfg)
 	return c, err
 }
 
-func extract(doi string, t *torrent.Torrent, internalT *torrent2.Torrent) (indexes.PerFile, error) {
-	p, err := getRecord(doi, internalT)
-	checkErr(err)
-
-	fmt.Println("starts waiting to download")
+func extract(t *torrent.Torrent, p *indexes.PerFile) ([]byte, error) {
+	fmt.Println("start downloading")
 	t.DownloadPieces(p.PieceStart, p.PieceEnd+1)
-
 	var tmpBinary = make([]byte, p.CompressedSize)
 	file := t.Files()[p.FileIndex]
-	fmt.Println(file.DisplayPath())
 	reader := file.NewReader()
-	_, err = reader.Seek(p.OffsetFromZip, io.SeekStart)
-	checkErr(err)
-	_, err = reader.Read(tmpBinary)
-	checkErr(err)
+	defer reader.Close()
 
-	hex := hash.Sha256SumHex(tmpBinary)
-	logger.Info(hex)
-	if hex != p.Sha256 {
-		logger.Fatal("sha256 mismatch, expected", p.Sha256, "actual", hex)
+	if _, err := reader.Seek(p.OffsetFromZip, io.SeekStart); err != nil {
+		return nil, err
 	}
-	os.WriteFile("./out/papers/map-reduce.pdf", tmpBinary, constants.DefaultFileMode)
-	return p, nil
+	if _, err := reader.Read(tmpBinary); err != nil {
+		return nil, err
+	}
+
+	fmt.Println("expected sha256:", p.Sha256)
+	hex := hash.Sha256SumHex(tmpBinary)
+	if hex != p.Sha256 {
+		return nil, fmt.Errorf("received sha256: %s %w", hex, ErrHashMisMatch)
+	}
+	fmt.Println("received sha256:", hex)
+
+	return tmpBinary, nil
 }
+
+var ErrHashMisMatch = errors.New("hash mismatch")

@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"path/filepath"
+	"strings"
 
 	"github.com/itchio/lzma"
 	"github.com/pkg/errors"
@@ -49,8 +49,7 @@ var loadCmd = &cobra.Command{
 				return errors.Wrapf(err, "can't search torrents with glob '%s'", glob)
 			}
 		}
-		db, err := bbolt.Open(filepath.Join(variable.GetAppBaseDir(), "papers.bolt"),
-			constants.DefaultFileMode, bbolt.DefaultOptions)
+		db, err := bbolt.Open(variable.GetPaperBoltPath(), constants.DefaultFileMode, bbolt.DefaultOptions)
 		if err != nil {
 			return errors.Wrap(err, "cant' open database file, maybe another process is running")
 		}
@@ -121,7 +120,7 @@ func loadIndexFile(b *bbolt.Bucket, name string) error {
 			return errors.Wrap(err, "can't decode base64")
 		}
 
-		key, err := url.QueryUnescape(s[0])
+		key, err := url.QueryUnescape(strings.TrimSuffix(s[0], ".pdf"))
 		if err != nil {
 			return err
 		}

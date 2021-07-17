@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/IncSW/go-bencode v0.1.2
+	github.com/anacrolix/log v0.9.0
 	github.com/anacrolix/torrent v1.29.1
 	github.com/cheggaaa/pb/v3 v3.0.8
 	github.com/itchio/lzma v0.0.0-20190703113020-d3e24e3e3d49

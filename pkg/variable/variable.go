@@ -15,7 +15,10 @@
 
 package variable
 
-import "os"
+import (
+	"os"
+	"path/filepath"
+)
 
 var appBaseDir string
 
@@ -26,4 +29,16 @@ func GetAppBaseDir() string {
 	appBaseDir = os.ExpandEnv("$HOME/.sci-hub-p2p")
 
 	return appBaseDir
+}
+
+func GetAppTmpDir() string {
+	return filepath.Join(GetAppBaseDir(), "tmp")
+}
+
+func GetPaperBoltPath() string {
+	return filepath.Join(GetAppBaseDir(), "papers.bolt")
+}
+
+func GetTorrentStoragePath() string {
+	return filepath.Join(GetAppBaseDir(), "torrents")
 }
