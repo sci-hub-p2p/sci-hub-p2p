@@ -89,7 +89,7 @@ var torrentPath string
 var out string
 
 func init() {
-	Cmd.AddCommand(genCmd)
+	Cmd.AddCommand(genCmd, loadCmd)
 
 	genCmd.Flags().StringVarP(&dataDir, "data", "d", "", "Path to data directory")
 	genCmd.Flags().StringVarP(&torrentPath, "torrent", "t", "",

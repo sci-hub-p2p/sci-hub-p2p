@@ -18,16 +18,14 @@ package torrent
 import (
 	"encoding/hex"
 	"fmt"
-	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"go.etcd.io/bbolt"
 
 	"sci_hub_p2p/internal/torrent"
-	utils2 "sci_hub_p2p/internal/utils"
+	"sci_hub_p2p/internal/utils"
 	"sci_hub_p2p/pkg/constants"
 	"sci_hub_p2p/pkg/constants/size"
 	"sci_hub_p2p/pkg/logger"
@@ -36,9 +34,8 @@ import (
 )
 
 var Cmd = &cobra.Command{
-	Use:               "torrent",
-	PersistentPreRunE: utils2.EnsureDir(variable.GetAppBaseDir()),
-	SilenceErrors:     false,
+	Use:           "torrent",
+	SilenceErrors: false,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		fmt.Println("indexes command")
 
@@ -48,34 +45,29 @@ var Cmd = &cobra.Command{
 var torrentSavePath = filepath.Join(variable.GetAppBaseDir(), "torrents")
 
 var loadCmd = &cobra.Command{
-	Use:               "load",
-	Short:             "Load torrents into database.",
-	Example:           "torrent load /path/to/*.torrents [-g '/path/to/data/*.torrents']",
-	SilenceErrors:     false,
-	PersistentPreRunE: utils2.EnsureDir(torrentSavePath),
+	Use:           "load",
+	Short:         "Load torrents into database.",
+	Example:       "torrent load /path/to/*.torrents [-g '/path/to/data/*.torrents']",
+	SilenceErrors: false,
+	PreRunE:       utils.EnsureDir(torrentSavePath),
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		var s []string
 		if glob != "" {
-			if strings.Contains(glob, "~") {
-				homedir, err := os.UserHomeDir()
-				if err != nil {
-					return errors.Wrap(err, "can't determine homedir to expand ~")
-				}
-
-				glob = strings.ReplaceAll(glob, "~", homedir)
-			}
-			s, err = filepath.Glob(glob)
+			s, err = utils.GlobWithExpand(glob)
 			if err != nil {
 				return errors.Wrapf(err, "can't search torrents with glob '%s'", glob)
 			}
 		}
+
 		db, err := bbolt.Open(filepath.Join(variable.GetAppBaseDir(), "torrent.bolt"),
 			constants.DefaultFileMode, bbolt.DefaultOptions)
+
 		if err != nil {
 			return errors.Wrap(err, "cant' open database file, maybe another process is running?")
 		}
 		defer func(db *bbolt.DB) {
 			if e := db.Close(); e != nil {
+				e = errors.Wrap(e, "can't save data to disk")
 				if err == nil {
 					err = e
 				} else {
@@ -102,7 +94,7 @@ var loadCmd = &cobra.Command{
 					return err
 				}
 				dst := filepath.Join(torrentSavePath, f.InfoHash+".torrent")
-				err = utils2.Copy(file, dst)
+				err = utils.Copy(file, dst)
 				if err != nil {
 					return errors.Wrapf(err, "can't copy torrent file to %s", dst)
 				}
