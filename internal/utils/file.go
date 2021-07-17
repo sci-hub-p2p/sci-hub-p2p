@@ -61,3 +61,30 @@ func GlobWithExpand(glob string) ([]string, error) {
 
 	return s, err
 }
+
+var ErrNotAFile = errors.New("not a file")
+var ErrNotADir = errors.New("not a dir")
+
+func FileExist(name string) (bool, error) {
+	s, err := os.Stat(name)
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	if s.IsDir() {
+		return false, ErrNotAFile
+	}
+
+	return true, err
+}
+
+func DirExist(name string) (bool, error) {
+	s, err := os.Stat(name)
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	if !s.IsDir() {
+		return false, ErrNotADir
+	}
+
+	return true, err
+}

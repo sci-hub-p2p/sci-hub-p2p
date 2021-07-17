@@ -2,7 +2,7 @@
 
 A project aims to fetch paper from the BitTorrent network.
 
-According to [this Reddit post](https://www.reddit.com/r/DataHoarder/comments/nc27fv/rescue_mission_for_scihub_and_open_science_we_are/), currently, all `sci-hub's papers are available in BitTorrent networks.
+According to [this Reddit post](https://www.reddit.com/r/DataHoarder/comments/nc27fv/rescue_mission_for_scihub_and_open_science_we_are/), currently, all `sci-hub`s papers are available in BitTorrent networks.
 
 This will be a local application with a cropped BitTorrent client that could fetch compressed data from the BitTorrent network and decompress them locally.
 

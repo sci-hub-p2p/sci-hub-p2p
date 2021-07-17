@@ -32,6 +32,7 @@ import (
 
 	"sci_hub_p2p/cmd/flag"
 	"sci_hub_p2p/internal/torrent"
+	"sci_hub_p2p/internal/utils"
 	"sci_hub_p2p/pkg/constants"
 	"sci_hub_p2p/pkg/hash"
 	"sci_hub_p2p/pkg/logger"
@@ -133,7 +134,15 @@ func zipFileToRecord(file *zip.File, currentZipOffset int64, pieceLength int64) 
 	return i, nil
 }
 
-func Generate(dirName, outDir string, t *torrent.Torrent) error {
+func Generate(dataDir, outDir string, t *torrent.Torrent) error {
+	exist, err := utils.DirExist(filepath.Join(dataDir, t.Name))
+	if err != nil {
+		return errors.Wrap(err, "can't find torrent data")
+	}
+	if !exist {
+		return errors.New("can't find torrent data")
+	}
+
 	var c = make(chan *PDFFileOffSet, flag.Parallel)
 	var done = make(chan int)
 	var in = make(chan int)
@@ -153,7 +162,7 @@ func Generate(dirName, outDir string, t *torrent.Torrent) error {
 	for i := 0; i < flag.Parallel; i++ {
 		go func(index int, t *torrent.Torrent) {
 			for i := range in {
-				err := IndexZipFile(c, dirName, i, t)
+				err := IndexZipFile(c, dataDir, i, t)
 				if err != nil {
 					logger.Error(err)
 
@@ -235,7 +244,16 @@ func dumpToFile(tx *bbolt.Tx, name string) error {
 	if err != nil {
 		return errors.Wrap(err, "can't create lzma file to save indexes")
 	}
-	defer t.Close()
+	defer func() {
+		if e := t.Close(); e != nil {
+			e = errors.Wrap(e, "can't save lzma file to disk")
+			if err == nil {
+				err = e
+			} else {
+				logger.Error(e)
+			}
+		}
+	}()
 
 	// Assume bucket exists and has keys
 	b := tx.Bucket(constants.PaperBucket())
