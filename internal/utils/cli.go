@@ -56,6 +56,7 @@ func EnsureDir(name string) func(cmd *cobra.Command, args []string) error {
 	}
 }
 
+// Unique make sure all element are unique and omit slice order
 func Unique(s []string) []string {
 	var m = make(map[string]bool)
 	for _, v := range s {
