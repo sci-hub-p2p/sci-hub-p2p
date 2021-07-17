@@ -23,6 +23,7 @@ import (
 
 	"sci_hub_p2p/cmd/flag"
 	"sci_hub_p2p/cmd/indexes"
+	"sci_hub_p2p/cmd/paper"
 	"sci_hub_p2p/cmd/torrent"
 	"sci_hub_p2p/pkg/logger"
 )
@@ -45,7 +46,7 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
-	rootCmd.AddCommand(indexes.Cmd, torrent.Cmd)
+	rootCmd.AddCommand(indexes.Cmd, torrent.Cmd, paper.Cmd)
 
 	rootCmd.PersistentFlags().BoolVar(&flag.Debug, "debug", false, "enable Debug")
 

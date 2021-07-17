@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package main
+package client
 
 import (
 	"fmt"
@@ -39,7 +39,7 @@ func checkErr(err error) {
 	}
 }
 
-func main() {
+func Fetch(doi string) {
 	c, err := getClient()
 	if err != nil {
 		logger.Fatal(err)

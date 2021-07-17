@@ -36,11 +36,6 @@ import (
 var Cmd = &cobra.Command{
 	Use:           "torrent",
 	SilenceErrors: false,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("indexes command")
-
-		return cmd.Help()
-	},
 }
 var torrentSavePath = filepath.Join(variable.GetAppBaseDir(), "torrents")
 
