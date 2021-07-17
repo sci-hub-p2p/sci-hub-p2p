@@ -55,3 +55,18 @@ func EnsureDir(name string) func(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 }
+
+// Unique make sure all element are unique and keep oder
+func Unique(s []string) []string {
+	var m = make(map[string]bool)
+	var n []string
+
+	for _, v := range s {
+		if _, value := m[v]; !value {
+			m[v] = true
+			n = append(n, v)
+		}
+	}
+
+	return n
+}

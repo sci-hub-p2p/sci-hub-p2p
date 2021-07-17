@@ -73,7 +73,7 @@ var genCmd = &cobra.Command{
 		err = indexes.Generate(dataDir, out, t)
 
 		if err != nil {
-			return errors.Wrap(err, "can't generate indexes from file")
+			return errors.Wrapf(err, "can't generate indexes from torrent %s", t.Name)
 		}
 
 		logger.Debugf("data: %s\n", dataDir)
@@ -89,7 +89,7 @@ var torrentPath string
 var out string
 
 func init() {
-	Cmd.AddCommand(genCmd)
+	Cmd.AddCommand(genCmd, loadCmd)
 
 	genCmd.Flags().StringVarP(&dataDir, "data", "d", "", "Path to data directory")
 	genCmd.Flags().StringVarP(&torrentPath, "torrent", "t", "",

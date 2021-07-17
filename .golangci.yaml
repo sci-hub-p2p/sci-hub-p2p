@@ -222,5 +222,5 @@ issues:
     - path: 'pkg[/\\]variable[/\\].*'
       linters: [gochecknoglobals]
 
-    - path: 'internal[/\\]utils[/\\]copyfile\.go'
+    - path: 'internal[/\\]utils[/\\]file\.go'
       linters: [wrapcheck]

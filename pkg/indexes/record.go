@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/hex"
+	"fmt"
 
 	"sci_hub_p2p/internal/torrent"
 )
@@ -31,6 +32,11 @@ type Record struct {
 	CompressedMethod uint16   // 2 bytes
 	CompressedSize   uint64   // 8 bytes
 	Sha256           [32]byte // For IPFS, not vary necessarily
+}
+
+func (r Record) String() string {
+	return fmt.Sprintf("Record{infohash=%s, compressedSize=%d, sha256=%s}",
+		hex.EncodeToString(r.InfoHash[:]), r.CompressedSize, hex.EncodeToString(r.Sha256[:]))
 }
 
 func (r Record) HexInfoHash() string {
