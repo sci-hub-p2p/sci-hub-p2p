@@ -29,10 +29,10 @@ start generate indexes
 22879 / 100000 [-------------->________________________________________________] 22.88% 1607 p/s
 ```
 
-这个命令会根据种子和 zip 文件的内容生成一个索引，储存在`./out/`文件夹里。原始的索引文件 `{info hash}.indexes`，以及压缩过的 `{info hash}.indexes.lzma`。
+这个命令会根据种子和 zip 文件的内容生成一个索引，储存在`./out/`文件夹里。原始的索引文件 `{info hash}.indexes`，以及压缩过的 `{info hash}.jsonlines.lzma`。
 
 ```console
 $ ls out/
 2afe5336ccf75d633fc7aac7c95342556745ad39.indexes
-2afe5336ccf75d633fc7aac7c95342556745ad39.indexes.lzma
+2afe5336ccf75d633fc7aac7c95342556745ad39.jsonlines.lzma
 ```
