@@ -37,8 +37,8 @@ import (
 
 var loadCmd = &cobra.Command{
 	Use:           "load",
-	Short:         "Load torrents into database.",
-	Example:       "torrent load /path/to/*.torrents [-g '/path/to/data/*.torrents']",
+	Short:         "Load indexes into database.",
+	Example:       "indexes load /path/to/*.jsonlines.lzma [--glob '/path/to/data/*.jsonlines.lzma']",
 	SilenceErrors: false,
 	PreRunE:       utils.EnsureDir(variable.GetAppBaseDir()),
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
@@ -65,7 +65,7 @@ var loadCmd = &cobra.Command{
 			}
 		}(db)
 
-		s = append(args, s...)
+		s = utils.Unique(append(args, s...))
 		if len(s) == 0 {
 			return fmt.Errorf("cant' find any index file to load")
 		}

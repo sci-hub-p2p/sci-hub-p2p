@@ -55,3 +55,16 @@ func EnsureDir(name string) func(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 }
+
+func Unique(s []string) []string {
+	var m = make(map[string]bool)
+	for _, v := range s {
+		m[v] = true
+	}
+	s = make([]string, 0, len(m))
+	for key := range m {
+		s = append(s, key)
+	}
+	
+	return s
+}

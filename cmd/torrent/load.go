@@ -47,7 +47,7 @@ var torrentSavePath = filepath.Join(variable.GetAppBaseDir(), "torrents")
 var loadCmd = &cobra.Command{
 	Use:           "load",
 	Short:         "Load torrents into database.",
-	Example:       "torrent load /path/to/*.torrents [-g '/path/to/data/*.torrents']",
+	Example:       "torrent load /path/to/*.torrents [--glob '/path/to/data/*.torrents']",
 	SilenceErrors: false,
 	PreRunE:       utils.EnsureDir(torrentSavePath),
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
@@ -75,7 +75,7 @@ var loadCmd = &cobra.Command{
 				}
 			}
 		}(db)
-		s = append(args, s...)
+		s = utils.Unique(append(args, s...))
 		if len(s) == 0 {
 			return fmt.Errorf("cant' find any torrent file to load")
 		}
