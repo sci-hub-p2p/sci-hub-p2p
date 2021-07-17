@@ -34,5 +34,5 @@ start generate indexes
 ```console
 $ ls out/
 2afe5336ccf75d633fc7aac7c95342556745ad39.indexes
-2afe5336ccf75d633fc7aac7c95342556745ad39.indexes.gz
+2afe5336ccf75d633fc7aac7c95342556745ad39.indexes.lzma
 ```
