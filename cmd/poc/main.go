@@ -16,21 +16,21 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
+	"io"
 	"os"
-	"time"
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/storage"
-
 	"go.etcd.io/bbolt"
 
 	torrent2 "sci_hub_p2p/internal/torrent"
 	"sci_hub_p2p/pkg/constants"
 	"sci_hub_p2p/pkg/hash"
 	"sci_hub_p2p/pkg/indexes"
+	"sci_hub_p2p/pkg/logger"
 	"sci_hub_p2p/pkg/persist"
+	"sci_hub_p2p/pkg/variable"
 )
 
 func checkErr(err error) {
@@ -39,91 +39,19 @@ func checkErr(err error) {
 	}
 }
 
-type P string
-
-func (receiver P) String() string {
-	return string(receiver)
-}
-
 func main() {
-	cfg := torrent.NewDefaultClientConfig()
-	fmt.Println(cfg.PeerID)
-	impl := storage.NewBoltDB("./")
-	cfg.DefaultStorage = impl
-	// cfg.PeerID = "-BOWxxx-7ah267cakuha"
-	cfg.Bep20 = "-GT0003-"
-	c, err := torrent.NewClient(cfg)
-	checkErr(err)
-	myT, err := torrent2.ParseFile("./out/d57b1013eee9138a8906bcd274d727b5d7e8a307.torrent")
-	checkErr(err)
-	t, err := c.AddTorrentFromFile("./out/d57b1013eee9138a8906bcd274d727b5d7e8a307.torrent")
-	checkErr(err)
-	p, err := getRecord("10.1145/1327452.1327492.pdf", myT)
-	checkErr(err)
-	var myPeer = torrent.PeerInfo{
-		Addr:    P("36.35.28.92:58093"),
-		Trusted: true,
-	}
-	t.AddPeers([]torrent.PeerInfo{myPeer})
-	fmt.Println("starts waiting to download")
-	fmt.Println(p.PieceStart, p.PieceEnd, p.String())
-	t.DownloadPieces(p.PieceStart, p.PieceEnd+1)
-	for range time.Tick(time.Second * 10) {
-		s := t.Stats()
-		downloaded := true
-		for _, pIndex := range p.Pieces {
-			fmt.Println("piece", pIndex)
-			ss := t.PieceState(pIndex)
-
-			if !ss.Complete {
-				downloaded = false
-			}
-
-			if ss.Complete {
-				t.Piece(pIndex).VerifyData()
-			}
-
-			fmt.Println(MustMarshal(ss))
-		}
-		if downloaded {
-			break
-		}
-		fmt.Println(MustMarshal(s))
-	}
-	var tmpBinary = make([]byte, p.CompressedSize)
-
-	for _, pIndex := range p.Pieces {
-		currentPiece := t.Piece(pIndex)
-		if currentPiece == nil {
-			return
-		}
-		torrentImpl, err := impl.OpenTorrent(t.Info(), t.InfoHash())
-		checkErr(err)
-
-		readLen, err := torrentImpl.Piece(currentPiece.Info()).ReadAt(tmpBinary, p.OffsetFromPiece)
-		checkErr(err)
-		fmt.Println(readLen)
-	}
-	hex := hash.Sha256SumHex(tmpBinary)
-	os.WriteFile("./map-reduce.pdf", tmpBinary, constants.DefaultFileMode)
-	fmt.Println(hex, p.Sha256)
-}
-
-func getTorrent(db *bbolt.DB, hash []byte) (*torrent2.Torrent, error) {
-	var t *torrent2.Torrent
-	err := db.View(func(tx *bbolt.Tx) error {
-		var err error
-		b := tx.Bucket(constants.TorrentBucket())
-		t, err = persist.GetTorrent(b, hash)
-		if err != nil {
-			return err
-		}
-		return err
-	})
+	c, err := getClient()
 	if err != nil {
-		return nil, err
+		logger.Fatal(err)
 	}
-	return t, nil
+	defer c.Close()
+	torrentPath := "./out/d57b1013eee9138a8906bcd274d727b5d7e8a307.torrent"
+	myT, err := torrent2.ParseFile(torrentPath)
+	checkErr(err)
+	t, err := c.AddTorrentFromFile(torrentPath)
+	checkErr(err)
+
+	extract("10.1002/%28sici%291096-9098%28199710%2966%3A2%3C110%3A%3Aaid-jso7%3E3.0.co%3B2-g.pdf", t, myT)
 
 }
 
@@ -148,18 +76,35 @@ func getRecord(doi string, t *torrent2.Torrent) (indexes.PerFile, error) {
 	return indexes.LoadRecordV0(raw).Build(doi, t), nil
 }
 
-func MustMarshalIndent(data interface{}) string {
-	b, err := json.MarshalIndent(data, "", "  ")
-	if err != nil {
-		panic(err)
-	}
-	return string(b)
+func getClient() (*torrent.Client, error) {
+	cfg := torrent.NewDefaultClientConfig()
+	cfg.DefaultStorage = storage.NewBoltDB(variable.GetAppBaseDir())
+	cfg.Bep20 = "-GT0003-"
+	c, err := torrent.NewClient(cfg)
+	return c, err
 }
 
-func MustMarshal(data interface{}) string {
-	b, err := json.Marshal(data)
-	if err != nil {
-		panic(err)
+func extract(doi string, t *torrent.Torrent, internalT *torrent2.Torrent) (indexes.PerFile, error) {
+	p, err := getRecord(doi, internalT)
+	checkErr(err)
+
+	fmt.Println("starts waiting to download")
+	t.DownloadPieces(p.PieceStart, p.PieceEnd+1)
+
+	var tmpBinary = make([]byte, p.CompressedSize)
+	file := t.Files()[p.FileIndex]
+	fmt.Println(file.DisplayPath())
+	reader := file.NewReader()
+	_, err = reader.Seek(p.OffsetFromZip, io.SeekStart)
+	checkErr(err)
+	_, err = reader.Read(tmpBinary)
+	checkErr(err)
+
+	hex := hash.Sha256SumHex(tmpBinary)
+	logger.Info(hex)
+	if hex != p.Sha256 {
+		logger.Fatal("sha256 mismatch, expected", p.Sha256, "actual", hex)
 	}
-	return string(b)
+	os.WriteFile("./out/papers/map-reduce.pdf", tmpBinary, constants.DefaultFileMode)
+	return p, nil
 }

@@ -30,6 +30,7 @@ type PerFile struct {
 	Sha256          string
 	OffsetFromZip   int64
 	OffsetFromPiece int64
+	FileIndex       int
 	Pieces          []int
 	PieceStart      int
 	PieceEnd        int

@@ -69,12 +69,13 @@ func (r Record) Build(doi string, t *torrent.Torrent) PerFile {
 	var fileStart int64 = -1
 	var f torrent.File
 	// var fileIndex int
-	for _, file := range t.Files {
+	var fileIndex int
+	for i, file := range t.Files {
 		if currentZipOffset+file.Length > pieceOffset {
 			fileStart = currentZipOffset
 			// i = fileIndex
 			f = file
-
+			fileIndex = i
 			break
 		}
 		currentZipOffset += file.Length
@@ -92,6 +93,7 @@ func (r Record) Build(doi string, t *torrent.Torrent) PerFile {
 		PieceLength:     t.PieceLength,
 		OffsetFromZip:   r.OffsetInPiece + int64(r.PieceStart)*t.PieceLength - fileStart,
 		OffsetFromPiece: r.OffsetInPiece,
+		FileIndex:       fileIndex,
 		File:            f.Copy(),
 		Torrent:         t.Copy(),
 	}
