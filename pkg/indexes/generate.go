@@ -137,10 +137,10 @@ func zipFileToRecord(file *zip.File, currentZipOffset int64, pieceLength int64) 
 func Generate(dataDir, outDir string, t *torrent.Torrent) error {
 	exist, err := utils.DirExist(filepath.Join(dataDir, t.Name))
 	if err != nil {
-		return errors.Wrap(err, "can't find torrent data")
+		return errors.Wrap(err, "can't find torrent data at "+filepath.Join(dataDir, t.Name))
 	}
 	if !exist {
-		return errors.New("can't find torrent data")
+		return errors.New("can't find torrent data " + filepath.Join(dataDir, t.Name))
 	}
 
 	var c = make(chan *PDFFileOffSet, flag.Parallel)
