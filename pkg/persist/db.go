@@ -68,18 +68,17 @@ func GetRecord(b *bbolt.Bucket, doi string) (*indexes.Record, error) {
 func GetPerFileAndRawTorrent(b *bbolt.Bucket, doi string) (*indexes.PerFile, []byte, error) {
 	record, err := GetRecord(b, doi)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.Wrap(err, "can't find record")
 	}
 	r, err := os.ReadFile(filepath.Join(variable.GetTorrentStoragePath(), record.HexInfoHash()+".torrent"))
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.Wrap(err, "can't read torrent data")
 	}
 
 	t, err := torrent.ParseRaw(r)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.Wrap(err, "can't parse torrent")
 	}
 
 	return record.Build(doi, t), r, nil
-
 }

@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/anacrolix/log"
 	"github.com/anacrolix/torrent"
@@ -53,7 +54,12 @@ func Fetch(doi string) ([]byte, error) {
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		if os.IsNotExist(err) {
+			return nil, errors.Wrap(err,
+				"find doi in index, but we can't find torrent file contains this paper, try load torrents again")
+		}
+
+		return nil, errors.Wrap(err, "can't find indexes of this paper")
 	}
 
 	c, err := getClient()
@@ -91,7 +97,7 @@ func getClient() (*torrent.Client, error) {
 	cfg.DisableUTP = true
 	c, err := torrent.NewClient(cfg)
 
-	return c, err
+	return c, errors.Wrap(err, "can't initialize BitTorrent client")
 }
 
 func extract(t *torrent.Torrent, p *indexes.PerFile) ([]byte, error) {
@@ -103,10 +109,10 @@ func extract(t *torrent.Torrent, p *indexes.PerFile) ([]byte, error) {
 	defer reader.Close()
 
 	if _, err := reader.Seek(p.OffsetFromZip, io.SeekStart); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "can't download data from BitTorrent network")
 	}
 	if _, err := reader.Read(tmpBinary); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "can't download data from BitTorrent network")
 	}
 
 	fmt.Println("expected sha256:", p.Sha256)
