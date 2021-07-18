@@ -31,12 +31,12 @@ type Record struct {
 	OffsetInPiece    int64    // should be uint32 I think
 	CompressedMethod uint16   // 2 bytes
 	CompressedSize   uint64   // 8 bytes
-	Sha256           [32]byte // For IPFS, not vary necessarily
+	MultiHash        [34]byte // For IPFS, 2-sha256 multi hash
 }
 
 func (r Record) String() string {
 	return fmt.Sprintf("Record{infohash=%s, compressedSize=%d, sha256=%s}",
-		hex.EncodeToString(r.InfoHash[:]), r.CompressedSize, hex.EncodeToString(r.Sha256[:]))
+		hex.EncodeToString(r.InfoHash[:]), r.CompressedSize, hex.EncodeToString(r.MultiHash[:]))
 }
 
 func (r Record) HexInfoHash() string {
@@ -51,7 +51,7 @@ func (r Record) DumpV0() []byte {
 	_ = binary.Write(&buf, binary.LittleEndian, r.OffsetInPiece)
 	_ = binary.Write(&buf, binary.LittleEndian, r.CompressedMethod)
 	_ = binary.Write(&buf, binary.LittleEndian, r.CompressedSize)
-	_ = binary.Write(&buf, binary.LittleEndian, r.Sha256)
+	_ = binary.Write(&buf, binary.LittleEndian, r.MultiHash)
 
 	return buf.Bytes()
 }
@@ -64,7 +64,7 @@ func LoadRecordV0(p []byte) *Record {
 	_ = binary.Read(buf, binary.LittleEndian, &i.OffsetInPiece)
 	_ = binary.Read(buf, binary.LittleEndian, &i.CompressedMethod)
 	_ = binary.Read(buf, binary.LittleEndian, &i.CompressedSize)
-	_ = binary.Read(buf, binary.LittleEndian, i.Sha256[:])
+	_ = binary.Read(buf, binary.LittleEndian, i.MultiHash[:])
 
 	return i
 }
@@ -93,7 +93,7 @@ func (r Record) Build(doi string, t *torrent.Torrent) *PerFile {
 		CompressMethod:  r.CompressedMethod,
 		CompressedSize:  int64(r.CompressedSize),
 		FileName:        f.Name(),
-		Sha256:          hex.EncodeToString(r.Sha256[:]),
+		Sha256:          hex.EncodeToString(r.MultiHash[:]),
 		Pieces:          makeRange(int(r.PieceStart), int(r.PieceStart)+int(int64(r.CompressedSize)/t.PieceLength)),
 		PieceStart:      int(r.PieceStart),
 		PieceEnd:        int(r.PieceStart) + int(int64(r.CompressedSize)/t.PieceLength),
