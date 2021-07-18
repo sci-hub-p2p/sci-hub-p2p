@@ -1,3 +1,8 @@
+REF := dev
+LDFLAGS = -X 'sci_hub_p2p/pkg/variable.Ref=$(REF)'
+LDFLAGS += -X 'sci_hub_p2p/pkg/variable.Builder=$(shell go version)'
+LDFLAGS += -X 'sci_hub_p2p/pkg/variable.BuildTime=$(shell date --iso-8601=seconds)'
+
 MAKEFLAGS += --no-builtin-rules
 GoSrc =  $(shell find . -path "*/.*" -prune -o -name "*.go" -print)
 ifeq ($(OS),Windows_NT)
@@ -31,15 +36,14 @@ Windows: dist/sci-hub_windows_64.exe
 Linux: dist/sci-hub_linux_64
 macOS: dist/sci-hub_macos_64
 
-
 dist/sci-hub_windows_64.exe: $(GoSrc)
-	env GOOS=windows GOARCH=amd64 go build -ldflags "-s -w" -o $@
+	env GOOS=windows GOARCH=amd64 go build -ldflags "-s -w $(LDFLAGS)" -o $@
 
 dist/sci-hub_linux_64: $(GoSrc)
-	env GOOS=linux GOARCH=amd64 go build -ldflags "-s -w" -o $@
+	env GOOS=linux GOARCH=amd64 go build -ldflags "-s -w $(LDFLAGS)" -o $@
 
 dist/sci-hub_macos_64: $(GoSrc)
-	env GOOS=darwin GOARCH=amd64 go build -ldflags "-s -w" -o $@
+	env GOOS=darwin GOARCH=amd64 go build -ldflags "-s -w $(LDFLAGS)" -o $@
 
 testdata/sm_00900000-00999999.torrent:
 	bash ./fetch.bash
