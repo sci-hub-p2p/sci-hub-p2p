@@ -71,6 +71,7 @@ func Fetch(doi string) ([]byte, error) {
 	}
 
 	b, err := extract(t, p)
+
 	return b, err
 }
 
