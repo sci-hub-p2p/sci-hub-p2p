@@ -125,7 +125,7 @@ func zipFileToRecord(file *zip.File, currentZipOffset int64, pieceLength int64) 
 	}
 	defer f.Close()
 
-	sha256, err := hash.CidSha256SumReader(f)
+	sha256, err := hash.Sha256CidBalanced(f)
 	if err != nil {
 		return nil, errors.Wrapf(err, "can't decompress file %s", file.Name)
 	}

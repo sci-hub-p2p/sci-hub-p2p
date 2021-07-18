@@ -34,7 +34,7 @@ func TestDumpLoad(t *testing.T) {
 		OffsetInPiece:    888137412,
 		CompressedMethod: 8,
 		CompressedSize:   13241729341923,
-		MultiHash: [32]byte{101, 51, 98, 48, 99, 52, 52, 50,
+		MultiHash: [34]byte{18, 1, 101, 51, 98, 48, 99, 52, 52, 50,
 			57, 56, 102, 99, 49, 99, 49, 52,
 			57, 97, 102, 98, 102, 52, 99, 56,
 			57, 57, 54, 102, 98, 57, 50, 52},

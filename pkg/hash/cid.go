@@ -25,7 +25,6 @@ import (
 	"github.com/ipfs/go-cid"
 	chunker "github.com/ipfs/go-ipfs-chunker"
 	ipld "github.com/ipfs/go-ipld-format"
-	"github.com/ipfs/go-merkledag"
 	"github.com/ipfs/go-unixfs/importer/balanced"
 	"github.com/ipfs/go-unixfs/importer/helpers"
 	"github.com/ipfs/go-unixfs/importer/trickle"
@@ -33,7 +32,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func CidSha256SumReader(r io.Reader) ([]byte, error) {
+func Sha256CidBalanced(r io.Reader) ([]byte, error) {
 	var n, err = addFile(r, &AddParams{
 		Layout:    "balanced",
 		Chunker:   "default",
@@ -127,9 +126,11 @@ func addFile(r io.Reader, params *AddParams) (ipld.Node, error) {
 		params.HashFun = "sha2-256"
 	}
 
-	prefix, err := merkledag.PrefixForCidVersion(0)
-	if err != nil {
-		return nil, fmt.Errorf("bad CID Version: %s", err)
+	prefix := cid.Prefix{
+		Version:  0,
+		Codec:    18,
+		MhType:   multihash.SHA2_256,
+		MhLength: -1,
 	}
 
 	hashFunCode, ok := multihash.Names[strings.ToLower(params.HashFun)]
