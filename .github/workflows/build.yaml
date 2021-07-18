@@ -39,6 +39,7 @@ jobs:
         id: version
         shell: bash
         run: |
+          TIME=$(node -p 'new Date().toISOString()')
           SHA=${GITHUB_SHA:0:8}
 
           if [[ ${GITHUB_REF} == refs/tags/* ]]; then
@@ -49,8 +50,9 @@ jobs:
             export REF=pr-${GITHUB_REF:11}
           fi
 
-          echo "name=SHA::$SHA" >>$GITHUB_PATH
-          echo "name=REF::$REF" >>$GITHUB_PATH
+          echo "SHA=$SHA" >>$GITHUB_PATH
+          echo "REF=$REF" >>$GITHUB_PATH
+          echo "TIME=${TIME}" >>$GITHUB_PATH
 
       - name: build
         run: make ${{ runner.os }}
