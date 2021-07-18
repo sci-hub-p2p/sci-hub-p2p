@@ -24,6 +24,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - uses: actions/cache@v2
+        with:
+          path: |
+            %LocalAppData%\go-build
+            ~/Library/Caches/go-build
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
       - name: build
         run: make ${{ runner.os }}
 
