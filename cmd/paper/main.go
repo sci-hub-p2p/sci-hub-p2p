@@ -35,7 +35,7 @@ var Cmd = &cobra.Command{
 var fetchCmd = &cobra.Command{
 	Use:           "fetch",
 	Short:         "fetch a paper from p2p network",
-	Example:       "paper fetch --doi '10.1145/1327452.1327492'",
+	Example:       "paper fetch --doi '10.1145/1327452.1327492' -o map-reduce.pdf",
 	SilenceErrors: false,
 	PreRunE:       utils.EnsureDir(variable.GetAppTmpDir()),
 	RunE: func(cmd *cobra.Command, args []string) error {
