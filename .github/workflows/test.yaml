@@ -43,7 +43,9 @@ jobs:
         run: make coverage
         env:
           GORACE: halt_on_error=1
-          GOCACHE: off
+
+      - name: clean go test cache
+        run: go clean -testcache.
 
       - run: bash <(curl -s https://codecov.io/bash) -F ${{ runner.os }}
         shell: bash
