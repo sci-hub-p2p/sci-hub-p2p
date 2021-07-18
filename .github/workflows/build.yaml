@@ -50,7 +50,7 @@ jobs:
           elif [[ ${GITHUB_REF} == refs/heads/* ]]; then
             export REF=branch-${GITHUB_REF:11}
           elif [[ ${GITHUB_REF} == refs/pull/*/merge ]]; then
-            export REF=pr-${GITHUB_REF:10:-6}
+            export REF=pr-$(python -c "print('$GITHUB_REF'[10:-6])")
           else
             export REF=development
           fi
