@@ -90,6 +90,7 @@ func getClient() (*torrent.Client, error) {
 	cfg.Logger = log.Logger{LoggerImpl: nilLogger{}}
 	cfg.DisableUTP = true
 	c, err := torrent.NewClient(cfg)
+
 	return c, err
 }
 

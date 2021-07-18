@@ -44,6 +44,7 @@ var fetchCmd = &cobra.Command{
 			return err
 		}
 		err = os.WriteFile(out, b, constants.DefaultFileMode)
+
 		return err
 	},
 }
