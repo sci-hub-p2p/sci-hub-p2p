@@ -82,6 +82,7 @@ func (r Record) Build(doi string, t *torrent.Torrent) *PerFile {
 			// i = fileIndex
 			f = file
 			fileIndex = i
+
 			break
 		}
 		currentZipOffset += file.Length
