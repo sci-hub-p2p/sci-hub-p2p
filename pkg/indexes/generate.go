@@ -107,7 +107,7 @@ func zipFileToRecord(file *zip.File, currentZipOffset int64, pieceLength int64) 
 			InfoHash:         [20]byte{},
 			CompressedMethod: file.Method,
 			CompressedSize:   file.CompressedSize64,
-			Sha256:           [32]byte{},
+			MultiHash:        [34]byte{},
 		},
 	}
 
@@ -125,11 +125,11 @@ func zipFileToRecord(file *zip.File, currentZipOffset int64, pieceLength int64) 
 	}
 	defer f.Close()
 
-	sha256, err := hash.Sha256SumReaderBytes(f)
+	sha256, err := hash.Sha256CidBalanced(f)
 	if err != nil {
 		return nil, errors.Wrapf(err, "can't decompress file %s", file.Name)
 	}
-	copy(i.Sha256[:], sha256)
+	copy(i.MultiHash[:], sha256)
 
 	return i, nil
 }
@@ -222,7 +222,6 @@ func collectResult(c chan *PDFFileOffSet, outDir string, t *torrent.Torrent, don
 
 		return
 	}
-
 	fmt.Println("start dumping data to file")
 	err = db.View(func(tx *bbolt.Tx) error {
 		return dumpToFile(tx, filepath.Join(outDir, t.InfoHash))
@@ -239,7 +238,7 @@ func collectResult(c chan *PDFFileOffSet, outDir string, t *torrent.Torrent, don
 	done <- 1
 }
 
-func dumpToFile(tx *bbolt.Tx, name string) error {
+func dumpToFile(tx *bbolt.Tx, name string) (err error) {
 	t, err := os.Create(name + ".jsonlines.lzma")
 	if err != nil {
 		return errors.Wrap(err, "can't create lzma file to save indexes")
@@ -261,7 +260,18 @@ func dumpToFile(tx *bbolt.Tx, name string) error {
 	c := b.Cursor()
 
 	w := lzma.NewWriterLevel(t, lzma.BestCompression)
-	defer w.Close()
+
+	defer func() {
+		if e := w.Close(); e != nil {
+			e = errors.Wrap(e, "can't save lzma file to disk")
+			if err == nil {
+				err = e
+			} else {
+				logger.Error(e)
+			}
+		}
+	}()
+
 	for k, v := c.First(); k != nil; k, v = c.Next() {
 		b64 := base64.StdEncoding.EncodeToString(v)
 		_, err := fmt.Fprintf(w, "[\"%s\", \"%s\"]\n", k, b64)

@@ -34,7 +34,7 @@ func TestDumpLoad(t *testing.T) {
 		OffsetInPiece:    888137412,
 		CompressedMethod: 8,
 		CompressedSize:   13241729341923,
-		Sha256: [32]byte{101, 51, 98, 48, 99, 52, 52, 50,
+		MultiHash: [34]byte{18, 1, 101, 51, 98, 48, 99, 52, 52, 50,
 			57, 56, 102, 99, 49, 99, 49, 52,
 			57, 97, 102, 98, 102, 52, 99, 56,
 			57, 57, 54, 102, 98, 57, 50, 52},
@@ -48,5 +48,5 @@ func TestDumpLoad(t *testing.T) {
 	assert.Equal(t, o.OffsetInPiece, n.OffsetInPiece)
 	assert.Equal(t, o.CompressedMethod, n.CompressedMethod)
 	assert.Equal(t, o.CompressedSize, n.CompressedSize)
-	assert.Equal(t, hex.EncodeToString(o.Sha256[:]), hex.EncodeToString(n.Sha256[:]))
+	assert.Equal(t, hex.EncodeToString(o.MultiHash[:]), hex.EncodeToString(n.MultiHash[:]))
 }

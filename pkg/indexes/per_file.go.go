@@ -27,7 +27,7 @@ type PerFile struct {
 	FileName        string // duplicated with doi maybe
 	CompressMethod  uint16 // seems that almost all files are just store in zip without compress.
 	CompressedSize  int64
-	Sha256          string
+	MultiHash       string
 	OffsetFromZip   int64
 	OffsetFromPiece int64
 	FileIndex       int

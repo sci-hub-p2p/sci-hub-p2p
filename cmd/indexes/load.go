@@ -68,6 +68,7 @@ var loadCmd = &cobra.Command{
 		if len(s) == 0 {
 			return fmt.Errorf("cant' find any index file to load")
 		}
+		var count int
 		err = db.Batch(func(tx *bbolt.Tx) error {
 			b, err := tx.CreateBucketIfNotExists(constants.PaperBucket())
 			if err != nil {
@@ -75,10 +76,11 @@ var loadCmd = &cobra.Command{
 			}
 
 			for _, file := range s {
-				err := loadIndexFile(b, file)
+				c, err := loadIndexFile(b, file)
 				if err != nil {
 					return errors.Wrap(err, "can't load indexes file "+file)
 				}
+				count += c
 
 			}
 
@@ -87,7 +89,8 @@ var loadCmd = &cobra.Command{
 		if err != nil {
 			return errors.Wrap(err, "can't save torrent data to database")
 		}
-		fmt.Printf("successfully load %d torrents into database\n", len(s))
+		fmt.Printf("successfully load %d index file into database\n", len(s))
+		fmt.Printf("%d records\n", count)
 
 		return nil
 	},
@@ -100,35 +103,40 @@ func init() {
 		"glob pattern to search indexes to avoid 'Argument list too long' error")
 }
 
-func loadIndexFile(b *bbolt.Bucket, name string) error {
+func loadIndexFile(b *bbolt.Bucket, name string) (success int, err error) {
 	f, err := os.Open(name)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer f.Close()
 	reader := lzma.NewReader(f)
 	scanner := bufio.NewScanner(reader)
-
 	for scanner.Scan() {
 		var s []string
 		err = json.Unmarshal(scanner.Bytes(), &s)
 		if err != nil || len(s) != 2 {
-			return errors.Wrap(err, "can't parse json "+scanner.Text())
+			return 0, errors.Wrap(err, "can't parse json "+scanner.Text())
 		}
 		value, err := base64.StdEncoding.DecodeString(s[1])
 		if err != nil {
-			return errors.Wrap(err, "can't decode base64")
+			return 0, errors.Wrap(err, "can't decode base64")
 		}
 
 		key, err := url.QueryUnescape(strings.TrimSuffix(s[0], ".pdf"))
 		if err != nil {
-			return err
+			return 0, err
 		}
 		err = b.Put([]byte(key), value)
 		if err != nil {
-			return errors.Wrap(err, "can't save record to database")
+			return 0, errors.Wrap(err, "can't save record to database")
 		}
+		success++
 	}
 
-	return errors.Wrap(scanner.Err(), "can't scan file")
+	err = scanner.Err()
+	if err != nil {
+		return 0, errors.Wrap(err, "can't scan file")
+	}
+
+	return success, errors.Wrap(scanner.Err(), "can't scan file")
 }

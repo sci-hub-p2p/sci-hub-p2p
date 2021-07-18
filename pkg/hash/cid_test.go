@@ -13,12 +13,31 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package main
+package hash_test
 
 import (
-	"sci_hub_p2p/cmd"
+	"bytes"
+	"os"
+	"testing"
+
+	"github.com/ipfs/go-cid"
+	"github.com/stretchr/testify/assert"
+
+	_ "sci_hub_p2p/internal/testing"
+	"sci_hub_p2p/pkg/hash"
 )
 
-func main() {
-	cmd.Execute()
+func TestSha256CidBalanced(t *testing.T) {
+	t.Parallel()
+
+	c, err := cid.Parse("QmVBAYRwHA5zCbteHvY7psWdgVVAMcPkuYS5hAWFPvVXiS")
+	assert.Nil(t, err)
+
+	b, err := os.ReadFile("./testdata/sm_00900000-00999999.torrent")
+	assert.Nil(t, err)
+
+	h, err := hash.Sha256CidBalanced(bytes.NewBuffer(b))
+	assert.Nil(t, err)
+
+	assert.EqualValues(t, c.Hash(), h)
 }
