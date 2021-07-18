@@ -47,9 +47,10 @@ testdata/sm_00900000-00999999.torrent:
 testdata: testdata/sm_00900000-00999999.torrent
 
 test: testdata
-	go test -covermode=atomic -coverprofile=coverage.out ./...
+	go test ./...
 
-coverage.out: test
+coverage.out: testdata
+	go test -v -covermode=atomic -coverprofile=coverage.out -count=1 ./...
 
 coverage: coverage.out
 
