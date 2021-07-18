@@ -39,13 +39,13 @@ Linux: dist/sci-hub_linux_64
 macOS: dist/sci-hub_macos_64
 
 dist/sci-hub_windows_64.exe: $(GoSrc)
-	env GOOS=windows GOARCH=amd64 go build -o $@ $(GoBuildArgs)
+	env CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o $@ $(GoBuildArgs)
 
 dist/sci-hub_linux_64: $(GoSrc)
-	env GOOS=linux GOARCH=amd64 go build -o $@ $(GoBuildArgs)
+	env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o $@ $(GoBuildArgs)
 
 dist/sci-hub_macos_64: $(GoSrc)
-	env GOOS=darwin GOARCH=amd64 go build -o $@ $(GoBuildArgs)
+	env CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o $@ $(GoBuildArgs)
 
 testdata/sm_00900000-00999999.torrent:
 	bash ./fetch.bash
