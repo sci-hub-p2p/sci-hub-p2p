@@ -50,9 +50,9 @@ jobs:
             export REF=pr-${GITHUB_REF:11}
           fi
 
-          echo "SHA=$SHA" >>$GITHUB_PATH
-          echo "REF=$REF" >>$GITHUB_PATH
-          echo "TIME=${TIME}" >>$GITHUB_PATH
+          echo "SHA=$SHA" >>$GITHUB_ENV
+          echo "REF=$REF" >>$GITHUB_ENV
+          echo "TIME=${TIME}" >>$GITHUB_ENV
 
       - name: build
         run: make ${{ runner.os }}
