@@ -1,5 +1,4 @@
-REF := dev
-LDFLAGS = -X 'sci_hub_p2p/pkg/variable.Ref=$(REF)'
+LDFLAGS = -X 'sci_hub_p2p/pkg/variable.Ref=${REF}'
 LDFLAGS += -X 'sci_hub_p2p/pkg/variable.Builder=$(shell go version)'
 LDFLAGS += -X 'sci_hub_p2p/pkg/variable.BuildTime=${TIME}'
 
