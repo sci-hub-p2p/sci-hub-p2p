@@ -49,6 +49,7 @@ func Fetch(doi string) ([]byte, error) {
 		if err != nil {
 			return errors.Wrap(err, "can't get file indexes")
 		}
+
 		return nil
 	})
 	if err != nil {
