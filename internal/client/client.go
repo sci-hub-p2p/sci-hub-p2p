@@ -115,7 +115,7 @@ func extract(t *torrent.Torrent, p *indexes.PerFile) ([]byte, error) {
 		return nil, errors.Wrap(err, "can't download data from BitTorrent network")
 	}
 
-	fmt.Println("expected sha256:", p.MultiHash)
+	fmt.Println("expected cid:", p.MultiHash)
 	hex, err := hash.Cid(bytes.NewReader(tmpBinary))
 	if err != nil {
 		return tmpBinary, errors.Wrap(err, "can't calculate CID file data")

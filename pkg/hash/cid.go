@@ -94,10 +94,7 @@ func (d DumpDagServ) Add(ctx context.Context, node ipld.Node) error {
 
 func (d DumpDagServ) AddMany(ctx context.Context, nodes []ipld.Node) error {
 	for _, node := range nodes {
-		err := d.Add(ctx, node)
-		if err != nil {
-			return err
-		}
+		_ = d.Add(ctx, node)
 	}
 
 	return nil
