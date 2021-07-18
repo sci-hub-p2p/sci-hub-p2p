@@ -61,6 +61,7 @@ func GetRecord(b *bbolt.Bucket, doi string) (*indexes.Record, error) {
 	if raw == nil {
 		return nil, ErrNotFound
 	}
+
 	return indexes.LoadRecordV0(raw), nil
 }
 
