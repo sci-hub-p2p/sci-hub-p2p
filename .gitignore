@@ -1,6 +1,5 @@
 .vscode/
 .idea/
-.vscode/
 *.torrent
 coverage*
 *.exe
@@ -9,3 +8,4 @@ sci_hub_p2p
 out/
 dist/
 torrents
+*.pdf

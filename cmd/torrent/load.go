@@ -36,20 +36,14 @@ import (
 var Cmd = &cobra.Command{
 	Use:           "torrent",
 	SilenceErrors: false,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("indexes command")
-
-		return cmd.Help()
-	},
 }
-var torrentSavePath = filepath.Join(variable.GetAppBaseDir(), "torrents")
 
 var loadCmd = &cobra.Command{
 	Use:           "load",
 	Short:         "Load torrents into database.",
 	Example:       "torrent load /path/to/*.torrents [--glob '/path/to/data/*.torrents']",
 	SilenceErrors: false,
-	PreRunE:       utils.EnsureDir(torrentSavePath),
+	PreRunE:       utils.EnsureDir(variable.GetTorrentStoragePath()),
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		var s []string
 		if glob != "" {
@@ -93,7 +87,7 @@ var loadCmd = &cobra.Command{
 				if err != nil {
 					return err
 				}
-				dst := filepath.Join(torrentSavePath, f.InfoHash+".torrent")
+				dst := filepath.Join(variable.GetTorrentStoragePath(), f.InfoHash+".torrent")
 				err = utils.Copy(file, dst)
 				if err != nil {
 					return errors.Wrapf(err, "can't copy torrent file to %s", dst)

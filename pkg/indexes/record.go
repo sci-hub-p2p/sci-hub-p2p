@@ -69,24 +69,26 @@ func LoadRecordV0(p []byte) *Record {
 	return i
 }
 
-func (r Record) Build(doi string, t *torrent.Torrent) PerFile {
+func (r Record) Build(doi string, t *torrent.Torrent) *PerFile {
 	var pieceOffset = t.PieceLength * int64(r.PieceStart)
 	var currentZipOffset int64
 	var fileStart int64 = -1
 	var f torrent.File
 	// var fileIndex int
-	for _, file := range t.Files {
+	var fileIndex int
+	for i, file := range t.Files {
 		if currentZipOffset+file.Length > pieceOffset {
 			fileStart = currentZipOffset
 			// i = fileIndex
 			f = file
+			fileIndex = i
 
 			break
 		}
 		currentZipOffset += file.Length
 	}
 
-	var p = PerFile{
+	return &PerFile{
 		Doi:             doi,
 		CompressMethod:  r.CompressedMethod,
 		CompressedSize:  int64(r.CompressedSize),
@@ -98,11 +100,10 @@ func (r Record) Build(doi string, t *torrent.Torrent) PerFile {
 		PieceLength:     t.PieceLength,
 		OffsetFromZip:   r.OffsetInPiece + int64(r.PieceStart)*t.PieceLength - fileStart,
 		OffsetFromPiece: r.OffsetInPiece,
+		FileIndex:       fileIndex,
 		File:            f.Copy(),
 		Torrent:         t.Copy(),
 	}
-
-	return p
 }
 
 func makeRange(min, max int) []int {

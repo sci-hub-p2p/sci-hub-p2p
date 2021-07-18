@@ -1,19 +1,45 @@
 MAKEFLAGS += --no-builtin-rules
-build: Windows Linux macOS
+GoSrc =  $(shell find . -path "*/.*" -prune -o -name "*.go" -print)
+ifeq ($(OS),Windows_NT)
+	DefaultRule := Windows
+else
+	UNAME_S := $(shell uname -s)
+	ifeq ($(UNAME_S),Linux)
+		DefaultRule = Linux
+	else ifeq ($(UNAME_S),Darwin)
+		DefaultRule = macOS
+	else
+		DefaultRule = None
+	endif
+endif
+
+# default: current OS only build
+$(DefaultRule):
+
+None:
+	@echo "Not Support System"
+	@echo "try 'make all' to cross compile"
+
+# this is just alias for some lazy person like myself
+windows: Windows
+linux: Linux
+macos: macOS
+
+all: Windows Linux macOS
 
 Windows: dist/sci-hub_windows_64.exe
 Linux: dist/sci-hub_linux_64
 macOS: dist/sci-hub_macos_64
 
 
-dist/sci-hub_macos_64:
-	env GOOS=darwin GOARCH=amd64 go build -ldflags "-s -w" -o $@
+dist/sci-hub_windows_64.exe: $(GoSrc)
+	env GOOS=windows GOARCH=amd64 go build -ldflags "-s -w" -o $@
 
-dist/sci-hub_linux_64:
+dist/sci-hub_linux_64: $(GoSrc)
 	env GOOS=linux GOARCH=amd64 go build -ldflags "-s -w" -o $@
 
-dist/sci-hub_windows_64.exe:
-	env GOOS=windows GOARCH=amd64 go build -ldflags "-s -w" -o $@
+dist/sci-hub_macos_64: $(GoSrc)
+	env GOOS=darwin GOARCH=amd64 go build -ldflags "-s -w" -o $@
 
 testdata/sm_00900000-00999999.torrent:
 	bash ./fetch.bash
@@ -34,4 +60,4 @@ clean:
 		  ./coverage.out \
 		  ./out
 
-.PHONY: Windows Linux macOS test coverage clean testdata
+.PHONY: Windows Linux macOS test coverage clean testdata None windows linux macos all
