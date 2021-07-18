@@ -22,6 +22,8 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"github.com/mr-tron/base58"
+
 	"sci_hub_p2p/internal/torrent"
 )
 
@@ -93,7 +95,7 @@ func (r Record) Build(doi string, t *torrent.Torrent) *PerFile {
 		CompressMethod:  r.CompressedMethod,
 		CompressedSize:  int64(r.CompressedSize),
 		FileName:        f.Name(),
-		Sha256:          hex.EncodeToString(r.MultiHash[:]),
+		MultiHash:       base58.Encode(r.MultiHash[:]),
 		Pieces:          makeRange(int(r.PieceStart), int(r.PieceStart)+int(int64(r.CompressedSize)/t.PieceLength)),
 		PieceStart:      int(r.PieceStart),
 		PieceEnd:        int(r.PieceStart) + int(int64(r.CompressedSize)/t.PieceLength),

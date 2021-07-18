@@ -30,6 +30,15 @@ import (
 )
 
 func Sha256CidBalanced(r io.Reader) ([]byte, error) {
+	var c, err = Cid(r)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't generate cid")
+	}
+
+	return c.Hash(), nil
+}
+
+func Cid(r io.Reader) (cid.Cid, error) {
 	var n, err = addFile(r, &AddParams{
 		Layout:    "balanced",
 		Chunker:   "default",
@@ -39,10 +48,10 @@ func Sha256CidBalanced(r io.Reader) ([]byte, error) {
 		Version:   0,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "can't generate cid")
+		return cid.Cid{}, errors.Wrap(err, "can't generate cid")
 	}
 
-	return n.Cid().Hash(), nil
+	return n.Cid(), nil
 }
 
 type DumpDagServ struct {

@@ -87,7 +87,7 @@ var loadCmd = &cobra.Command{
 		if err != nil {
 			return errors.Wrap(err, "can't save torrent data to database")
 		}
-		fmt.Printf("successfully load %d torrents into database\n", len(s))
+		fmt.Printf("successfully load %d index file into database\n", len(s))
 
 		return nil
 	},
