@@ -39,6 +39,9 @@ jobs:
         id: version
         shell: bash
         run: |
+          echo "GITHUB_REF=$GITHUB_REF"
+          echo "GITHUB_SHA=$GITHUB_SHA"
+
           TIME=$(node -p 'new Date().toISOString()')
           SHA=${GITHUB_SHA:0:8}
 
