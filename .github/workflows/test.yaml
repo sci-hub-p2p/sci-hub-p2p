@@ -43,6 +43,7 @@ jobs:
         run: make coverage
         env:
           GORACE: halt_on_error=1
+          GOCACHE: off
 
       - run: bash <(curl -s https://codecov.io/bash) -F ${{ runner.os }}
         shell: bash
