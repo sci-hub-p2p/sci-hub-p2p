@@ -1,7 +1,7 @@
 REF := dev
 LDFLAGS = -X 'sci_hub_p2p/pkg/variable.Ref=$(REF)'
 LDFLAGS += -X 'sci_hub_p2p/pkg/variable.Builder=$(shell go version)'
-LDFLAGS += -X 'sci_hub_p2p/pkg/variable.BuildTime=$(shell date --iso-8601=seconds)'
+LDFLAGS += -X 'sci_hub_p2p/pkg/variable.BuildTime=$(shell date --rfc-3339=seconds)'
 
 MAKEFLAGS += --no-builtin-rules
 GoSrc =  $(shell find . -path "*/.*" -prune -o -name "*.go" -print)
