@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package dagServ
+package dagserv
 
 // customized layout to store piece offset in metadata db.
 
@@ -32,8 +32,6 @@ func BalanceLayout(db *helpers.DagBuilderHelper) (ipld.Node, error) {
 		if err != nil {
 			return nil, err
 		}
-		// This works without Filestore support (`ProcessFileStore`).
-		// TODO: Why? Is there a test case missing?
 
 		return root, db.Add(root)
 	}
@@ -51,7 +49,6 @@ func BalanceLayout(db *helpers.DagBuilderHelper) (ipld.Node, error) {
 	// has reached its maximum capacity of `db.Maxlinks()` per node)
 	// extend it by making it a sub-DAG of a bigger DAG with `depth+1`.
 	for depth := 1; !db.Done(); depth++ {
-
 		// Add the old `root` as a child of the `newRoot`.
 		newRoot := db.NewFSNodeOverDag(ft.TFile)
 		newRoot.AddChild(root, fileSize, db)
@@ -86,7 +83,6 @@ func fillNodeRec(db *helpers.DagBuilderHelper, node *helpers.FSNodeOverDag, dept
 
 	// While we have room and there is data available to be added.
 	for node.NumChildren() < db.Maxlinks() && !db.Done() {
-
 		if depth == 1 {
 			// Base case: add leaf node with data.
 			childNode, childFileSize, err = db.NewLeafDataNode(ft.TFile)

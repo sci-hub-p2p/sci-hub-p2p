@@ -27,7 +27,7 @@ import (
 	"github.com/multiformats/go-multihash"
 	"github.com/pkg/errors"
 
-	"sci_hub_p2p/pkg/dagServ"
+	"sci_hub_p2p/pkg/dagserv"
 )
 
 func Black2dBalancedSized256K(r io.Reader) ([]byte, error) {
@@ -70,8 +70,8 @@ func addFile(
 	}
 
 	dbp := helpers.DagBuilderParams{
-		Dagserv:    dagServ.NewMemory(),
-		RawLeaves:  true,
+		Dagserv:    dagserv.NewMemory(),
+		RawLeaves:  rawLeaves,
 		Maxlinks:   helpers.DefaultLinksPerBlock,
 		CidBuilder: &prefix,
 		NoCopy:     false,

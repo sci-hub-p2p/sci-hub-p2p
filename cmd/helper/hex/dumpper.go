@@ -13,21 +13,51 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package dagServ
+package main
 
 import (
+	"encoding/hex"
 	"fmt"
+	"io"
+	"log"
 	"os"
-	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/spf13/cobra"
 )
 
-func TestZipArchive(t *testing.T) {
-	r, err := os.Open("d:/paper.pdf")
-	assert.Nil(t, err)
-	defer r.Close()
-	n, err := Build(r)
-	assert.Nil(t, err)
-	fmt.Println(n.Cid())
+var rootCmd = &cobra.Command{
+	Args: cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		name := args[0]
+		r, err := os.Open(name)
+		if err != nil {
+			return err
+		}
+		defer r.Close()
+		var raw []byte
+		if head == 0 {
+			raw, err = io.ReadAll(r)
+			if err != nil {
+				return err
+			}
+		} else {
+			raw = make([]byte, head)
+			_, err = io.ReadFull(r, raw)
+			if err != nil {
+				return err
+			}
+		}
+		fmt.Println(hex.Dump(raw))
+		return nil
+	},
+}
+
+var head int
+
+func main() {
+	rootCmd.Flags().IntVarP(&head, "head", "H", 128, "first N bytes")
+	if err := rootCmd.Execute(); err != nil {
+		log.Fatalln(err)
+		os.Exit(1)
+	}
 }

@@ -13,23 +13,22 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package dagServ
+package dagserv
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"sync"
 
+	"github.com/ipfs/go-cid"
 	chunker "github.com/ipfs/go-ipfs-chunker"
+	format "github.com/ipfs/go-ipld-format"
 	ipld "github.com/ipfs/go-ipld-format"
-	"github.com/ipfs/go-unixfs/importer/balanced"
 	"github.com/ipfs/go-unixfs/importer/helpers"
 	"github.com/multiformats/go-multihash"
 	"github.com/pkg/errors"
-
-	"github.com/ipfs/go-cid"
-	"github.com/ipfs/go-ipld-format"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
@@ -69,12 +68,20 @@ func (d ZipArchive) GetMany(ctx context.Context, cids []cid.Cid) <-chan *format.
 	return c
 }
 
+var dump = false
+
 func (d ZipArchive) Add(ctx context.Context, node format.Node) error {
 	d.m.Lock()
 	defer d.m.Unlock()
 	stat, _ := node.Stat()
 	size, _ := node.Size()
 	fmt.Println(node.Cid().String(), stat, size, len(node.RawData()))
+	if !dump {
+
+		fmt.Println(hex.Dump(node.RawData()[len(node.RawData())-128:]))
+		fmt.Println()
+		dump = true
+	}
 	// if
 	// fmt.Println(hex.Dump(node.RawData()))
 	d.M[node.Cid().String()] = node
@@ -137,11 +144,10 @@ func Build(r io.Reader) (ipld.Node, error) {
 		return nil, errors.Wrap(err, "can't create dag builder from chunker")
 	}
 	fmt.Println("start layout")
-	n, err := balanced.Layout(dbh)
+	n, err := BalanceLayout(dbh)
 	if err != nil {
 		return nil, errors.Wrapf(err, "can't layout all chunk")
 	}
 
 	return n, nil
-
 }
