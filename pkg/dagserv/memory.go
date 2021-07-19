@@ -20,7 +20,6 @@ import (
 	"sync"
 
 	"github.com/ipfs/go-cid"
-	format "github.com/ipfs/go-ipld-format"
 	ipld "github.com/ipfs/go-ipld-format"
 	"github.com/pkg/errors"
 )
@@ -33,13 +32,13 @@ func NewMemory() DumpDagServ {
 }
 
 type DumpDagServ struct {
-	M map[string]format.Node
+	M map[string]ipld.Node
 	m *sync.Mutex
 }
 
 var ErrNotFound = errors.New("not found")
 
-func (d DumpDagServ) Get(ctx context.Context, cid cid.Cid) (format.Node, error) {
+func (d DumpDagServ) Get(ctx context.Context, cid cid.Cid) (ipld.Node, error) {
 	d.m.Lock()
 	defer d.m.Unlock()
 	i, ok := d.M[cid.String()]
@@ -50,19 +49,19 @@ func (d DumpDagServ) Get(ctx context.Context, cid cid.Cid) (format.Node, error) 
 	return i, nil
 }
 
-func (d DumpDagServ) GetMany(ctx context.Context, cids []cid.Cid) <-chan *format.NodeOption {
-	var c = make(chan *format.NodeOption)
+func (d DumpDagServ) GetMany(ctx context.Context, cids []cid.Cid) <-chan *ipld.NodeOption {
+	var c = make(chan *ipld.NodeOption)
 	go func() {
 		for _, cid := range cids {
 			i, err := d.Get(ctx, cid)
-			c <- &format.NodeOption{Node: i, Err: err}
+			c <- &ipld.NodeOption{Node: i, Err: err}
 		}
 	}()
 
 	return c
 }
 
-func (d DumpDagServ) Add(ctx context.Context, node format.Node) error {
+func (d DumpDagServ) Add(ctx context.Context, node ipld.Node) error {
 	d.m.Lock()
 	defer d.m.Unlock()
 	d.M[node.Cid().String()] = node
@@ -70,7 +69,7 @@ func (d DumpDagServ) Add(ctx context.Context, node format.Node) error {
 	return nil
 }
 
-func (d DumpDagServ) AddMany(ctx context.Context, nodes []format.Node) error {
+func (d DumpDagServ) AddMany(ctx context.Context, nodes []ipld.Node) error {
 	for _, node := range nodes {
 		_ = d.Add(ctx, node)
 	}

@@ -21,13 +21,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	_ "sci_hub_p2p/internal/testing"
 	"sci_hub_p2p/internal/torrent"
 )
 
 func TestParseFile(t *testing.T) {
 	t.Parallel()
-	f, err := filepath.Abs("./testdata/sm_00900000-00999999.torrent")
+	f, err := filepath.Abs("../../testdata/sm_00900000-00999999.torrent")
 	assert.Nil(t, err)
 	tor, err := torrent.ParseFile(f)
 	assert.Nil(t, err)

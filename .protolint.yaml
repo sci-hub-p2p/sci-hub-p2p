@@ -1,0 +1,31 @@
+lint:
+  rules:
+  # Linter rules option.
+  rules_option:
+    # MAX_LINE_LENGTH rule option.
+    max_line_length:
+      # Enforces a maximum line length
+      max_chars: 100
+
+    # INDENT rule option.
+    indent:
+      # Available styles are 4(4-spaces), 2(2-spaces) or tab.
+      style: 2
+      # Available newlines are "\n", "\r", or "\r\n".
+      newline: "\n"
+
+    # IMPORTS_SORTED rule option.
+    imports_sorted:
+      # Available newlines are "\n", "\r", or "\r\n".
+      newline: "\n"
+
+    # ENUM_FIELD_NAMES_ZERO_VALUE_END_WITH rule option.
+    enum_field_names_zero_value_end_with:
+      suffix: INVALID
+
+    messages_have_comment:
+      # Comments need to begin with the name of the thing being described. default is false.
+      should_follow_golang_style: true
+
+    enums_have_comment:
+      should_follow_golang_style: true

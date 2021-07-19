@@ -16,20 +16,23 @@
 package dagserv
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"fmt"
-	"io"
 	"sync"
 
 	"github.com/ipfs/go-cid"
 	chunker "github.com/ipfs/go-ipfs-chunker"
-	format "github.com/ipfs/go-ipld-format"
 	ipld "github.com/ipfs/go-ipld-format"
+	"github.com/ipfs/go-merkledag"
+	"github.com/ipfs/go-unixfs"
 	"github.com/ipfs/go-unixfs/importer/helpers"
 	"github.com/multiformats/go-multihash"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
+
+	"sci_hub_p2p/pkg/logger"
 )
 
 func NewZip() ZipArchive {
@@ -40,12 +43,13 @@ func NewZip() ZipArchive {
 }
 
 type ZipArchive struct {
-	M  map[string]format.Node
-	m  *sync.Mutex
-	db *leveldb.DB
+	M   map[string]ipld.Node
+	m   *sync.Mutex
+	db  *leveldb.DB
+	raw []byte // raw content, determine block offset
 }
 
-func (d ZipArchive) Get(ctx context.Context, cid cid.Cid) (format.Node, error) {
+func (d ZipArchive) Get(ctx context.Context, cid cid.Cid) (ipld.Node, error) {
 	d.m.Lock()
 	defer d.m.Unlock()
 	i, ok := d.M[cid.String()]
@@ -56,40 +60,69 @@ func (d ZipArchive) Get(ctx context.Context, cid cid.Cid) (format.Node, error) {
 	return i, nil
 }
 
-func (d ZipArchive) GetMany(ctx context.Context, cids []cid.Cid) <-chan *format.NodeOption {
-	var c = make(chan *format.NodeOption)
+func (d ZipArchive) GetMany(ctx context.Context, cids []cid.Cid) <-chan *ipld.NodeOption {
+	var c = make(chan *ipld.NodeOption)
 	go func() {
 		for _, cid := range cids {
 			i, err := d.Get(ctx, cid)
-			c <- &format.NodeOption{Node: i, Err: err}
+			c <- &ipld.NodeOption{Node: i, Err: err}
 		}
 	}()
 
 	return c
 }
 
-var dump = false
+func showFirst32(b []byte) {
+	l := len(b)
+	if l == 0 {
+		return
+	}
 
-func (d ZipArchive) Add(ctx context.Context, node format.Node) error {
+	fmt.Println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+	if l > 32 {
+		fmt.Print(hex.Dump(b[:32]))
+	} else {
+		fmt.Print(hex.Dump(b))
+	}
+	fmt.Println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+}
+
+func (d ZipArchive) Add(ctx context.Context, node ipld.Node) error {
 	d.m.Lock()
 	defer d.m.Unlock()
-	stat, _ := node.Stat()
-	size, _ := node.Size()
-	fmt.Println(node.Cid().String(), stat, size, len(node.RawData()))
-	if !dump {
 
-		fmt.Println(hex.Dump(node.RawData()[len(node.RawData())-128:]))
-		fmt.Println()
-		dump = true
+	stat, _ := node.Stat()
+
+	fmt.Println(node.Cid().String(), stat)
+
+	v, ok := node.(*merkledag.ProtoNode)
+	if ok {
+		n, err := unixfs.FSNodeFromBytes(v.Data())
+		if err != nil {
+			logger.Error(err)
+		} else {
+			// fmt.Println(n)
+			if n.Data() != nil {
+				i := bytes.Index(d.raw, n.Data())
+				//fmt.Println(n.FileSize())
+				// showFirst32(n.Data())
+				if i < 0 {
+					return errors.Errorf("can't find data")
+				}
+				fmt.Println("index:", i)
+			} else {
+				fmt.Println("n without data, should save pure node data")
+			}
+		}
 	}
-	// if
-	// fmt.Println(hex.Dump(node.RawData()))
+
+	fmt.Println()
 	d.M[node.Cid().String()] = node
 
 	return nil
 }
 
-func (d ZipArchive) AddMany(ctx context.Context, nodes []format.Node) error {
+func (d ZipArchive) AddMany(ctx context.Context, nodes []ipld.Node) error {
 	for _, node := range nodes {
 		_ = d.Add(ctx, node)
 	}
@@ -113,29 +146,30 @@ func (d ZipArchive) RemoveMany(ctx context.Context, cids []cid.Cid) error {
 	return nil
 }
 
-func Build(r io.Reader) (ipld.Node, error) {
+func Build(raw []byte) (ipld.Node, error) {
 	prefix := cid.Prefix{
 		Version:  0,
 		Codec:    cid.DagProtobuf,
 		MhType:   multihash.SHA2_256,
 		MhLength: -1,
 	}
-	db, err := leveldb.OpenFile("./database/", nil)
+	db, err := leveldb.OpenFile("./.leveldb/", nil)
 	if err != nil {
 		return nil, err
 	}
 	defer db.Close()
 	dbp := helpers.DagBuilderParams{
 		Dagserv: ZipArchive{
-			M:  make(map[string]ipld.Node),
-			m:  &sync.Mutex{},
-			db: db,
+			M:   make(map[string]ipld.Node),
+			m:   &sync.Mutex{},
+			db:  db,
+			raw: raw,
 		},
 		Maxlinks:   helpers.DefaultLinksPerBlock,
 		CidBuilder: &prefix,
 	}
 
-	chunk, err := chunker.FromString(r, "default")
+	chunk, err := chunker.FromString(bytes.NewReader(raw), "default")
 	if err != nil {
 		return nil, errors.Wrapf(err, "can't create default chunker")
 	}
