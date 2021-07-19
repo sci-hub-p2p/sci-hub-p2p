@@ -16,10 +16,8 @@
 package hash
 
 import (
-	"context"
 	"io"
 	"strings"
-	"sync"
 
 	"github.com/ipfs/go-cid"
 	chunker "github.com/ipfs/go-ipfs-chunker"
@@ -28,6 +26,8 @@ import (
 	"github.com/ipfs/go-unixfs/importer/helpers"
 	"github.com/multiformats/go-multihash"
 	"github.com/pkg/errors"
+
+	"sci_hub_p2p/pkg/dagServ"
 )
 
 func Black2dBalancedSized256K(r io.Reader) ([]byte, error) {
@@ -46,69 +46,6 @@ func Cid(r io.Reader) (cid.Cid, error) {
 	}
 
 	return n.Cid(), nil
-}
-
-type DumpDagServ struct {
-	M map[string]ipld.Node
-	m *sync.Mutex
-}
-
-var errNotFound = errors.New("not found")
-
-func (d DumpDagServ) Get(ctx context.Context, cid cid.Cid) (ipld.Node, error) {
-	d.m.Lock()
-	defer d.m.Unlock()
-	i, ok := d.M[cid.String()]
-	if !ok {
-		return nil, errNotFound
-	}
-
-	return i, nil
-}
-
-func (d DumpDagServ) GetMany(ctx context.Context, cids []cid.Cid) <-chan *ipld.NodeOption {
-	var c = make(chan *ipld.NodeOption)
-	go func() {
-		for _, cid := range cids {
-			i, err := d.Get(ctx, cid)
-			c <- &ipld.NodeOption{Node: i, Err: err}
-		}
-	}()
-
-	return c
-}
-
-func (d DumpDagServ) Add(ctx context.Context, node ipld.Node) error {
-	d.m.Lock()
-	defer d.m.Unlock()
-
-	d.M[node.Cid().String()] = node
-
-	return nil
-}
-
-func (d DumpDagServ) AddMany(ctx context.Context, nodes []ipld.Node) error {
-	for _, node := range nodes {
-		_ = d.Add(ctx, node)
-	}
-
-	return nil
-}
-
-func (d DumpDagServ) Remove(ctx context.Context, cid cid.Cid) error {
-	d.m.Lock()
-	defer d.m.Unlock()
-	delete(d.M, cid.String())
-
-	return nil
-}
-
-func (d DumpDagServ) RemoveMany(ctx context.Context, cids []cid.Cid) error {
-	for _, c := range cids {
-		_ = d.Remove(ctx, c)
-	}
-
-	return nil
 }
 
 var ErrMissingHashFunc = errors.New("missing hash function")
@@ -133,13 +70,10 @@ func addFile(
 	}
 
 	dbp := helpers.DagBuilderParams{
-		Dagserv: DumpDagServ{
-			M: make(map[string]ipld.Node),
-			m: &sync.Mutex{},
-		},
+		Dagserv:    dagServ.NewMemory(),
+		RawLeaves:  true,
 		Maxlinks:   helpers.DefaultLinksPerBlock,
 		CidBuilder: &prefix,
-		RawLeaves:  rawLeaves,
 		NoCopy:     false,
 	}
 
