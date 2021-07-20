@@ -29,16 +29,16 @@ import (
 
 type Record struct {
 	InfoHash         [20]byte // This can be empty when indexing data from same torrent.
-	PieceStart       uint32   // 4 bytes
-	OffsetInPiece    int64    // should be uint32 I think
-	CompressedMethod uint16   // 2 bytes
-	CompressedSize   uint64   // 8 bytes
-	MultiHash        [34]byte // For IPFS, 2-sha256 multi hash
+	PieceStart       uint32
+	OffsetInPiece    int64
+	CompressedMethod uint16
+	CompressedSize   uint64
+	CID              [36]byte // v1 with DagProtobuf blake2b-256 size-262144 raw-leaves
 }
 
 func (r Record) String() string {
-	return fmt.Sprintf("Record{infohash=%s, compressedSize=%d, sha256=%s}",
-		hex.EncodeToString(r.InfoHash[:]), r.CompressedSize, hex.EncodeToString(r.MultiHash[:]))
+	return fmt.Sprintf("Record{infohash=%s, compressedSize=%d, CID=%s}",
+		hex.EncodeToString(r.InfoHash[:]), r.CompressedSize, hex.EncodeToString(r.CID[:]))
 }
 
 func (r Record) HexInfoHash() string {
@@ -53,7 +53,7 @@ func (r Record) DumpV0() []byte {
 	_ = binary.Write(&buf, binary.LittleEndian, r.OffsetInPiece)
 	_ = binary.Write(&buf, binary.LittleEndian, r.CompressedMethod)
 	_ = binary.Write(&buf, binary.LittleEndian, r.CompressedSize)
-	_ = binary.Write(&buf, binary.LittleEndian, r.MultiHash)
+	_ = binary.Write(&buf, binary.LittleEndian, r.CID)
 
 	return buf.Bytes()
 }
@@ -66,7 +66,7 @@ func LoadRecordV0(p []byte) *Record {
 	_ = binary.Read(buf, binary.LittleEndian, &i.OffsetInPiece)
 	_ = binary.Read(buf, binary.LittleEndian, &i.CompressedMethod)
 	_ = binary.Read(buf, binary.LittleEndian, &i.CompressedSize)
-	_ = binary.Read(buf, binary.LittleEndian, i.MultiHash[:])
+	_ = binary.Read(buf, binary.LittleEndian, i.CID[:])
 
 	return i
 }
@@ -95,7 +95,7 @@ func (r Record) Build(doi string, t *torrent.Torrent) *PerFile {
 		CompressMethod:  r.CompressedMethod,
 		CompressedSize:  int64(r.CompressedSize),
 		FileName:        f.Name(),
-		MultiHash:       base58.Encode(r.MultiHash[:]),
+		MultiHash:       base58.Encode(r.CID[:]),
 		Pieces:          makeRange(int(r.PieceStart), int(r.PieceStart)+int(int64(r.CompressedSize)/t.PieceLength)),
 		PieceStart:      int(r.PieceStart),
 		PieceEnd:        int(r.PieceStart) + int(int64(r.CompressedSize)/t.PieceLength),
