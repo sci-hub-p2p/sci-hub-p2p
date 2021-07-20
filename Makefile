@@ -47,10 +47,13 @@ dist/sci-hub_linux_64: $(GoSrc)
 dist/sci-hub_macos_64: $(GoSrc)
 	env CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o $@ $(GoBuildArgs)
 
-testdata/sm_00900000-00999999.torrent:
-	bash ./fetch.bash
+testdata/sm_00900000-00999999.torrent: ./scripts/fetch.bash
+	bash ./scripts/fetch.bash
 
-testdata: testdata/sm_00900000-00999999.torrent
+testdata: testdata/sm_00900000-00999999.torrent testdata/big_file.bin
+
+testdata/big_file.bin: ./scripts/gen_big_file.py
+	python ./scripts/gen_big_file.py
 
 test: testdata
 	go test ./...
@@ -59,6 +62,7 @@ coverage.out: testdata
 	go test -v -covermode=atomic -coverprofile=coverage.out -count=1 ./...
 
 coverage: coverage.out
+
 
 clean:
 	rm dist -rf

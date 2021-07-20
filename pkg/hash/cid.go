@@ -18,6 +18,7 @@ package hash
 import (
 	"context"
 	"io"
+	"strings"
 	"sync"
 
 	"github.com/ipfs/go-cid"
@@ -29,7 +30,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func Sha256CidBalanced(r io.Reader) ([]byte, error) {
+func Black2dBalancedSized256K(r io.Reader) ([]byte, error) {
 	var c, err = Cid(r)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't generate cid")
@@ -39,14 +40,7 @@ func Sha256CidBalanced(r io.Reader) ([]byte, error) {
 }
 
 func Cid(r io.Reader) (cid.Cid, error) {
-	var n, err = addFile(r, &AddParams{
-		Layout:    "balanced",
-		Chunker:   "default",
-		RawLeaves: false,
-		NoCopy:    false,
-		HashFun:   "sha2-256",
-		Version:   0,
-	})
+	var n, err = addFile(r, "blake2b-256", "size-262144", 1, true)
 	if err != nil {
 		return cid.Cid{}, errors.Wrap(err, "can't generate cid")
 	}
@@ -87,6 +81,7 @@ func (d DumpDagServ) GetMany(ctx context.Context, cids []cid.Cid) <-chan *ipld.N
 func (d DumpDagServ) Add(ctx context.Context, node ipld.Node) error {
 	d.m.Lock()
 	defer d.m.Unlock()
+
 	d.M[node.Cid().String()] = node
 
 	return nil
@@ -116,26 +111,24 @@ func (d DumpDagServ) RemoveMany(ctx context.Context, cids []cid.Cid) error {
 	return nil
 }
 
-// AddParams contains all of the configurable parameters needed to specify the
-// importing process of a file.
-type AddParams struct {
-	Layout    string
-	Chunker   string
-	RawLeaves bool
-	NoCopy    bool
-	HashFun   string
-	Version   int
-}
+var ErrMissingHashFunc = errors.New("missing hash function")
 
-func addFile(r io.Reader, params *AddParams) (ipld.Node, error) {
-	if params == nil {
-		params = &AddParams{}
+func addFile(
+	r io.Reader,
+	hashFun string,
+	chunkMethod string,
+	version uint64,
+	rawLeaves bool,
+) (ipld.Node, error) {
+	hashFunCode, ok := multihash.Names[strings.ToLower(hashFun)]
+	if !ok {
+		return nil, errors.Wrapf(ErrMissingHashFunc, "unrecognized hash with %s", hashFun)
 	}
 
 	prefix := cid.Prefix{
-		Version:  0,
+		Version:  version,
 		Codec:    cid.DagProtobuf,
-		MhType:   multihash.SHA2_256,
+		MhType:   hashFunCode,
 		MhLength: -1,
 	}
 
@@ -144,19 +137,19 @@ func addFile(r io.Reader, params *AddParams) (ipld.Node, error) {
 			M: make(map[string]ipld.Node),
 			m: &sync.Mutex{},
 		},
-		RawLeaves:  params.RawLeaves,
 		Maxlinks:   helpers.DefaultLinksPerBlock,
-		NoCopy:     params.NoCopy,
 		CidBuilder: &prefix,
+		RawLeaves:  rawLeaves,
+		NoCopy:     false,
 	}
 
-	chunk, err := chunker.FromString(r, params.Chunker)
+	chunk, err := chunker.FromString(r, chunkMethod)
 	if err != nil {
-		return nil, errors.Wrapf(err, "can't create chunker %s", params.Chunker)
+		return nil, errors.Wrapf(err, "can't create chunker %s", chunkMethod)
 	}
 	dbh, err := dbp.New(chunk)
 	if err != nil {
-		return nil, errors.Wrap(err, "can't create dagbuilder from chunker")
+		return nil, errors.Wrap(err, "can't create DAG builder from chunker")
 	}
 
 	n, err := balanced.Layout(dbh)

@@ -17,6 +17,7 @@ package hash_test
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"testing"
 
@@ -25,19 +26,41 @@ import (
 
 	_ "sci_hub_p2p/internal/testing"
 	"sci_hub_p2p/pkg/hash"
+	"sci_hub_p2p/pkg/indexes"
 )
 
-func TestSha256CidBalanced(t *testing.T) {
+func TestCID(t *testing.T) {
 	t.Parallel()
-
-	c, err := cid.Parse("QmVBAYRwHA5zCbteHvY7psWdgVVAMcPkuYS5hAWFPvVXiS")
+	e, err := cid.Parse("bafykbzaceavd6aaauynuqgkkrg6lapmno5crbsyinmp3um5sn3daztzsghvl2")
 	assert.Nil(t, err)
 
-	b, err := os.ReadFile("./testdata/sm_00900000-00999999.torrent")
+	raw, err := os.ReadFile("./testdata/big_file.bin")
 	assert.Nil(t, err)
 
-	h, err := hash.Sha256CidBalanced(bytes.NewBuffer(b))
+	a, err := hash.Cid(bytes.NewBuffer(raw))
+	assert.Nil(t, err)
+	assert.EqualValues(t, e.Hash(), a.Hash(), fmt.Sprintln(e.Prefix(), a.Prefix()))
+}
+
+func TestCIDSaved(t *testing.T) {
+	t.Parallel()
+	var r = indexes.Record{
+		InfoHash:         [20]byte{},
+		PieceStart:       0,
+		OffsetInPiece:    0,
+		CompressedMethod: 0,
+		CompressedSize:   0,
+		MultiHash:        [36]byte{},
+	}
+
+	raw, err := os.ReadFile("./testdata/big_file.bin")
 	assert.Nil(t, err)
 
-	assert.EqualValues(t, c.Hash(), h)
+	a, err := hash.Black2dBalancedSized256K(bytes.NewBuffer(raw))
+	assert.Nil(t, err)
+	copy(r.MultiHash[:], a)
+
+	n := indexes.LoadRecordV0(r.DumpV0())
+
+	assert.EqualValues(t, a, n.MultiHash[:], "cid hash should be the save after dump and load")
 }

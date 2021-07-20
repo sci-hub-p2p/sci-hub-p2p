@@ -33,7 +33,7 @@ type Record struct {
 	OffsetInPiece    int64    // should be uint32 I think
 	CompressedMethod uint16   // 2 bytes
 	CompressedSize   uint64   // 8 bytes
-	MultiHash        [34]byte // For IPFS, 2-sha256 multi hash
+	MultiHash        [36]byte // For IPFS, 2-sha256 multi hash
 }
 
 func (r Record) String() string {
