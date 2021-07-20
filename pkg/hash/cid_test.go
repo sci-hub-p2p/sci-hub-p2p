@@ -50,7 +50,7 @@ func TestCIDSaved(t *testing.T) {
 		OffsetInPiece:    0,
 		CompressedMethod: 0,
 		CompressedSize:   0,
-		MultiHash:        [36]byte{},
+		CID:              [36]byte{},
 	}
 
 	raw, err := os.ReadFile("./testdata/big_file.bin")
@@ -58,9 +58,9 @@ func TestCIDSaved(t *testing.T) {
 
 	a, err := hash.Black2dBalancedSized256K(bytes.NewBuffer(raw))
 	assert.Nil(t, err)
-	copy(r.MultiHash[:], a)
+	copy(r.CID[:], a)
 
 	n := indexes.LoadRecordV0(r.DumpV0())
 
-	assert.EqualValues(t, a, n.MultiHash[:], "cid hash should be the save after dump and load")
+	assert.EqualValues(t, a, n.CID[:], "cid hash should be the save after dump and load")
 }
