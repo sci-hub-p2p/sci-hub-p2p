@@ -20,10 +20,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"io/fs"
-	"os"
 	"sync"
-	"time"
 
 	"github.com/ipfs/go-cid"
 	chunker "github.com/ipfs/go-ipfs-chunker"
@@ -34,7 +31,7 @@ import (
 	"github.com/ipfs/go-unixfs/importer/helpers"
 	"github.com/multiformats/go-multihash"
 	"github.com/pkg/errors"
-	"github.com/syndtr/goleveldb/leveldb"
+	"go.etcd.io/bbolt"
 
 	"sci_hub_p2p/pkg/constants"
 	"sci_hub_p2p/pkg/logger"
@@ -52,7 +49,7 @@ var _ ipld.DAGService = ZipArchive{}
 type ZipArchive struct {
 	M          map[string]ipld.Node
 	m          *sync.Mutex
-	db         *leveldb.DB
+	db         *bbolt.DB
 	raw        []byte // raw content, determine block offset
 	baseOffset uint64
 }
@@ -170,7 +167,11 @@ func Build(raw []byte, baseOffset uint64) (ipld.Node, error) {
 		MhType:   multihash.SHA2_256,
 		MhLength: -1,
 	}
-	db, err := leveldb.OpenFile("./.leveldb/", nil)
+	db, err := bbolt.Open("../../test.bolt", constants.DefaultFilePerm, &bbolt.Options{
+		Timeout:         1,
+		FreelistType:    bbolt.FreelistMapType,
+		InitialMmapSize: 60 * 1024 * 1024,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -210,63 +211,4 @@ func Build(raw []byte, baseOffset uint64) (ipld.Node, error) {
 	}
 
 	return n, nil
-}
-
-type CompressedFile struct {
-	reader             *bytes.Reader
-	info               CompressedFileInfo
-	zipPath            string
-	compressedFilePath string
-	size               int64
-}
-
-func (c CompressedFile) Read(p []byte) (n int, err error) {
-	return c.reader.Read(p)
-}
-
-func (c CompressedFile) Close() error {
-	c.reader = nil
-	return nil
-}
-
-func (c CompressedFile) Size() (int64, error) {
-	return c.size, nil
-}
-
-func (c CompressedFile) AbsPath() string {
-	return c.zipPath
-}
-
-func (c CompressedFile) Stat() os.FileInfo {
-	return CompressedFileInfo{c.zipPath, c.compressedFilePath, c.size}
-}
-
-type CompressedFileInfo struct {
-	zipPath            string
-	compressedFilePath string
-	size               int64
-}
-
-func (c CompressedFileInfo) Name() string {
-	return c.compressedFilePath
-}
-
-func (c CompressedFileInfo) Size() int64 {
-	return c.size
-}
-
-func (c CompressedFileInfo) Mode() fs.FileMode {
-	return constants.DefaultFilePerm
-}
-
-func (c CompressedFileInfo) ModTime() time.Time {
-	return time.Now()
-}
-
-func (c CompressedFileInfo) IsDir() bool {
-	return false
-}
-
-func (c CompressedFileInfo) Sys() interface{} {
-	return nil
 }

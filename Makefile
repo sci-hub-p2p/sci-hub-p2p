@@ -16,6 +16,7 @@ Others Targets:
 
   generate: generated files like protobuf.
   clean: cleanup all auxiliary files.
+  install: install protoc-go-gen
 
 endef
 export helpMessage
@@ -25,6 +26,7 @@ help:
 
 include .mk/build.mk
 include .mk/test.mk
+include .mk/dev.mk
 
 clean::
 	rm -rf ./out
