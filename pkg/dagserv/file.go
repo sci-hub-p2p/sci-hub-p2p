@@ -16,7 +16,6 @@
 package dagserv
 
 import (
-	"bytes"
 	"io"
 	"io/fs"
 	"os"
@@ -34,7 +33,7 @@ var _ interface {
 } = CompressedFile{}
 
 type CompressedFile struct {
-	reader             *bytes.Reader
+	reader             io.Reader
 	zipPath            string
 	compressedFilePath string
 	size               int64
