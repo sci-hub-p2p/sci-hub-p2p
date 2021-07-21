@@ -22,7 +22,8 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/mr-tron/base58"
+	"github.com/ipfs/go-cid"
+	"github.com/pkg/errors"
 
 	"sci_hub_p2p/internal/torrent"
 )
@@ -33,7 +34,7 @@ type Record struct {
 	OffsetInPiece    int64
 	CompressedMethod uint16
 	CompressedSize   uint64
-	CID              [36]byte // v1 with DagProtobuf blake2b-256 size-262144 raw-leaves
+	CID              [38]byte // v1 with DagProtobuf blake2b-256 size-262144 raw-leaves
 }
 
 func (r Record) String() string {
@@ -71,7 +72,7 @@ func LoadRecordV0(p []byte) *Record {
 	return i
 }
 
-func (r Record) Build(doi string, t *torrent.Torrent) *PerFile {
+func (r Record) Build(doi string, t *torrent.Torrent) (*PerFile, error) {
 	var pieceOffset = t.PieceLength * int64(r.PieceStart)
 	var currentZipOffset int64
 	var fileStart int64 = -1
@@ -90,12 +91,17 @@ func (r Record) Build(doi string, t *torrent.Torrent) *PerFile {
 		currentZipOffset += file.Length
 	}
 
+	_, c, err := cid.CidFromBytes(r.CID[:])
+	if err != nil {
+		return nil, errors.Wrap(err, "can't parse CID")
+	}
+
 	return &PerFile{
 		Doi:             doi,
 		CompressMethod:  r.CompressedMethod,
 		CompressedSize:  int64(r.CompressedSize),
 		FileName:        f.Name(),
-		MultiHash:       base58.Encode(r.CID[:]),
+		CID:             c,
 		Pieces:          makeRange(int(r.PieceStart), int(r.PieceStart)+int(int64(r.CompressedSize)/t.PieceLength)),
 		PieceStart:      int(r.PieceStart),
 		PieceEnd:        int(r.PieceStart) + int(int64(r.CompressedSize)/t.PieceLength),
@@ -105,7 +111,7 @@ func (r Record) Build(doi string, t *torrent.Torrent) *PerFile {
 		FileIndex:       fileIndex,
 		File:            f.Copy(),
 		Torrent:         t.Copy(),
-	}
+	}, nil
 }
 
 func makeRange(min, max int) []int {

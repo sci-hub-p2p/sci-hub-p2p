@@ -18,6 +18,8 @@ package indexes
 import (
 	"fmt"
 
+	"github.com/ipfs/go-cid"
+
 	"sci_hub_p2p/internal/torrent"
 )
 
@@ -27,7 +29,7 @@ type PerFile struct {
 	FileName        string // duplicated with doi maybe
 	CompressMethod  uint16 // seems that almost all files are just store in zip without compress.
 	CompressedSize  int64
-	MultiHash       string
+	CID             cid.Cid
 	OffsetFromZip   int64
 	OffsetFromPiece int64
 	FileIndex       int

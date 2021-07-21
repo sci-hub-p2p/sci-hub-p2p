@@ -36,7 +36,7 @@ func Black2dBalancedSized256K(r io.Reader) ([]byte, error) {
 		return nil, errors.Wrap(err, "can't generate cid")
 	}
 
-	return c.Hash(), nil
+	return c.Bytes(), nil
 }
 
 func Cid(r io.Reader) (cid.Cid, error) {

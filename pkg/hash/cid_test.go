@@ -50,7 +50,7 @@ func TestCIDSaved(t *testing.T) {
 		OffsetInPiece:    0,
 		CompressedMethod: 0,
 		CompressedSize:   0,
-		CID:              [36]byte{},
+		CID:              [38]byte{},
 	}
 
 	raw, err := os.ReadFile("./testdata/big_file.bin")
