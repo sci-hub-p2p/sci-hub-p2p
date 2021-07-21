@@ -45,5 +45,6 @@ jobs:
         env:
           GORACE: halt_on_error=1
 
-      - run: bash <(curl -s https://codecov.io/bash) -F ${{ runner.os }}
+      - run: <(curl -s https://codecov.io/bash) -F ${{ runner.os }}
+        name: Codecov
         shell: bash
