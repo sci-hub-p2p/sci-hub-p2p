@@ -32,7 +32,7 @@ jobs:
       - uses: actions/cache@v2
         with:
           path: |
-            %LocalAppData%\go-build
+            ${{ env.LocalAppData }}/go-build
             ~/Library/Caches/go-build
             ~/.cache/go-build
             ~/go/pkg/mod
