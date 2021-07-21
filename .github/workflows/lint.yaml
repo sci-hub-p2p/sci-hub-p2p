@@ -22,3 +22,28 @@ jobs:
 
       - name: Run linters
         uses: golangci/golangci-lint-action@v2
+
+  generate:
+    name: Check Generate Code Fresh
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16.x
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          version: "3.x"
+
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Install protoc-gen-go
+        run: make install
+
+      - name: Generate Code
+        run: make generate
+
+      - run: git diff --exit-code
