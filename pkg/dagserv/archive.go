@@ -96,7 +96,7 @@ func (d ZipArchive) Add(ctx context.Context, node ipld.Node) error {
 		}
 		// fmt.Println(n)
 		if n.Data() != nil {
-			fmt.Println("fsnode with data")
+			fmt.Println("ipld.Node with data")
 		} else {
 			fmt.Println("n without data, should save pure node data")
 		}
