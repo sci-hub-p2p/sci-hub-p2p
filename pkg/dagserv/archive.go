@@ -165,6 +165,9 @@ func Build(raw []byte) (ipld.Node, error) {
 			db:  db,
 			raw: raw,
 		},
+		NoCopy:    true,
+		RawLeaves: true,
+		// TODO: NoCopy require a `FileInfo` on chunker
 		Maxlinks:   helpers.DefaultLinksPerBlock,
 		CidBuilder: &prefix,
 	}

@@ -18,7 +18,7 @@ import (
 
 var log = logging.Logger("blockstore")
 
-// BlockPrefix namespaces blockstore datastores
+// BlockPrefix namespaces blockstore datastores.
 var BlockPrefix = ds.NewKey("blocks")
 
 // ErrHashMismatch is an error returned when the hash of a block
@@ -74,13 +74,13 @@ type Viewer interface {
 // garbage-collection operations.
 type GCLocker interface {
 	// GCLock locks the blockstore for garbage collection. No operations
-	// that expect to finish with a pin should ocurr simultaneously.
+	// that expect to finish with a pin should occur simultaneously.
 	// Reading during GC is safe, and requires no lock.
 	GCLock() Unlocker
 
 	// PinLock locks the blockstore for sequences of puts expected to finish
 	// with a pin (before GC). Multiple put->pin sequences can write through
-	// at the same time, but no GC should happen simulatenously.
+	// at the same time, but no GC should happen simultaneously.
 	// Reading during Pinning is safe, and requires no lock.
 	PinLock() Unlocker
 
@@ -208,7 +208,6 @@ func (bs *blockstore) DeleteBlock(k cid.Cid) error {
 //
 // AllKeysChan respects context.
 func (bs *blockstore) AllKeysChan(ctx context.Context) (<-chan cid.Cid, error) {
-
 	// KeysOnly, because that would be _a lot_ of data.
 	q := dsq.Query{KeysOnly: true}
 	res, err := bs.datastore.Query(q)
