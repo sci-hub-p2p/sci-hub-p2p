@@ -9,27 +9,6 @@ on:
       - master
 
 jobs:
-  generate:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Install Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.16.x
-
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: '3.x'
-
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - run: make install
-      - run: make generate -B
-
-      - run: git diff --exit-code
-
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -37,6 +16,7 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: 1.16.x
+
       - name: Checkout code
         uses: actions/checkout@v2
 
