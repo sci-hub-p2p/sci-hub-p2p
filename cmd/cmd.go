@@ -73,7 +73,6 @@ func Execute() {
 	rootCmd.AddCommand(indexes.Cmd, torrent.Cmd, paper.Cmd, debugCmd)
 
 	rootCmd.PersistentFlags().BoolVar(&flag.Debug, "debug", false, "enable Debug")
-
 	var defaultParallel = 3
 
 	rootCmd.PersistentFlags().IntVarP(&flag.Parallel, "parallel", "n",
