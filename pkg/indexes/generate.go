@@ -107,7 +107,7 @@ func zipFileToRecord(file *zip.File, currentZipOffset int64, pieceLength int64) 
 			InfoHash:         [20]byte{},
 			CompressedMethod: file.Method,
 			CompressedSize:   file.CompressedSize64,
-			CID:              [36]byte{},
+			CID:              [38]byte{},
 		},
 	}
 
@@ -125,11 +125,11 @@ func zipFileToRecord(file *zip.File, currentZipOffset int64, pieceLength int64) 
 	}
 	defer f.Close()
 
-	sha256, err := hash.Black2dBalancedSized256K(f)
+	cid, err := hash.Black2dBalancedSized256K(f)
 	if err != nil {
 		return nil, errors.Wrapf(err, "can't decompress file %s", file.Name)
 	}
-	copy(i.CID[:], sha256)
+	copy(i.CID[:], cid)
 
 	return i, nil
 }

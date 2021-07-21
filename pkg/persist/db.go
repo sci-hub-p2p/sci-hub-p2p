@@ -79,6 +79,7 @@ func GetPerFileAndRawTorrent(b *bbolt.Bucket, doi string) (*indexes.PerFile, []b
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "can't parse torrent")
 	}
+	p, err := record.Build(doi, t)
 
-	return record.Build(doi, t), r, nil
+	return p, r, errors.Wrapf(err, "can't contract PerFile from record")
 }

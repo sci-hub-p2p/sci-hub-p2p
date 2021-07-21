@@ -22,7 +22,6 @@ require (
 	github.com/jackpal/bencode-go v1.0.0
 	github.com/libp2p/go-libp2p v0.14.2 // indirect
 	github.com/libp2p/go-libp2p-record v0.1.3 // indirect
-	github.com/mr-tron/base58 v1.2.0
 	github.com/multiformats/go-multiaddr v0.3.2 // indirect
 	github.com/multiformats/go-multihash v0.0.15
 	github.com/pkg/errors v0.9.1
