@@ -17,6 +17,7 @@ package dagserv
 
 import (
 	"bytes"
+	"io"
 	"io/fs"
 	"os"
 	"time"
@@ -38,9 +39,10 @@ type CompressedFile struct {
 
 func (c CompressedFile) Read(p []byte) (int, error) {
 	n, err := c.reader.Read(p)
-	// if errors.Is(err, io.EOF) {
-	//	return n, io.EOF
-	// }
+	if err == io.EOF {
+		return n, io.EOF
+	}
+
 	return n, errors.Wrapf(err, "can't read from reader %s", c.zipPath)
 }
 
