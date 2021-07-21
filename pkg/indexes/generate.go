@@ -134,7 +134,7 @@ func zipFileToRecord(file *zip.File, currentZipOffset int64, pieceLength int64) 
 	return i, nil
 }
 
-func Generate(dataDir, outDir string, t *torrent.Torrent) error {
+func Generate(dataDir, outDir string, t *torrent.Torrent, disableProgress bool) error {
 	exist, err := utils.DirExist(filepath.Join(dataDir, t.Name))
 	if err != nil {
 		return errors.Wrap(err, "can't find torrent data at "+filepath.Join(dataDir, t.Name))
@@ -157,7 +157,7 @@ func Generate(dataDir, outDir string, t *torrent.Torrent) error {
 		return errors.Wrapf(err, "can't open %s to write indexes", out)
 	}
 	defer db.Close()
-	go collectResult(c, outDir, t, done, db)
+	go collectResult(c, outDir, t, done, db, disableProgress)
 
 	for i := 0; i < flag.Parallel; i++ {
 		go func(index int, t *torrent.Torrent) {
@@ -197,8 +197,18 @@ func Generate(dataDir, outDir string, t *torrent.Torrent) error {
 	return nil
 }
 
-func collectResult(c chan *PDFFileOffSet, outDir string, t *torrent.Torrent, done chan int, db *bbolt.DB) {
-	bar := pb.StartNew(filesPerTorrent)
+func collectResult(
+	c chan *PDFFileOffSet,
+	outDir string,
+	t *torrent.Torrent,
+	done chan int,
+	db *bbolt.DB,
+	disablePB bool,
+) {
+	bar := pb.New(filesPerTorrent)
+	if !disablePB {
+		bar.Start()
+	}
 	err := db.Batch(func(tx *bbolt.Tx) error {
 		b, err := tx.CreateBucketIfNotExists(constants.PaperBucket())
 		if err != nil {

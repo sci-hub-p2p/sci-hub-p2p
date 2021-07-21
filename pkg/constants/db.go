@@ -21,4 +21,5 @@ func PaperBucket() []byte { return []byte("paper-v0") }
 
 func TorrentBucket() []byte { return []byte("torrent-v0") }
 
-const DefaultFilePerm os.FileMode = 0644
+const DefaultFilePerm os.FileMode = 0640
+const DefaultDirPerm os.FileMode = os.ModeDir | DefaultFilePerm

@@ -23,6 +23,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
+	"sci_hub_p2p/cmd/flag"
 	"sci_hub_p2p/internal/torrent"
 	"sci_hub_p2p/internal/utils"
 	"sci_hub_p2p/pkg/constants"
@@ -55,7 +56,7 @@ var genCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		
+
 		s, err := os.Stat(out)
 		if err != nil {
 			if os.IsNotExist(err) {
@@ -70,8 +71,8 @@ var genCmd = &cobra.Command{
 			}
 		}
 
-		fmt.Println("start generate indexes")
-		err = indexes.Generate(dataDir, out, t)
+		fmt.Println("start generate indexes for torrent", t.Name)
+		err = indexes.Generate(dataDir, out, t, flag.DisableProgressBar)
 
 		if err != nil {
 			return errors.Wrapf(err, "can't generate indexes from torrent %s", t.Name)
@@ -96,7 +97,9 @@ func init() {
 	genCmd.Flags().StringVarP(&torrentPath, "torrent", "t", "",
 		"TorrentPath path of this data file")
 	genCmd.Flags().StringVarP(&out, "out", "o", "./out/", "Output directory")
-
+	genCmd.Flags().BoolVar(
+		&flag.DisableProgressBar, "disable-progress", false, "disable progress bar if you don't like it",
+	)
 	if err := utils.MarkFlagsRequired(genCmd, "data", "torrent"); err != nil {
 		log.Fatalln(err)
 	}

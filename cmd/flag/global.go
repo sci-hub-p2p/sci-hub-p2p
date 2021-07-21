@@ -16,6 +16,7 @@
 package flag
 
 var (
-	Parallel int
-	Debug    bool
+	Parallel           int
+	Debug              bool
+	DisableProgressBar bool
 )
