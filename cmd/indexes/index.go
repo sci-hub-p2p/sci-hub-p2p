@@ -26,6 +26,7 @@ import (
 	"sci_hub_p2p/cmd/flag"
 	"sci_hub_p2p/internal/torrent"
 	"sci_hub_p2p/internal/utils"
+	"sci_hub_p2p/pkg/constants"
 	"sci_hub_p2p/pkg/indexes"
 	"sci_hub_p2p/pkg/logger"
 )
@@ -59,7 +60,7 @@ var genCmd = &cobra.Command{
 		s, err := os.Stat(out)
 		if err != nil {
 			if os.IsNotExist(err) {
-				err = os.MkdirAll(out, os.ModeDir)
+				err = os.MkdirAll(out, constants.DefaultDirPerm)
 				if err != nil {
 					return errors.Wrapf(err, "Can't create output dir %s", out)
 				}

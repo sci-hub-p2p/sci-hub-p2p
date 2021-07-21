@@ -43,7 +43,7 @@ var fetchCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		err = os.WriteFile(out, b, constants.DefaultFileMode)
+		err = os.WriteFile(out, b, constants.DefaultFilePerm)
 
 		return err
 	},
