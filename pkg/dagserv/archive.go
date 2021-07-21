@@ -18,7 +18,6 @@ package dagserv
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
 	"fmt"
 	"sync"
 
@@ -28,6 +27,7 @@ import (
 	ipld "github.com/ipfs/go-ipld-format"
 	"github.com/ipfs/go-merkledag"
 	"github.com/ipfs/go-unixfs"
+	"github.com/ipfs/go-unixfs/importer/balanced"
 	"github.com/ipfs/go-unixfs/importer/helpers"
 	"github.com/multiformats/go-multihash"
 	"github.com/pkg/errors"
@@ -77,21 +77,6 @@ func (d ZipArchive) GetMany(ctx context.Context, cids []cid.Cid) <-chan *ipld.No
 	return c
 }
 
-func showFirst32(b []byte) {
-	l := len(b)
-	if l == 0 {
-		return
-	}
-
-	fmt.Println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-	if l > 32 {
-		fmt.Print(hex.Dump(b[:32]))
-	} else {
-		fmt.Print(hex.Dump(b))
-	}
-	fmt.Println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-}
-
 func (d ZipArchive) Add(ctx context.Context, node ipld.Node) error {
 	d.m.Lock()
 	defer d.m.Unlock()
@@ -106,28 +91,31 @@ func (d ZipArchive) Add(ctx context.Context, node ipld.Node) error {
 		n, err := unixfs.FSNodeFromBytes(v.Data())
 		if err != nil {
 			logger.Error(err)
+
+			return nil
+		}
+		// fmt.Println(n)
+		if n.Data() != nil {
+			fmt.Println("fsnode with data")
 		} else {
-			// fmt.Println(n)
-			if n.Data() != nil {
-				fmt.Println("fsnode with data")
-			} else {
-				fmt.Println("n without data, should save pure node data")
-			}
+			fmt.Println("n without data, should save pure node data")
 		}
-	} else {
-		fmt.Println("not ProtoNode")
-		// is pure data node
-		if v, ok := node.(*merkledag.RawNode); ok {
-			fmt.Println("Node: merkledag.RawNode")
-			fmt.Println(v.Size())
-		}
-		if v, ok := node.(*posinfo.FilestoreNode); ok {
-			fmt.Println("Node: posinfo.FilestoreNode")
-			fmt.Println(v.PosInfo.FullPath)
-			blockOffsetOfZip := v.PosInfo.Offset + d.baseOffset
-			length, _ := v.Size()
-			fmt.Println("this block is", blockOffsetOfZip, length)
-		}
+
+		return nil
+	}
+
+	fmt.Println("not ProtoNode")
+	// is pure data node
+	if v, ok := node.(*merkledag.RawNode); ok {
+		fmt.Println("Node: merkledag.RawNode")
+		fmt.Println(v.Size())
+	}
+	if v, ok := node.(*posinfo.FilestoreNode); ok {
+		fmt.Println("Node: posinfo.FilestoreNode")
+		fmt.Println(v.PosInfo.FullPath)
+		blockOffsetOfZip := v.PosInfo.Offset + d.baseOffset
+		length, _ := v.Size()
+		fmt.Println("this block is", blockOffsetOfZip, length)
 	}
 
 	fmt.Println()
@@ -167,13 +155,12 @@ func Build(raw []byte, baseOffset uint64) (ipld.Node, error) {
 		MhType:   multihash.SHA2_256,
 		MhLength: -1,
 	}
-	db, err := bbolt.Open("../../test.bolt", constants.DefaultFilePerm, &bbolt.Options{
-		Timeout:         1,
-		FreelistType:    bbolt.FreelistMapType,
-		InitialMmapSize: 60 * 1024 * 1024,
+	dbPath := "../../test.bolt"
+	db, err := bbolt.Open(dbPath, constants.DefaultFilePerm, &bbolt.Options{
+		FreelistType: bbolt.FreelistMapType,
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "can't open database %s", dbPath)
 	}
 	defer db.Close()
 	dbp := helpers.DagBuilderParams{
@@ -184,12 +171,12 @@ func Build(raw []byte, baseOffset uint64) (ipld.Node, error) {
 			raw:        raw,
 			baseOffset: baseOffset,
 		},
-		NoCopy:    true,
-		RawLeaves: true,
-		// TODO: NoCopy require a `FileInfo` on chunker
+		NoCopy:     true,
+		RawLeaves:  true,
 		Maxlinks:   helpers.DefaultLinksPerBlock,
 		CidBuilder: &prefix,
 	}
+	// NoCopy require a `FileInfo` on chunker
 	f := CompressedFile{
 		reader:             bytes.NewReader(raw),
 		zipPath:            "path/to/archive.zip",
@@ -205,7 +192,7 @@ func Build(raw []byte, baseOffset uint64) (ipld.Node, error) {
 		return nil, errors.Wrap(err, "can't create dag builder from chunker")
 	}
 	fmt.Println("start layout")
-	n, err := BalanceLayout(dbh)
+	n, err := balanced.Layout(dbh)
 	if err != nil {
 		return nil, errors.Wrapf(err, "can't layout all chunk")
 	}

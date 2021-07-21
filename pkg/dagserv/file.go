@@ -21,23 +21,27 @@ import (
 	"os"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"sci_hub_p2p/pkg/constants"
 )
 
 type CompressedFile struct {
 	reader             *bytes.Reader
-	info               CompressedFileInfo
 	zipPath            string
 	compressedFilePath string
 	size               int64
 }
 
-func (c CompressedFile) Read(p []byte) (n int, err error) {
-	return c.reader.Read(p)
+func (c CompressedFile) Read(p []byte) (int, error) {
+	n, err := c.reader.Read(p)
+
+	return n, errors.Wrapf(err, "can't read from reader %s", c.zipPath)
 }
 
-func (c CompressedFile) Close() error {
+func (c *CompressedFile) Close() error {
 	c.reader = nil
+
 	return nil
 }
 
