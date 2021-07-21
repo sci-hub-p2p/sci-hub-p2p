@@ -12,10 +12,3 @@ enabled = true
 
 [analyzers.meta]
 import_root = "sci_hub_p2p"
-
-[[analyzers]]
-name = "test-coverage"
-enabled = true
-
-[analyzers.meta]
-go = "coverage.out"

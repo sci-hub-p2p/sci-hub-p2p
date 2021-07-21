@@ -129,7 +129,7 @@ linters-settings:
     # Select the Go version to target. The default is '1.13'.
     go: "1.16"
     # https://staticcheck.io/docs/options#checks
-    checks: [ "all" ]
+    checks: ["all"]
 
   importas:
     no-unaliased: true
@@ -138,7 +138,6 @@ linters-settings:
         pkg: "github.com/ipfs/go-ipld-format"
       - alias: chunker
         pkg: "github.com/ipfs/go-ipfs-chunker"
-
 
   lll:
     # max line length, lines longer will be reported. Default is 120.
@@ -161,7 +160,7 @@ linters-settings:
     # Select the Go version to target. The default is '1.13'.
     go: "1.16"
     # https://staticcheck.io/docs/options#checks
-    checks: [ "all" ]
+    checks: ["all"]
 
   stylecheck:
     # Select the Go version to target. The default is '1.13'.
@@ -218,13 +217,13 @@ issues:
   exclude-rules:
     # Disable linters that are annoying in tests.
     - path: 'cmd[/\\].*'
-      linters: [ gochecknoglobals, gochecknoinits, goerr113, wrapcheck ]
+      linters: [gochecknoglobals, gochecknoinits, goerr113, wrapcheck]
 
     - path: 'internal[/\\]testing[/\\].*'
-      linters: [ dogsled, gochecknoinits ]
+      linters: [dogsled, gochecknoinits]
 
     - path: 'pkg[/\\]variable[/\\].*'
-      linters: [ gochecknoglobals ]
+      linters: [gochecknoglobals]
 
     - path: 'internal[/\\]utils[/\\]file\.go'
-      linters: [ wrapcheck ]
+      linters: [wrapcheck]
