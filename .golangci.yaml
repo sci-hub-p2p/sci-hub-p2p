@@ -219,9 +219,6 @@ issues:
     - path: 'cmd[/\\].*'
       linters: [gochecknoglobals, gochecknoinits, goerr113, wrapcheck]
 
-    - path: 'internal[/\\]testing[/\\].*'
-      linters: [dogsled, gochecknoinits]
-
     - path: 'pkg[/\\]variable[/\\].*'
       linters: [gochecknoglobals]
 
