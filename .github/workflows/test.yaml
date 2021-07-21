@@ -40,6 +40,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
+      - name: Generate Test Data
+        run: make testdata
+
       - name: Run tests
         run: make coverage
         env:
