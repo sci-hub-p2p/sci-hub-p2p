@@ -21,10 +21,13 @@ import (
 	"os"
 	"time"
 
+	files "github.com/ipfs/go-ipfs-files"
 	"github.com/pkg/errors"
 
 	"sci_hub_p2p/pkg/constants"
 )
+
+var _ files.FileInfo = CompressedFile{}
 
 type CompressedFile struct {
 	reader             *bytes.Reader
@@ -35,13 +38,13 @@ type CompressedFile struct {
 
 func (c CompressedFile) Read(p []byte) (int, error) {
 	n, err := c.reader.Read(p)
-
+	// if errors.Is(err, io.EOF) {
+	//	return n, io.EOF
+	// }
 	return n, errors.Wrapf(err, "can't read from reader %s", c.zipPath)
 }
 
-func (c *CompressedFile) Close() error {
-	c.reader = nil
-
+func (c CompressedFile) Close() error {
 	return nil
 }
 

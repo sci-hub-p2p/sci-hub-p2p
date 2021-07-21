@@ -150,7 +150,7 @@ func (d ZipArchive) RemoveMany(ctx context.Context, cids []cid.Cid) error {
 
 func Build(raw []byte, baseOffset uint64) (ipld.Node, error) {
 	prefix := cid.Prefix{
-		Version:  0,
+		Version:  1,
 		Codec:    cid.DagProtobuf,
 		MhType:   multihash.SHA2_256,
 		MhLength: -1,
@@ -183,6 +183,7 @@ func Build(raw []byte, baseOffset uint64) (ipld.Node, error) {
 		compressedFilePath: "path/in/zip/article.pdf",
 		size:               int64(len(raw)),
 	}
+
 	chunk, err := chunker.FromString(f, "default")
 	if err != nil {
 		return nil, errors.Wrapf(err, "can't create default chunker")

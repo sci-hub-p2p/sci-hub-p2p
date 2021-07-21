@@ -11,8 +11,8 @@ filepath = "./testdata/big_file.bin"
 expected_sha256 = "a5e4d5b214589333198cd124aef844624f3c3ec4d29f0b1646cda2ff8c08d530"
 generator = random.Random("seed")
 
+basic = bytes(generator.getrandbits(8) for _ in range(filesize))
 with open(filepath, "wb") as f:
-    basic = bytes(generator.getrandbits(8) for _ in range(filesize))
     f.write(basic)
     f.truncate()
 

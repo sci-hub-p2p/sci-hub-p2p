@@ -26,7 +26,7 @@ import (
 )
 
 func TestZipArchive(t *testing.T) {
-	raw, err := os.ReadFile("../../testdata/big_file.bin")
+	raw, err := os.ReadFile("./../../testdata/big_file.bin")
 	assert.Nil(t, err)
 	t.Parallel()
 
