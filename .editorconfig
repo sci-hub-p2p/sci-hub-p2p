@@ -7,3 +7,8 @@ root = true
 [*]
 end_of_line = lf
 insert_final_newline = true
+
+[*.py]
+# for isort
+profile = black
+length_sort = true

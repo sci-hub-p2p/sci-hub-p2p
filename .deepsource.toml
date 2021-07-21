@@ -1,0 +1,14 @@
+version = 1
+transformers = [
+    { name = "black", enabled = true },
+    { name = 'isort', enabled = true },
+    { name = 'prettier', enabled = true },
+]
+exclude_patterns = ["license.md"]
+
+[[analyzers]]
+name = "go"
+enabled = true
+
+[analyzers.meta]
+import_root = "sci_hub_p2p"
