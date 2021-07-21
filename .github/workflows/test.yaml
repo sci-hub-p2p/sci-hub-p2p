@@ -32,14 +32,14 @@ jobs:
       - uses: actions/cache@v2
         with:
           path: |
-            ${{ env.LocalAppData }}/go-build
+            ${{ env.LOCALAPPDATA }}/go-build
             ~/Library/Caches/go-build
             ~/.cache/go-build
             ~/go/pkg/mod
           key: ${{ runner.os }}-go-1-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-
+      - run: env
       - name: Generate Test Data
         run: make testdata
 
