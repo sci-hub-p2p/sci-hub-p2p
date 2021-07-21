@@ -37,7 +37,7 @@ import (
 )
 
 func Fetch(doi string) ([]byte, error) {
-	db, err := bbolt.Open(variable.GetPaperBoltPath(), constants.DefaultFileMode, bbolt.DefaultOptions)
+	db, err := bbolt.Open(variable.GetPaperBoltPath(), constants.DefaultFilePerm, bbolt.DefaultOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't open indexes database file")
 	}

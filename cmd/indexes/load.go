@@ -49,7 +49,7 @@ var loadCmd = &cobra.Command{
 				return errors.Wrapf(err, "can't search torrents with glob '%s'", glob)
 			}
 		}
-		db, err := bbolt.Open(variable.GetPaperBoltPath(), constants.DefaultFileMode, bbolt.DefaultOptions)
+		db, err := bbolt.Open(variable.GetPaperBoltPath(), constants.DefaultFilePerm, bbolt.DefaultOptions)
 		if err != nil {
 			return errors.Wrap(err, "cant' open database file, maybe another process is running")
 		}

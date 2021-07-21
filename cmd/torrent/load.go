@@ -54,7 +54,7 @@ var loadCmd = &cobra.Command{
 		}
 
 		db, err := bbolt.Open(filepath.Join(variable.GetAppBaseDir(), "torrent.bolt"),
-			constants.DefaultFileMode, bbolt.DefaultOptions)
+			constants.DefaultFilePerm, bbolt.DefaultOptions)
 
 		if err != nil {
 			return errors.Wrap(err, "cant' open database file, maybe another process is running")
@@ -118,7 +118,7 @@ var getCmd = &cobra.Command{
 
 		var db *bbolt.DB
 		db, err = bbolt.Open(filepath.Join(variable.GetAppBaseDir(), "torrent.bolt"),
-			constants.DefaultFileMode, bbolt.DefaultOptions)
+			constants.DefaultFilePerm, bbolt.DefaultOptions)
 		if err != nil {
 			return errors.Wrap(err, "cant' open database file, maybe another process is running?")
 		}

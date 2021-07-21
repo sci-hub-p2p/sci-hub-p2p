@@ -20,10 +20,14 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"io/fs"
+	"os"
 	"sync"
+	"time"
 
 	"github.com/ipfs/go-cid"
 	chunker "github.com/ipfs/go-ipfs-chunker"
+	posinfo "github.com/ipfs/go-ipfs-posinfo"
 	ipld "github.com/ipfs/go-ipld-format"
 	"github.com/ipfs/go-merkledag"
 	"github.com/ipfs/go-unixfs"
@@ -32,6 +36,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
 
+	"sci_hub_p2p/pkg/constants"
 	"sci_hub_p2p/pkg/logger"
 )
 
@@ -42,11 +47,14 @@ func NewZip() ZipArchive {
 	}
 }
 
+var _ ipld.DAGService = ZipArchive{}
+
 type ZipArchive struct {
-	M   map[string]ipld.Node
-	m   *sync.Mutex
-	db  *leveldb.DB
-	raw []byte // raw content, determine block offset
+	M          map[string]ipld.Node
+	m          *sync.Mutex
+	db         *leveldb.DB
+	raw        []byte // raw content, determine block offset
+	baseOffset uint64
 }
 
 func (d ZipArchive) Get(ctx context.Context, cid cid.Cid) (ipld.Node, error) {
@@ -97,22 +105,31 @@ func (d ZipArchive) Add(ctx context.Context, node ipld.Node) error {
 
 	v, ok := node.(*merkledag.ProtoNode)
 	if ok {
+		fmt.Println("is ProtoNode")
 		n, err := unixfs.FSNodeFromBytes(v.Data())
 		if err != nil {
 			logger.Error(err)
 		} else {
 			// fmt.Println(n)
 			if n.Data() != nil {
-				i := bytes.Index(d.raw, n.Data())
-				//fmt.Println(n.FileSize())
-				// showFirst32(n.Data())
-				if i < 0 {
-					return errors.Errorf("can't find data")
-				}
-				fmt.Println("index:", i)
+				fmt.Println("fsnode with data")
 			} else {
 				fmt.Println("n without data, should save pure node data")
 			}
+		}
+	} else {
+		fmt.Println("not ProtoNode")
+		// is pure data node
+		if v, ok := node.(*merkledag.RawNode); ok {
+			fmt.Println("Node: merkledag.RawNode")
+			fmt.Println(v.Size())
+		}
+		if v, ok := node.(*posinfo.FilestoreNode); ok {
+			fmt.Println("Node: posinfo.FilestoreNode")
+			fmt.Println(v.PosInfo.FullPath)
+			blockOffsetOfZip := v.PosInfo.Offset + d.baseOffset
+			length, _ := v.Size()
+			fmt.Println("this block is", blockOffsetOfZip, length)
 		}
 	}
 
@@ -146,7 +163,7 @@ func (d ZipArchive) RemoveMany(ctx context.Context, cids []cid.Cid) error {
 	return nil
 }
 
-func Build(raw []byte) (ipld.Node, error) {
+func Build(raw []byte, baseOffset uint64) (ipld.Node, error) {
 	prefix := cid.Prefix{
 		Version:  0,
 		Codec:    cid.DagProtobuf,
@@ -160,10 +177,11 @@ func Build(raw []byte) (ipld.Node, error) {
 	defer db.Close()
 	dbp := helpers.DagBuilderParams{
 		Dagserv: ZipArchive{
-			M:   make(map[string]ipld.Node),
-			m:   &sync.Mutex{},
-			db:  db,
-			raw: raw,
+			M:          make(map[string]ipld.Node),
+			m:          &sync.Mutex{},
+			db:         db,
+			raw:        raw,
+			baseOffset: baseOffset,
 		},
 		NoCopy:    true,
 		RawLeaves: true,
@@ -171,8 +189,13 @@ func Build(raw []byte) (ipld.Node, error) {
 		Maxlinks:   helpers.DefaultLinksPerBlock,
 		CidBuilder: &prefix,
 	}
-
-	chunk, err := chunker.FromString(bytes.NewReader(raw), "default")
+	f := CompressedFile{
+		reader:             bytes.NewReader(raw),
+		zipPath:            "path/to/archive.zip",
+		compressedFilePath: "path/in/zip/article.pdf",
+		size:               int64(len(raw)),
+	}
+	chunk, err := chunker.FromString(f, "default")
 	if err != nil {
 		return nil, errors.Wrapf(err, "can't create default chunker")
 	}
@@ -187,4 +210,63 @@ func Build(raw []byte) (ipld.Node, error) {
 	}
 
 	return n, nil
+}
+
+type CompressedFile struct {
+	reader             *bytes.Reader
+	info               CompressedFileInfo
+	zipPath            string
+	compressedFilePath string
+	size               int64
+}
+
+func (c CompressedFile) Read(p []byte) (n int, err error) {
+	return c.reader.Read(p)
+}
+
+func (c CompressedFile) Close() error {
+	c.reader = nil
+	return nil
+}
+
+func (c CompressedFile) Size() (int64, error) {
+	return c.size, nil
+}
+
+func (c CompressedFile) AbsPath() string {
+	return c.zipPath
+}
+
+func (c CompressedFile) Stat() os.FileInfo {
+	return CompressedFileInfo{c.zipPath, c.compressedFilePath, c.size}
+}
+
+type CompressedFileInfo struct {
+	zipPath            string
+	compressedFilePath string
+	size               int64
+}
+
+func (c CompressedFileInfo) Name() string {
+	return c.compressedFilePath
+}
+
+func (c CompressedFileInfo) Size() int64 {
+	return c.size
+}
+
+func (c CompressedFileInfo) Mode() fs.FileMode {
+	return constants.DefaultFilePerm
+}
+
+func (c CompressedFileInfo) ModTime() time.Time {
+	return time.Now()
+}
+
+func (c CompressedFileInfo) IsDir() bool {
+	return false
+}
+
+func (c CompressedFileInfo) Sys() interface{} {
+	return nil
 }

@@ -30,7 +30,7 @@ func TestZipArchive(t *testing.T) {
 	assert.Nil(t, err)
 	t.Parallel()
 
-	n, err := dagserv.Build(raw)
+	n, err := dagserv.Build(raw, 0)
 	assert.Nil(t, err)
 	fmt.Println(n.Cid())
 }

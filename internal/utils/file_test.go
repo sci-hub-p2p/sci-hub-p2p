@@ -31,7 +31,7 @@ func TestFileExist(t *testing.T) {
 
 	tmp := t.TempDir()
 	tmpFile := filepath.Join(tmp, "filename")
-	assert.Nil(t, os.WriteFile(tmpFile, []byte("s"), constants.DefaultFileMode))
+	assert.Nil(t, os.WriteFile(tmpFile, []byte("s"), constants.DefaultFilePerm))
 	re, err := utils.FileExist(tmpFile)
 	assert.Nil(t, err)
 	assert.True(t, re, tmpFile)
@@ -64,7 +64,7 @@ func TestDirIsFileErr(t *testing.T) {
 
 	tmp := t.TempDir()
 	tmpFile := filepath.Join(tmp, "filename")
-	assert.Nil(t, os.WriteFile(tmpFile, []byte("s"), constants.DefaultFileMode))
+	assert.Nil(t, os.WriteFile(tmpFile, []byte("s"), constants.DefaultFilePerm))
 	_, err := utils.DirExist(tmpFile)
 	assert.NotNil(t, err)
 	assert.ErrorIs(t, err, utils.ErrNotADir)

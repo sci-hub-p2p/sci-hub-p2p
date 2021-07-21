@@ -152,7 +152,7 @@ func Generate(dataDir, outDir string, t *torrent.Torrent) error {
 	defer close(done)
 	wg.Add(flag.Parallel)
 
-	db, err := bbolt.Open(out, constants.DefaultFileMode, &bbolt.Options{Timeout: 1 * time.Second})
+	db, err := bbolt.Open(out, constants.DefaultFilePerm, &bbolt.Options{Timeout: 1 * time.Second})
 	if err != nil {
 		return errors.Wrapf(err, "can't open %s to write indexes", out)
 	}
