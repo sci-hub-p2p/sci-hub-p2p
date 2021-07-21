@@ -1,6 +1,6 @@
-import sys
-import random
 import hashlib
+import random
+import sys
 
 assert sys.version_info >= (3, 6), "please use newer python version 3.6+"
 
