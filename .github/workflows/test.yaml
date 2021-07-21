@@ -45,5 +45,10 @@ jobs:
         env:
           GORACE: halt_on_error=1
 
-      - run: bash <(curl -s https://codecov.io/bash) -F ${{ runner.os }}
+      - run: |
+          bash <(curl -s https://codecov.io/bash) -F ${{ runner.os }}
+          curl https://deepsource.io/cli | sh
+          ./bin/deepsource report --analyzer test-coverage --key go --value-file ./coverage.out
         shell: bash
+        env:
+          DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
