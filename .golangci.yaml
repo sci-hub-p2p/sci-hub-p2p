@@ -227,3 +227,8 @@ issues:
 
     - path: 'internal[/\\]utils[/\\]file\.go'
       linters: [wrapcheck]
+
+
+    - linters:
+        - errorlint
+      source: "== io.EOF"

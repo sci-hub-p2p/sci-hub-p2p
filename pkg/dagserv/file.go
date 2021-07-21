@@ -28,7 +28,10 @@ import (
 	"sci_hub_p2p/pkg/constants"
 )
 
-var _ files.FileInfo = CompressedFile{}
+var _ interface {
+	files.FileInfo
+	io.Reader
+} = CompressedFile{}
 
 type CompressedFile struct {
 	reader             *bytes.Reader
