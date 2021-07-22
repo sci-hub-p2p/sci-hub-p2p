@@ -17,8 +17,6 @@ package dagserv
 
 import (
 	"context"
-	"fmt"
-	"reflect"
 	"sync"
 
 	"github.com/ipfs/go-cid"
@@ -28,17 +26,18 @@ import (
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
 
-	"sci_hub_p2p/pkg/logger"
 	"sci_hub_p2p/pkg/variable"
 )
 
-func NewZip() ZipArchive {
+var _ ipld.DAGService = ZipArchive{}
+
+func New(db *bbolt.DB, baseOffset uint64) ZipArchive {
 	return ZipArchive{
-		m: &sync.Mutex{},
+		m:          &sync.Mutex{},
+		db:         db,
+		baseOffset: baseOffset,
 	}
 }
-
-var _ ipld.DAGService = ZipArchive{}
 
 type ZipArchive struct {
 	m          *sync.Mutex
@@ -79,6 +78,7 @@ func (d ZipArchive) Get(ctx context.Context, c cid.Cid) (ipld.Node, error) {
 	panic("un-supported cid data type")
 }
 
+// GetMany TODO: need to parallel this, but I'm lazy.
 func (d ZipArchive) GetMany(ctx context.Context, cids []cid.Cid) <-chan *ipld.NodeOption {
 	var c = make(chan *ipld.NodeOption)
 	go func() {
@@ -94,65 +94,82 @@ func (d ZipArchive) GetMany(ctx context.Context, cids []cid.Cid) <-chan *ipld.No
 func (d ZipArchive) Add(ctx context.Context, node ipld.Node) error {
 	d.m.Lock()
 	defer d.m.Unlock()
-	if v, ok := node.(*merkledag.ProtoNode); ok {
-		err := d.db.Update(func(tx *bbolt.Tx) error {
-			b, err := tx.CreateBucketIfNotExists(variable.NodeBucketName())
+	err := d.db.Update(func(tx *bbolt.Tx) error {
+		b, err := tx.CreateBucketIfNotExists(variable.NodeBucketName())
+		if err != nil {
+			return errors.Wrap(err, "can't create bucket")
+		}
+
+		return d.add(b, node)
+	})
+
+	return errors.Wrap(err, "can't save node to database")
+}
+
+func (d ZipArchive) AddMany(ctx context.Context, nodes []ipld.Node) error {
+	err := d.db.Batch(func(tx *bbolt.Tx) error {
+		b, err := tx.CreateBucketIfNotExists(variable.NodeBucketName())
+		if err != nil {
+			return errors.Wrap(err, "can't create bucket")
+		}
+		for _, node := range nodes {
+			err := d.add(b, node)
 			if err != nil {
-				return errors.Wrap(err, "can't create bucket")
+				return err
 			}
+		}
 
-			return SaveProtoNode(b, node.Cid(), v)
-		})
+		return err
+	})
 
-		return errors.Wrap(err, "can't save node to database")
+	return errors.Wrap(err, "can't save node to database")
+}
+
+func (d ZipArchive) Remove(ctx context.Context, c cid.Cid) error {
+	err := d.db.Update(func(tx *bbolt.Tx) error {
+		b := tx.Bucket(variable.NodeBucketName())
+		if b == nil {
+			return nil
+		}
+
+		return b.Delete(c.Hash())
+	})
+
+	return errors.Wrap(err, "can't delete node from database")
+}
+
+func (d ZipArchive) RemoveMany(ctx context.Context, cids []cid.Cid) error {
+	err := d.db.Batch(func(tx *bbolt.Tx) error {
+		b := tx.Bucket(variable.NodeBucketName())
+		if b == nil {
+			return nil
+		}
+		for _, c := range cids {
+			if err := b.Delete(c.Hash()); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+
+	return errors.Wrap(err, "can't delete node from database")
+}
+
+var errNotSupportNode = errors.New("not supported error")
+
+func (d ZipArchive) add(b *bbolt.Bucket, node ipld.Node) error {
+	if v, ok := node.(*merkledag.ProtoNode); ok {
+		return errors.Wrap(SaveProtoNode(b, node.Cid(), v), "can't save node to database")
 	}
 
 	if v, ok := node.(*posinfo.FilestoreNode); ok {
 		length, _ := v.Size()
 		blockOffsetOfZip := v.PosInfo.Offset + d.baseOffset
 
-		err := d.db.Update(func(tx *bbolt.Tx) error {
-			b, err := tx.CreateBucketIfNotExists(variable.NodeBucketName())
-			if err != nil {
-				return errors.Wrap(err, "can't create bucket")
-			}
-
-			return SaveFileStoreMeta(b, node.Cid(), v.PosInfo.FullPath, blockOffsetOfZip, length)
-		})
-
-		return errors.Wrap(err, "can't save node to database")
+		return errors.Wrap(SaveFileStoreMeta(b, node.Cid(), v.PosInfo.FullPath, blockOffsetOfZip, length),
+			"can't save node to database")
 	}
 
-	msg := fmt.Sprintf("unknown ipld.Node type %s", reflect.TypeOf(node))
-	logger.Errorf(msg)
-	panic(msg)
-}
-
-func (d ZipArchive) AddMany(ctx context.Context, nodes []ipld.Node) error {
-	for _, node := range nodes {
-		err := d.Add(ctx, node)
-		if err != nil {
-			return errors.Wrap(err, "can't save many nodes to database")
-		}
-	}
-
-	return nil
-}
-
-func (d ZipArchive) Remove(ctx context.Context, cid cid.Cid) error {
-	panic("can't remove node from disk")
-	// d.m.Lock()
-	// defer d.m.Unlock()
-	// delete(d.m, cid.String())
-	//
-	// return nil
-}
-
-func (d ZipArchive) RemoveMany(ctx context.Context, cids []cid.Cid) error {
-	panic("can't remove node from disk")
-	// for _, c := range cids {
-	// 	_ = d.Remove(ctx, c)
-	// }
-
-	// return nil
+	return errNotSupportNode
 }

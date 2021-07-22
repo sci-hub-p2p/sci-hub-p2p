@@ -16,21 +16,27 @@
 package dagserv_test
 
 import (
+	"bytes"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"go.etcd.io/bbolt"
 
+	"sci_hub_p2p/pkg/constants"
 	"sci_hub_p2p/pkg/dagserv"
 )
 
 func TestZipArchive(t *testing.T) {
 	raw, err := os.ReadFile("./../../testdata/big_file.bin")
-	assert.Nil(t, err)
 	t.Parallel()
+	assert.Nil(t, err)
 
-	_, err = dagserv.Build(raw,
-		`C:\Users\Trim21\proj\golang\sci-hub-p2p\testdata\big_file.bin`,
-		0)
+	db, err := bbolt.Open(filepath.Join(t.TempDir(), "test.bolt"), constants.DefaultFilePerm, bbolt.DefaultOptions)
+	assert.Nil(t, err)
+	defer db.Close()
+
+	_, err = dagserv.Add(db, bytes.NewReader(raw), "../../testdata/big_file.bin", int64(len(raw)), 0)
 	assert.Nil(t, err)
 }

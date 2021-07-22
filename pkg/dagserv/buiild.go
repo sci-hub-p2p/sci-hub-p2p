@@ -16,12 +16,8 @@
 package dagserv
 
 import (
-	"bytes"
-	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
-	"sync"
+	"io"
 
 	"github.com/ipfs/go-cid"
 	chunker "github.com/ipfs/go-ipfs-chunker"
@@ -31,45 +27,22 @@ import (
 	"github.com/multiformats/go-multihash"
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
-
-	"sci_hub_p2p/pkg/constants"
 )
 
-func Build(raw []byte, abs string, baseOffset uint64) (ipld.Node, error) {
-	prefix := cid.Prefix{
-		Version:  1,
-		Codec:    cid.DagProtobuf,
-		MhType:   multihash.Names["blake2b-256"],
-		MhLength: -1,
-	}
-	dbPath := "../../test.bolt"
-	db, err := bbolt.Open(dbPath, constants.DefaultFilePerm, &bbolt.Options{
-		FreelistType: bbolt.FreelistMapType,
-	})
-	if err != nil {
-		return nil, errors.Wrapf(err, "can't open database %s", dbPath)
-	}
-	defer db.Close()
-
-	dagServ := ZipArchive{
-		m:          &sync.Mutex{},
-		db:         db,
-		baseOffset: baseOffset,
-	}
-
+func Add(db *bbolt.DB, r io.Reader, abs string, size int64, baseOffset uint64) (ipld.Node, error) {
 	dbp := helpers.DagBuilderParams{
-		Dagserv:    dagServ,
+		Dagserv:    New(db, baseOffset),
 		NoCopy:     true,
 		RawLeaves:  true,
 		Maxlinks:   helpers.DefaultLinksPerBlock,
-		CidBuilder: &prefix,
+		CidBuilder: defaultPrefix(),
 	}
 	// NoCopy require a `FileInfo` on chunker
 	f := CompressedFile{
-		reader:             bytes.NewReader(raw),
+		reader:             r,
 		zipPath:            abs,
 		compressedFilePath: "path/in/zip/article.pdf",
-		size:               int64(len(raw)),
+		size:               size,
 	}
 
 	chunk, err := chunker.FromString(f, "default")
@@ -86,21 +59,14 @@ func Build(raw []byte, abs string, baseOffset uint64) (ipld.Node, error) {
 		return nil, errors.Wrapf(err, "can't layout all chunk")
 	}
 
-	fmt.Println("try to get node", n.Cid())
-	node, err := dagServ.Get(context.TODO(), n.Cid())
-	if err != nil {
-		return nil, err
-	}
-	fmt.Println(node.Cid(), Sha256SumHex(node.RawData()))
-	fmt.Println(n.Cid(), Sha256SumHex(n.RawData()))
-
-	return n, nil
+	return n, errors.Wrap(db.Sync(), "failed to flush data to disk")
 }
 
-func Sha256SumHex(b []byte) string {
-	h := sha256.New()
-	_, _ = h.Write(b)
-	sum := h.Sum(nil)
-
-	return hex.EncodeToString(sum)
+func defaultPrefix() cid.Prefix {
+	return cid.Prefix{
+		Version:  1,
+		Codec:    cid.DagProtobuf,
+		MhType:   multihash.Names["blake2b-256"],
+		MhLength: -1,
+	}
 }

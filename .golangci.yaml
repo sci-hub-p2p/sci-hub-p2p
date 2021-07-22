@@ -190,6 +190,21 @@ linters-settings:
     enable-all: true
     disable:
       - shadow
+  wrapcheck:
+    # An array of strings that specify substrings of signatures to ignore.
+    # If this set, it will override the default set of ignored signatures.
+    # See https://github.com/tomarrell/wrapcheck#configuration for more information.
+    ignoreSigs:
+      - .Errorf(
+      - errors.New(
+      - errors.Unwrap(
+      - .Wrap(
+      - .Wrapf(
+      - .WithMessage(
+      - '(*go.etcd.io/bbolt.Bucket).Delete'
+      - '(*go.etcd.io/bbolt.Bucket).Get'
+      - '(*go.etcd.io/bbolt.Bucket).Put'
+      - '(*go.etcd.io/bbolt.Tx).CreateBucketIfNotExists'
 
 linters:
   enable-all: true
