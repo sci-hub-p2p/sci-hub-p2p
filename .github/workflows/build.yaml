@@ -27,7 +27,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            %LocalAppData%\go-build
+            ~/AppData/Local/go-build
             ~/Library/Caches/go-build
             ~/.cache/go-build
             ~/go/pkg/mod
