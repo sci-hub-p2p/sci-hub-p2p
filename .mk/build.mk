@@ -1,11 +1,11 @@
 include .mk/args.mk
-PROTOFILES = $(shell find . -path "*/.*" -prune -o -name "*.proto" -print)
-GOPROTOFILES=$(patsubst %.proto,%.pb.go,$(PROTOFILES))
+ProtoFiles = $(shell find . -path "*/.*" -prune -o -name "*.proto" -print)
+GoProtoFiles=$(patsubst %.proto,%.pb.go,$(ProtoFiles))
 
 GoSrc = $(shell find . -path "*/.*" -prune -o -name "*.go" -print)
-GoSrc += $(GOPROTOFILES)
+GoSrc += $(GoProtoFiles)
 
-$(GOPROTOFILES): $(PROTOFILES)
+$(GoProtoFiles): $(ProtoFiles)
 	protoc --go_out=. $^
 
 windows: Windows
@@ -26,7 +26,7 @@ dist/sci-hub_linux_64: $(GoSrc)
 dist/sci-hub_macos_64: $(GoSrc)
 	env CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o $@ $(GoBuildArgs)
 
-generate: $(GOPROTOFILES)
+generate: $(GoProtoFiles)
 
 clean::
 	rm -rf ./dist
