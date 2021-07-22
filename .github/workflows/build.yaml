@@ -15,14 +15,16 @@ jobs:
         platform: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.platform }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
       - name: Install Go
         uses: actions/setup-go@v2
         with:
           go-version: 1.16.x
 
-      - name: Checkout code
-        uses: actions/checkout@v2
-
+      - name: Install protoc-gen-go
+        run: make install
       - name: Setup Cache Dir
         run: echo "GOCACHE=$HOME/.cache/go-build" >> $GITHUB_ENV
 
@@ -35,6 +37,12 @@ jobs:
           key: ${{ runner.os }}-go-336-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-336-
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          version: "3.x"
+      - run: make install
 
       - name: Set Version Env Vars
         shell: bash

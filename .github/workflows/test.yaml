@@ -42,7 +42,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-336-
 
-      - run: env
+      - run: make install
+
       - name: Generate Test Data
         run: make testdata
 
