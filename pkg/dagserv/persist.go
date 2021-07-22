@@ -53,7 +53,7 @@ func ReadFileStoreNode(b *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {
 		return nil, errors.Wrapf(err, "failed to seek file %s", v.Filename)
 	}
 
-	var p = make([]byte, v.Offset)
+	var p = make([]byte, v.Length)
 
 	_, err = io.ReadFull(f, p)
 	if err != nil {

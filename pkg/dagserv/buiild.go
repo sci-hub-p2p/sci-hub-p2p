@@ -35,7 +35,7 @@ func Add(db *bbolt.DB, r io.Reader, abs string, size int64, baseOffset uint64) (
 		NoCopy:     true,
 		RawLeaves:  true,
 		Maxlinks:   helpers.DefaultLinksPerBlock,
-		CidBuilder: defaultPrefix(),
+		CidBuilder: DefaultPrefix(),
 	}
 	// NoCopy require a `FileInfo` on chunker
 	f := CompressedFile{
@@ -62,7 +62,7 @@ func Add(db *bbolt.DB, r io.Reader, abs string, size int64, baseOffset uint64) (
 	return n, errors.Wrap(db.Sync(), "failed to flush data to disk")
 }
 
-func defaultPrefix() cid.Prefix {
+func DefaultPrefix() cid.Prefix {
 	return cid.Prefix{
 		Version:  1,
 		Codec:    cid.DagProtobuf,

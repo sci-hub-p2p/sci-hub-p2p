@@ -235,3 +235,6 @@ issues:
 
     - path: 'internal[/\\]utils[/\\]file\.go'
       linters: [wrapcheck]
+
+    - path: '.*_test\.go'
+      linters: [gocritic, nlreturn]
