@@ -36,6 +36,7 @@ jobs:
         uses: arduino/setup-protoc@v1
         with:
           version: "3.x"
+          repo-token: ${{ github.token }}
 
       - name: Checkout Code
         uses: actions/checkout@v2
