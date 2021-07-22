@@ -65,7 +65,7 @@ func ReadFileStoreNode(b *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {
 	return &posinfo.FilestoreNode{Node: &merkledag.RawNode{Block: block}}, errors.Wrap(err, "failed to create block")
 }
 
-func SaveFileStoreMeta(b *bbolt.Bucket, c cid.Cid, name string, offset uint64, size uint64) error {
+func SaveFileStoreMeta(b *bbolt.Bucket, c cid.Cid, name string, offset, size uint64) error {
 	v := &Record{
 		Offset:   offset,
 		Length:   size,
