@@ -1,0 +1,15 @@
+syntax = "proto3";
+option go_package = "./pkg/dagserv";
+
+message Record {
+  uint64 offset = 1;
+  uint64 length = 2;
+  string filename = 3;
+}
+
+
+message Link{
+  string name = 1;
+  uint64 size = 2;
+  bytes cid = 3;
+}

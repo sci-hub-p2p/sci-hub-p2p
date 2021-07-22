@@ -13,18 +13,34 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package testing
+package indexes
 
 import (
-	"os"
-	"path"
-	"runtime"
+	"fmt"
+
+	"github.com/ipfs/go-cid"
+
+	"sci_hub_p2p/internal/torrent"
 )
 
-func init() {
-	_, filename, _, _ := runtime.Caller(0)
-	dir := path.Join(path.Dir(filename), "..", "..")
-	if err := os.Chdir(dir); err != nil {
-		panic(err)
-	}
+type PerFile struct {
+	FileName        string
+	CID             cid.Cid
+	Doi             string
+	Pieces          []int
+	File            torrent.File
+	Torrent         torrent.Torrent
+	PieceStart      int
+	OffsetFromZip   int64
+	CompressedSize  int64
+	OffsetFromPiece int64
+	PieceLength     int64
+	PieceEnd        int
+	FileIndex       int
+	CompressMethod  uint16
+}
+
+func (f PerFile) String() string {
+	return fmt.Sprintf("PerFile{name: %s, method: %d, size: %d, OffsetFromZip: %d, pieceStart: %d, pieceEnd: %d}",
+		f.FileName, f.CompressMethod, f.CompressedSize, f.OffsetFromZip, f.PieceStart, f.PieceEnd)
 }

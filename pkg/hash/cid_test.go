@@ -24,7 +24,6 @@ import (
 	"github.com/ipfs/go-cid"
 	"github.com/stretchr/testify/assert"
 
-	_ "sci_hub_p2p/internal/testing"
 	"sci_hub_p2p/pkg/hash"
 	"sci_hub_p2p/pkg/indexes"
 )
@@ -34,10 +33,10 @@ func TestCID(t *testing.T) {
 	e, err := cid.Parse("bafykbzaceavd6aaauynuqgkkrg6lapmno5crbsyinmp3um5sn3daztzsghvl2")
 	assert.Nil(t, err)
 
-	raw, err := os.ReadFile("./testdata/big_file.bin")
+	b, err := os.ReadFile("../../testdata/big_file.bin")
 	assert.Nil(t, err)
 
-	a, err := hash.Cid(bytes.NewBuffer(raw))
+	a, err := hash.Cid(bytes.NewBuffer(b))
 	assert.Nil(t, err)
 	assert.EqualValues(t, e.Hash(), a.Hash(), fmt.Sprintln(e.Prefix(), a.Prefix()))
 }
@@ -53,7 +52,7 @@ func TestCIDSaved(t *testing.T) {
 		CID:              [38]byte{},
 	}
 
-	raw, err := os.ReadFile("./testdata/big_file.bin")
+	raw, err := os.ReadFile("../../testdata/big_file.bin")
 	assert.Nil(t, err)
 
 	a, err := hash.Black2dBalancedSized256K(bytes.NewBuffer(raw))

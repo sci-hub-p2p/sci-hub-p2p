@@ -27,10 +27,10 @@ func TestConvertSlice(t *testing.T) {
 	t.Parallel()
 
 	type T1 struct {
-		Host  string   `tuple:"0"`
-		Port  int      `tuple:"1"`
-		Names []string `tuple:"3"`
 		Raw   []byte   `tuple:"2"`
+		Host  string   `tuple:"0"`
+		Names []string `tuple:"3"`
+		Port  int      `tuple:"1"`
 	}
 
 	var (
@@ -48,14 +48,14 @@ func TestConvertSlice(t *testing.T) {
 	assert.Equal(t, row[2], v.Raw)
 }
 
-func TestDontPanic(t *testing.T) {
+func TestDoNotPanic(t *testing.T) {
 	t.Parallel()
 
 	type T1 struct {
-		Host  string   `tuple:"0"`
-		Port  int      `tuple:"1"`
-		Names []string `tuple:"3"`
 		Raw   []byte   `tuple:"2"`
+		Host  string   `tuple:"0"`
+		Names []string `tuple:"3"`
+		Port  int      `tuple:"1"`
 	}
 
 	var (

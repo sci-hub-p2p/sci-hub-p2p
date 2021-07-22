@@ -41,8 +41,8 @@ import (
 const filesPerTorrent = 100_000
 
 type PDFFileOffSet struct {
-	Record
 	DOI string
+	Record
 }
 
 func (f PDFFileOffSet) Key() []byte {

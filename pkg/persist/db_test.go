@@ -22,7 +22,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.etcd.io/bbolt"
 
-	_ "sci_hub_p2p/internal/testing"
 	"sci_hub_p2p/internal/torrent"
 	"sci_hub_p2p/pkg/constants"
 	"sci_hub_p2p/pkg/persist"
@@ -37,7 +36,7 @@ func TestSaveTorrent(t *testing.T) {
 	assert.Nil(t, db.Update(func(tx *bbolt.Tx) error {
 		b, err := tx.CreateBucket(constants.TorrentBucket())
 		assert.Nil(t, err)
-		tor, err := torrent.ParseFile("./testdata/sm_00900000-00999999.torrent")
+		tor, err := torrent.ParseFile("../../testdata/sm_00900000-00999999.torrent")
 		assert.Nil(t, err)
 		assert.Nil(t, persist.PutTorrent(b, tor))
 
@@ -54,7 +53,7 @@ func TestGetTorrent(t *testing.T) {
 	assert.Nil(t, db.Update(func(tx *bbolt.Tx) error {
 		b, err := tx.CreateBucket(constants.TorrentBucket())
 		assert.Nil(t, err)
-		tor, err := torrent.ParseFile("./testdata/sm_00900000-00999999.torrent")
+		tor, err := torrent.ParseFile("../../testdata/sm_00900000-00999999.torrent")
 		assert.Nil(t, err)
 		assert.Nil(t, persist.PutTorrent(b, tor))
 		newT, err := persist.GetTorrent(b, tor.RawInfoHash())

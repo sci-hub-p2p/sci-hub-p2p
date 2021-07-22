@@ -60,7 +60,7 @@ var genCmd = &cobra.Command{
 		s, err := os.Stat(out)
 		if err != nil {
 			if os.IsNotExist(err) {
-				err = os.MkdirAll(out, constants.DefaultDirPerm)
+				err = os.MkdirAll(out, os.ModeDir|constants.DefaultFilePerm)
 				if err != nil {
 					return errors.Wrapf(err, "Can't create output dir %s", out)
 				}

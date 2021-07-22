@@ -29,12 +29,12 @@ import (
 )
 
 type Record struct {
-	InfoHash         [20]byte // This can be empty when indexing data from same torrent.
-	PieceStart       uint32
 	OffsetInPiece    int64
-	CompressedMethod uint16
 	CompressedSize   uint64
+	PieceStart       uint32
+	CompressedMethod uint16
 	CID              [38]byte // v1 with DagProtobuf blake2b-256 size-262144 raw-leaves
+	InfoHash         [20]byte
 }
 
 func (r Record) String() string {
