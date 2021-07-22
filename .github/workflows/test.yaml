@@ -29,15 +29,19 @@ jobs:
         with:
           fetch-depth: 2
 
+      - name: Setup Cache Dir
+        run: echo "GOCACHE=$($HOME/.cache/go-build)" >> $GITHUB_PATH
+        shell: bash
+
       - name: Cache Dependencies
         uses: actions/cache@v2
         with:
           path: |
-            ~/.cache/go-build
+            ${{ env.GOCACHE }}
             ~/go/pkg/mod
           key: ${{ runner.os }}-go-333-${{ hashFiles('**/go.sum') }}
           restore-keys: |
-            ${{ runner.os }}-go-333-
+            ${{ runner.os }}-go-334-
 
       - run: env
       - name: Generate Test Data
@@ -47,7 +51,6 @@ jobs:
         run: make coverage
         env:
           GORACE: halt_on_error=1
-          GOCACHE: "${{ format('{0}/.cache/go-build', env.HOME) }}"
 
       - name: Codecov
         run: bash <(curl -s https://codecov.io/bash) -F ${{ runner.os }}
