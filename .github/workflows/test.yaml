@@ -30,7 +30,7 @@ jobs:
           fetch-depth: 2
 
       - name: Setup Cache Dir
-        run: echo "GOCACHE=$($HOME/.cache/go-build)" >> $GITHUB_PATH
+        run: echo "GOCACHE=$($HOME/.cache/go-build)" >> $GITHUB_ENV
         shell: bash
 
       - name: Cache Dependencies
@@ -39,9 +39,9 @@ jobs:
           path: |
             ${{ env.GOCACHE }}
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-333-${{ hashFiles('**/go.sum') }}
+          key: ${{ runner.os }}-go-335-${{ hashFiles('**/go.sum') }}
           restore-keys: |
-            ${{ runner.os }}-go-334-
+            ${{ runner.os }}-go-335-
 
       - run: env
       - name: Generate Test Data
