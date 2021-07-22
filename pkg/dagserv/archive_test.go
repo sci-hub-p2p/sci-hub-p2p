@@ -16,7 +16,6 @@
 package dagserv_test
 
 import (
-	"fmt"
 	"os"
 	"testing"
 
@@ -30,7 +29,8 @@ func TestZipArchive(t *testing.T) {
 	assert.Nil(t, err)
 	t.Parallel()
 
-	n, err := dagserv.Build(raw, 0)
+	_, err = dagserv.Build(raw,
+		`C:\Users\Trim21\proj\golang\sci-hub-p2p\testdata\big_file.bin`,
+		0)
 	assert.Nil(t, err)
-	fmt.Println(n.Cid())
 }

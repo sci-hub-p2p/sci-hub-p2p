@@ -1,9 +1,9 @@
 syntax = "proto3";
-option go_package = "./pkg/persist";
+option go_package = "./pkg/dagserv";
 
 message Record {
-  int64 offset = 1;
-  int64 length = 2;
+  uint64 offset = 1;
+  uint64 length = 2;
   string filename = 3;
 }
 

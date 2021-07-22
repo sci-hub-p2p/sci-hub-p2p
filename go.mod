@@ -8,6 +8,7 @@ require (
 	github.com/anacrolix/torrent v1.29.1
 	github.com/cheggaaa/pb/v3 v3.0.8
 	github.com/ipfs/go-bitswap v0.3.4 // indirect
+	github.com/ipfs/go-block-format v0.0.3
 	github.com/ipfs/go-blockservice v0.1.4 // indirect
 	github.com/ipfs/go-cid v0.0.7
 	github.com/ipfs/go-ipfs-blockstore v1.0.4 // indirect

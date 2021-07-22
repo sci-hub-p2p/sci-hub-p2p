@@ -42,3 +42,7 @@ func GetPaperBoltPath() string {
 func GetTorrentStoragePath() string {
 	return filepath.Join(GetAppBaseDir(), "torrents")
 }
+
+func NodeBucketName() []byte {
+	return []byte("block-v0")
+}
