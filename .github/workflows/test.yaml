@@ -30,7 +30,7 @@ jobs:
           fetch-depth: 2
 
       - name: Setup Cache Dir
-        run: echo "GOCACHE=$HOME/.cache/go-build" >> $GITHUB_ENV
+        run: echo GOCACHE=$(python -c "from os.path import *;print(normpath(expanduser('~/.cache/go-build')))") >> $GITHUB_ENV
 
       - name: Cache Dependencies
         uses: actions/cache@v2
