@@ -40,9 +40,9 @@ jobs:
           path: |
             ${{ env.GOCACHE }}
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-336-${{ hashFiles('**/go.sum') }}
+          key: ${{ runner.os }}-go-1-${{ hashFiles('**/go.sum') }}
           restore-keys: |
-            ${{ runner.os }}-go-336-
+            ${{ runner.os }}-go-1-
 
       - run: make install
 
