@@ -28,9 +28,9 @@ const (
 )
 
 type file struct {
-	Length   int64    `json:"length" bencode:"length"`
 	Path     []string `json:"path" bencode:"path"`
 	PathUTF8 []string `bencode:"path.utf-8,omitempty"`
+	Length   int64    `json:"length" bencode:"length"`
 }
 
 func (f file) GetPath() []string {
@@ -42,11 +42,11 @@ func (f file) GetPath() []string {
 }
 
 type info struct {
-	Files       []file `json:"files" bencode:"files"`
 	Name        string `json:"name" bencode:"name"`
 	NameUTF8    string `bencode:"name.utf-8,omitempty"`
-	PieceLength int64  `json:"piece length" bencode:"piece length"`
 	Pieces      string `json:"pieces" bencode:"pieces"`
+	Files       []file `json:"files" bencode:"files"`
+	PieceLength int64  `json:"piece length" bencode:"piece length"`
 }
 
 func (i info) GetName() string {
@@ -58,12 +58,12 @@ func (i info) GetName() string {
 }
 
 type torrentFile struct {
-	Announce     string
 	AnnounceList [][]string
-	CreationDate int
-	Info         info
 	// should be a [][string, int], golang didn't support this
-	Nodes [][]interface{}
+	Nodes        [][]interface{}
+	Announce     string
+	Info         info
+	CreationDate int
 }
 
 func (t torrentFile) toTorrent() (*Torrent, error) {

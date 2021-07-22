@@ -59,7 +59,7 @@ jobs:
           echo "TIME=${TIME}" >>$GITHUB_ENV
 
       - name: Build
-        run: make ${{ runner.os }}
+        run: make --debug=V ${{ runner.os }}
 
       - uses: actions/upload-artifact@v2
         with:

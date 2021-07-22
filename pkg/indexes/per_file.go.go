@@ -24,21 +24,20 @@ import (
 )
 
 type PerFile struct {
-	Doi string `json:"doi"`
-
-	FileName        string // duplicated with doi maybe
-	CompressMethod  uint16 // seems that almost all files are just store in zip without compress.
-	CompressedSize  int64
+	FileName        string
 	CID             cid.Cid
-	OffsetFromZip   int64
-	OffsetFromPiece int64
-	FileIndex       int
+	Doi             string
 	Pieces          []int
-	PieceStart      int
-	PieceEnd        int
-	PieceLength     int64
-	Torrent         torrent.Torrent
 	File            torrent.File
+	Torrent         torrent.Torrent
+	PieceStart      int
+	OffsetFromZip   int64
+	CompressedSize  int64
+	OffsetFromPiece int64
+	PieceLength     int64
+	PieceEnd        int
+	FileIndex       int
+	CompressMethod  uint16
 }
 
 func (f PerFile) String() string {

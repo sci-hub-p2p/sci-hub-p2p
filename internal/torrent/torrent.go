@@ -33,8 +33,8 @@ type Node struct {
 }
 
 type File struct {
-	Length int64
 	Path   []string
+	Length int64
 }
 
 func (f File) Name() string {
@@ -49,17 +49,16 @@ func (f File) Copy() File {
 }
 
 type Torrent struct {
-	Announce     string
-	Files        []File
-	infoHash     []byte
-	Name         string
-	PieceLength  int64
-	AnnounceList [][]string
-	CreationDate int
-	Nodes        []Node
 	InfoHash     string
-	// avoid change, only return copy
-	Pieces [][]byte
+	Announce     string
+	Name         string
+	infoHash     []byte
+	Pieces       [][]byte
+	Files        []File
+	AnnounceList [][]string
+	Nodes        []Node
+	PieceLength  int64
+	CreationDate int
 }
 
 var ErrWrongPieces = errors.New("The length of the pieces can't be divided by 20")

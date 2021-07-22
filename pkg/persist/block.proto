@@ -1,5 +1,6 @@
 syntax = "proto3";
 option go_package = "./pkg/persist";
+
 message Record {
   int64 offset = 1;
   int64 length = 2;
