@@ -24,7 +24,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Setup Cache Dir
-        run: echo "GOCACHE=$($HOME/.cache/go-build)" >> $GITHUB_ENV
+        run: echo "GOCACHE=$HOME/.cache/go-build" >> $GITHUB_ENV
         shell: bash
 
       - name: Cache Dependencies
@@ -33,9 +33,9 @@ jobs:
           path: |
             ${{ env.GOCACHE }}
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-335-${{ hashFiles('**/go.sum') }}
+          key: ${{ runner.os }}-go-336-${{ hashFiles('**/go.sum') }}
           restore-keys: |
-            ${{ runner.os }}-go-335-
+            ${{ runner.os }}-go-336-
 
       - name: Set Version Env Vars
         shell: bash
