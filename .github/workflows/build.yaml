@@ -25,7 +25,6 @@ jobs:
 
       - name: Setup Cache Dir
         run: echo "GOCACHE=$HOME/.cache/go-build" >> $GITHUB_ENV
-        shell: bash
 
       - name: Cache Dependencies
         uses: actions/cache@v2
