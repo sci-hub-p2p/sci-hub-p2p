@@ -75,5 +75,5 @@ jobs:
 
       - uses: actions/upload-artifact@v2
         with:
-          name: ${{ runner.os }}-${{ env.REF }}-${{ env.SHA }}
+          name: ${{ runner.os }} ${{ env.REF }} ${{ env.SHA }}
           path: ./dist/
