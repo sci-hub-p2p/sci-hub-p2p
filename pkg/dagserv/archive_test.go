@@ -46,7 +46,7 @@ func TestZipArchive(t *testing.T) {
 	assert.Nil(t, err)
 	defer db.Close()
 
-	_, err = dagserv.Add(db, bytes.NewReader(raw), "../../testdata/big_file.bin", int64(len(raw)), 0)
+	_, err = dagserv.Add(db, bytes.NewReader(raw), "../../testdata/big_file.bin", uint64(len(raw)), 0)
 	assert.Nil(t, err)
 }
 

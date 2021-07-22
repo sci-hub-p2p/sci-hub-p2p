@@ -16,7 +16,6 @@
 package dagserv
 
 import (
-	"fmt"
 	"io"
 
 	"github.com/ipfs/go-cid"
@@ -29,7 +28,7 @@ import (
 	"go.etcd.io/bbolt"
 )
 
-func Add(db *bbolt.DB, r io.Reader, abs string, size int64, baseOffset uint64) (ipld.Node, error) {
+func Add(db *bbolt.DB, r io.Reader, abs string, size, baseOffset uint64) (ipld.Node, error) {
 	dbp := helpers.DagBuilderParams{
 		Dagserv:    New(db, baseOffset),
 		NoCopy:     true,
@@ -53,7 +52,6 @@ func Add(db *bbolt.DB, r io.Reader, abs string, size int64, baseOffset uint64) (
 	if err != nil {
 		return nil, errors.Wrap(err, "can't create dag builder from chunker")
 	}
-	fmt.Println("start layout")
 	n, err := balanced.Layout(dbh)
 	if err != nil {
 		return nil, errors.Wrapf(err, "can't layout all chunk")

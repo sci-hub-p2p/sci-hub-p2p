@@ -36,7 +36,7 @@ type CompressedFile struct {
 	reader             io.Reader
 	zipPath            string
 	compressedFilePath string
-	size               int64
+	size               uint64
 }
 
 func (c CompressedFile) Read(p []byte) (int, error) {
@@ -53,7 +53,7 @@ func (c CompressedFile) Close() error {
 }
 
 func (c CompressedFile) Size() (int64, error) {
-	return c.size, nil
+	return int64(c.size), nil
 }
 
 func (c CompressedFile) AbsPath() string {
@@ -61,7 +61,7 @@ func (c CompressedFile) AbsPath() string {
 }
 
 func (c CompressedFile) Stat() os.FileInfo {
-	return CompressedFileInfo{c.zipPath, c.compressedFilePath, c.size}
+	return CompressedFileInfo{c.zipPath, c.compressedFilePath, int64(c.size)}
 }
 
 type CompressedFileInfo struct {
