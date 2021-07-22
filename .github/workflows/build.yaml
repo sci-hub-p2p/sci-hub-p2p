@@ -23,8 +23,6 @@ jobs:
         with:
           go-version: 1.16.x
 
-      - name: Install protoc-gen-go
-        run: make install
       - name: Setup Cache Dir
         run: echo "GOCACHE=$HOME/.cache/go-build" >> $GITHUB_ENV
 
@@ -44,7 +42,8 @@ jobs:
           version: "3.x"
           repo-token: ${{ github.token }}
 
-      - run: make install
+      - name: Install protoc-gen-go
+        run: make install
 
       - name: Set Version Env Vars
         shell: bash
