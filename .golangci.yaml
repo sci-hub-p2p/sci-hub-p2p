@@ -131,12 +131,16 @@ linters-settings:
     checks: ["all"]
 
   importas:
-    no-unaliased: true
+    no-unaliased: false
     alias:
       - alias: ipld
         pkg: "github.com/ipfs/go-ipld-format"
       - alias: chunker
         pkg: "github.com/ipfs/go-ipfs-chunker"
+      - alias: ds
+        pkg: "github.com/ipfs/go-datastore"
+      - alias: dshelp
+        pkg: "github.com/ipfs/go-ipfs-ds-help"
 
   lll:
     # max line length, lines longer will be reported. Default is 120.
