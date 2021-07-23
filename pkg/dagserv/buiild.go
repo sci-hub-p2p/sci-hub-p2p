@@ -73,11 +73,11 @@ func DefaultPrefix() cid.Prefix {
 func AddFile(db *bbolt.DB, abs string) (ipld.Node, error) {
 	s, err := os.Stat(abs)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to get file stat")
 	}
 	r, err := os.Open(abs)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to open file %s", abs)
 	}
 	defer r.Close()
 

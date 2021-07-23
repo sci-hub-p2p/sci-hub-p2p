@@ -41,6 +41,21 @@ func New(db *bbolt.DB, baseOffset uint64) ZipArchive {
 	}
 }
 
+func InitDB(db *bbolt.DB) error {
+	return errors.Wrap(db.Update(func(tx *bbolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists(variable.NodeBucketName())
+		if err != nil {
+			return errors.Wrap(err, "can't create node bucket")
+		}
+		_, err = tx.CreateBucketIfNotExists(variable.BlockBucketName())
+		if err != nil {
+			return errors.Wrap(err, "can't create block bucket")
+		}
+
+		return nil
+	}), "failed to init bolt database")
+}
+
 type ZipArchive struct {
 	m          *sync.Mutex
 	db         *bbolt.DB
@@ -99,12 +114,7 @@ func (d ZipArchive) Add(ctx context.Context, node ipld.Node) error {
 	d.m.Lock()
 	defer d.m.Unlock()
 	err := d.db.Update(func(tx *bbolt.Tx) error {
-		b, err := tx.CreateBucketIfNotExists(variable.NodeBucketName())
-		if err != nil {
-			return errors.Wrap(err, "can't create bucket")
-		}
-
-		return d.add(b, node)
+		return d.add(tx, node)
 	})
 
 	return errors.Wrap(err, "can't save node to database")
@@ -112,18 +122,14 @@ func (d ZipArchive) Add(ctx context.Context, node ipld.Node) error {
 
 func (d ZipArchive) AddMany(ctx context.Context, nodes []ipld.Node) error {
 	err := d.db.Batch(func(tx *bbolt.Tx) error {
-		b, err := tx.CreateBucketIfNotExists(variable.NodeBucketName())
-		if err != nil {
-			return errors.Wrap(err, "can't create bucket")
-		}
 		for _, node := range nodes {
-			err := d.add(b, node)
+			err := d.add(tx, node)
 			if err != nil {
 				return err
 			}
 		}
 
-		return err
+		return nil
 	})
 
 	return errors.Wrap(err, "can't save node to database")
@@ -162,15 +168,16 @@ func (d ZipArchive) RemoveMany(ctx context.Context, cids []cid.Cid) error {
 
 var errNotSupportNode = errors.New("not supported error")
 
-func (d ZipArchive) add(b *bbolt.Bucket, node ipld.Node) error {
+func (d ZipArchive) add(tx *bbolt.Tx, node ipld.Node) error {
 	if v, ok := node.(*merkledag.ProtoNode); ok {
-		return errors.Wrap(SaveProtoNode(b, node.Cid(), v), "can't save node to database")
+		return errors.Wrap(SaveProtoNode(tx, node.Cid(), v), "can't save node to database")
 	}
 
 	if v, ok := node.(*posinfo.FilestoreNode); ok {
 		length, _ := v.Size()
 		blockOffsetOfZip := v.PosInfo.Offset + d.baseOffset
-		return errors.Wrap(SaveFileStoreMeta(b, node.Cid(), v.PosInfo.FullPath, blockOffsetOfZip, length),
+
+		return errors.Wrap(SaveFileStoreMeta(tx, node.Cid(), v.PosInfo.FullPath, blockOffsetOfZip, length),
 			"can't save node to database")
 	}
 

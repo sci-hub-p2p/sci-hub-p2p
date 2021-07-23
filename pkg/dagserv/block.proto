@@ -7,9 +7,16 @@ message Record {
   string filename = 3;
 }
 
+enum BlockType {
+  file = 0;
+  proto = 1;
+}
 
-message Link{
-  string name = 1;
-  uint64 size = 2;
-  bytes cid = 3;
+message Block{
+  // ember Record
+  uint64 offset = 1;
+  uint64 length = 2;
+  BlockType type = 3;
+  bytes CID = 4;
+  string filename = 5;
 }

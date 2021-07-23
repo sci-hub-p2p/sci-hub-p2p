@@ -16,7 +16,7 @@
 package store
 
 import (
-	"context"
+	"encoding/hex"
 	"fmt"
 	"log"
 
@@ -28,7 +28,6 @@ import (
 	"go.etcd.io/bbolt"
 
 	"sci_hub_p2p/pkg/dagserv"
-	"sci_hub_p2p/pkg/variable"
 )
 
 // Here are some basic store implementations.
@@ -42,6 +41,27 @@ type MapDatastore struct {
 
 var ErrWriteNotAllowed = errors.New("write data not allowed")
 
+func showFirst32(p []byte) {
+	l := len(p)
+	if l == 0 {
+		return
+	}
+	if l >= 32 {
+		fmt.Println(hex.Dump(p[:32]))
+	} else {
+		fmt.Println(hex.Dump(p))
+	}
+}
+
+func List(s *MapDatastore) {
+	fmt.Println("start list key")
+	for key, value := range s.values {
+		fmt.Println(key)
+		showFirst32(value)
+	}
+	fmt.Println("stop list key")
+}
+
 // NewMapDatastore constructs a MapDatastore. It is _not_ thread-safe by
 // default, wrap using sync.MutexWrap if you need thread safety (the answer here
 // is usually yes).
@@ -53,46 +73,51 @@ func NewMapDatastore(db *bbolt.DB) (d *MapDatastore) {
 	}
 }
 
-// Put implements Datastore.Put
+// Put implements Datastore.Put.
 func (d *MapDatastore) Put(key ds.Key, value []byte) (err error) {
-	return ErrWriteNotAllowed
+	d.values[key] = value
+	return nil
 }
 
-// Sync implements Datastore.Sync
+// Sync implements Datastore.Sync.
 func (d *MapDatastore) Sync(prefix ds.Key) error {
 	return nil
 }
 
-// Get implements Datastore.Get
 func (d *MapDatastore) Get(key ds.Key) (value []byte, err error) {
-	c, err := dshelp.DsKeyToMultihash(key)
-	if err != nil {
-		return nil, err
-	}
-	d.dag.Get(context.TODO(), c)
-	var val []byte
-	err = d.db.View(func(tx *bbolt.Tx) error {
-		b := tx.Bucket(variable.NodeBucketName())
-		val = b.Get(c.Bytes())
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	if val == nil {
-
+	val, found := d.values[key]
+	if !found {
 		return nil, ds.ErrNotFound
 	}
 	return val, nil
+
+	// c, err := dshelp.DsKeyToMultihash(key)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// var val []byte
+	// err = d.db.View(func(tx *bbolt.Tx) error {
+	// 	b := tx.Bucket(variable.NodeBucketName())
+	// 	val = b.Get(c)
+	// 	return nil
+	// })
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// if val == nil {
+	//
+	// 	return nil, ds.ErrNotFound
+	// }
+	// return val, nil
 }
 
-// Has implements Datastore.Has
+// Has implements Datastore.Has.
 func (d *MapDatastore) Has(key ds.Key) (exists bool, err error) {
 	_, found := d.values[key]
 	return found, nil
 }
 
-// GetSize implements Datastore.GetSize
+// GetSize implements Datastore.GetSize.
 func (d *MapDatastore) GetSize(key ds.Key) (size int, err error) {
 	if v, found := d.values[key]; found {
 		return len(v), nil
@@ -100,13 +125,13 @@ func (d *MapDatastore) GetSize(key ds.Key) (size int, err error) {
 	return -1, ds.ErrNotFound
 }
 
-// Delete implements Datastore.Delete
+// Delete implements Datastore.Delete.
 func (d *MapDatastore) Delete(key ds.Key) (err error) {
 	delete(d.values, key)
 	return nil
 }
 
-// Query implements Datastore.Query
+// Query implements Datastore.Query.
 func (d *MapDatastore) Query(q dsq.Query) (dsq.Results, error) {
 	re := make([]dsq.Entry, 0, len(d.values))
 	for k, v := range d.values {
@@ -150,25 +175,25 @@ func NewLogDatastore(ds ds.Datastore, name string) *LogDatastore {
 	return &LogDatastore{Name: name, child: ds}
 }
 
-// Children implements Shim
+// Children implements Shim.
 func (d *LogDatastore) Children() []ds.Datastore {
 	return []ds.Datastore{d.child}
 }
 
-// Put implements Datastore.Put
+// Put implements Datastore.Put.
 func (d *LogDatastore) Put(key ds.Key, value []byte) (err error) {
 	log.Printf("%s: Put %s\n", d.Name, key)
 	// log.Printf("%s: Put %s ```%s```", d.Name, key, value)
 	return d.child.Put(key, value)
 }
 
-// Sync implements Datastore.Sync
+// Sync implements Datastore.Sync.
 func (d *LogDatastore) Sync(prefix ds.Key) error {
 	log.Printf("%s: Sync %s\n", d.Name, prefix)
 	return d.child.Sync(prefix)
 }
 
-// Get implements Datastore.Get
+// Get implements Datastore.Get.
 func (d *LogDatastore) Get(key ds.Key) (value []byte, err error) {
 	log.Printf("%s: Get %s\n", d.Name, key)
 	if mh, err := dshelp.DsKeyToMultihash(key); err == nil {
@@ -178,19 +203,19 @@ func (d *LogDatastore) Get(key ds.Key) (value []byte, err error) {
 	return d.child.Get(key)
 }
 
-// Has implements Datastore.Has
+// Has implements Datastore.Has.
 func (d *LogDatastore) Has(key ds.Key) (exists bool, err error) {
 	log.Printf("%s: Has %s\n", d.Name, key)
 	return d.child.Has(key)
 }
 
-// GetSize implements Datastore.GetSize
+// GetSize implements Datastore.GetSize.
 func (d *LogDatastore) GetSize(key ds.Key) (size int, err error) {
 	log.Printf("%s: GetSize %s\n", d.Name, key)
 	return d.child.GetSize(key)
 }
 
-// Delete implements Datastore.Delete
+// Delete implements Datastore.Delete.
 func (d *LogDatastore) Delete(key ds.Key) (err error) {
 	log.Printf("%s: Delete %s\n", d.Name, key)
 	return d.child.Delete(key)
@@ -202,7 +227,7 @@ func (d *LogDatastore) DiskUsage() (uint64, error) {
 	return ds.DiskUsage(d.child)
 }
 
-// Query implements Datastore.Query
+// Query implements Datastore.Query.
 func (d *LogDatastore) Query(q dsq.Query) (dsq.Results, error) {
 	log.Printf("%s: Query\n", d.Name)
 	log.Printf("%s: q.Prefix: %s\n", d.Name, q.Prefix)
@@ -236,20 +261,20 @@ func (d *LogDatastore) Batch() (ds.Batch, error) {
 	return nil, ds.ErrBatchUnsupported
 }
 
-// Put implements Batch.Put
+// Put implements Batch.Put.
 func (d *LogBatch) Put(key ds.Key, value []byte) (err error) {
 	log.Printf("%s: BatchPut %s\n", d.Name, key)
 	// log.Printf("%s: Put %s ```%s```", d.Name, key, value)
 	return d.child.Put(key, value)
 }
 
-// Delete implements Batch.Delete
+// Delete implements Batch.Delete.
 func (d *LogBatch) Delete(key ds.Key) (err error) {
 	log.Printf("%s: BatchDelete %s\n", d.Name, key)
 	return d.child.Delete(key)
 }
 
-// Commit implements Batch.Commit
+// Commit implements Batch.Commit.
 func (d *LogBatch) Commit() (err error) {
 	log.Printf("%s: BatchCommit\n", d.Name)
 	return d.child.Commit()

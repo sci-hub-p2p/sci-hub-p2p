@@ -13,16 +13,19 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package constants
+package key
 
-import "os"
+import (
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
+)
 
-func PaperBucket() []byte { return []byte("paper-v0") }
-
-func TorrentBucket() []byte { return []byte("torrent-v0") }
-
-const DefaultFilePerm os.FileMode = 0640
-const DefaultDirPerm os.FileMode = os.ModeDir | DefaultFilePerm
-
-const SecurityPerm os.FileMode = 0600
-const PrivateKeyLength = 4096
+func ExportRsaPrivateKeyAsPem(key *rsa.PrivateKey) []byte {
+	return pem.EncodeToMemory(
+		&pem.Block{
+			Type:  "RSA PRIVATE KEY",
+			Bytes: x509.MarshalPKCS1PrivateKey(key),
+		},
+	)
+}

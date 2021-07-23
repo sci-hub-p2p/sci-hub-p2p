@@ -20,6 +20,52 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type BlockType int32
+
+const (
+	BlockType_file  BlockType = 0
+	BlockType_proto BlockType = 1
+)
+
+// Enum value maps for BlockType.
+var (
+	BlockType_name = map[int32]string{
+		0: "file",
+		1: "proto",
+	}
+	BlockType_value = map[string]int32{
+		"file":  0,
+		"proto": 1,
+	}
+)
+
+func (x BlockType) Enum() *BlockType {
+	p := new(BlockType)
+	*p = x
+	return p
+}
+
+func (x BlockType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (BlockType) Descriptor() protoreflect.EnumDescriptor {
+	return file_pkg_dagserv_block_proto_enumTypes[0].Descriptor()
+}
+
+func (BlockType) Type() protoreflect.EnumType {
+	return &file_pkg_dagserv_block_proto_enumTypes[0]
+}
+
+func (x BlockType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use BlockType.Descriptor instead.
+func (BlockType) EnumDescriptor() ([]byte, []int) {
+	return file_pkg_dagserv_block_proto_rawDescGZIP(), []int{0}
+}
+
 type Record struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -83,18 +129,21 @@ func (x *Record) GetFilename() string {
 	return ""
 }
 
-type Link struct {
+type Block struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Size uint64 `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
-	Cid  []byte `protobuf:"bytes,3,opt,name=cid,proto3" json:"cid,omitempty"`
+	// ember Record
+	Offset   uint64    `protobuf:"varint,1,opt,name=offset,proto3" json:"offset,omitempty"`
+	Length   uint64    `protobuf:"varint,2,opt,name=length,proto3" json:"length,omitempty"`
+	Type     BlockType `protobuf:"varint,3,opt,name=type,proto3,enum=BlockType" json:"type,omitempty"`
+	CID      []byte    `protobuf:"bytes,4,opt,name=CID,proto3" json:"CID,omitempty"`
+	Filename string    `protobuf:"bytes,5,opt,name=filename,proto3" json:"filename,omitempty"`
 }
 
-func (x *Link) Reset() {
-	*x = Link{}
+func (x *Block) Reset() {
+	*x = Block{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_pkg_dagserv_block_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -102,13 +151,13 @@ func (x *Link) Reset() {
 	}
 }
 
-func (x *Link) String() string {
+func (x *Block) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Link) ProtoMessage() {}
+func (*Block) ProtoMessage() {}
 
-func (x *Link) ProtoReflect() protoreflect.Message {
+func (x *Block) ProtoReflect() protoreflect.Message {
 	mi := &file_pkg_dagserv_block_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -120,30 +169,44 @@ func (x *Link) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Link.ProtoReflect.Descriptor instead.
-func (*Link) Descriptor() ([]byte, []int) {
+// Deprecated: Use Block.ProtoReflect.Descriptor instead.
+func (*Block) Descriptor() ([]byte, []int) {
 	return file_pkg_dagserv_block_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *Link) GetName() string {
+func (x *Block) GetOffset() uint64 {
 	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *Link) GetSize() uint64 {
-	if x != nil {
-		return x.Size
+		return x.Offset
 	}
 	return 0
 }
 
-func (x *Link) GetCid() []byte {
+func (x *Block) GetLength() uint64 {
 	if x != nil {
-		return x.Cid
+		return x.Length
+	}
+	return 0
+}
+
+func (x *Block) GetType() BlockType {
+	if x != nil {
+		return x.Type
+	}
+	return BlockType_file
+}
+
+func (x *Block) GetCID() []byte {
+	if x != nil {
+		return x.CID
 	}
 	return nil
+}
+
+func (x *Block) GetFilename() string {
+	if x != nil {
+		return x.Filename
+	}
+	return ""
 }
 
 var File_pkg_dagserv_block_proto protoreflect.FileDescriptor
@@ -156,12 +219,19 @@ var file_pkg_dagserv_block_proto_rawDesc = []byte{
 	0x65, 0x6e, 0x67, 0x74, 0x68, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x6c, 0x65, 0x6e,
 	0x67, 0x74, 0x68, 0x12, 0x1a, 0x0a, 0x08, 0x66, 0x69, 0x6c, 0x65, 0x6e, 0x61, 0x6d, 0x65, 0x18,
 	0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x66, 0x69, 0x6c, 0x65, 0x6e, 0x61, 0x6d, 0x65, 0x22,
-	0x40, 0x0a, 0x04, 0x4c, 0x69, 0x6e, 0x6b, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x73,
-	0x69, 0x7a, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x04, 0x73, 0x69, 0x7a, 0x65, 0x12,
-	0x10, 0x0a, 0x03, 0x63, 0x69, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x03, 0x63, 0x69,
-	0x64, 0x42, 0x0f, 0x5a, 0x0d, 0x2e, 0x2f, 0x70, 0x6b, 0x67, 0x2f, 0x64, 0x61, 0x67, 0x73, 0x65,
-	0x72, 0x76, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x85, 0x01, 0x0a, 0x05, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x12, 0x16, 0x0a, 0x06, 0x6f, 0x66, 0x66,
+	0x73, 0x65, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x6f, 0x66, 0x66, 0x73, 0x65,
+	0x74, 0x12, 0x16, 0x0a, 0x06, 0x6c, 0x65, 0x6e, 0x67, 0x74, 0x68, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x04, 0x52, 0x06, 0x6c, 0x65, 0x6e, 0x67, 0x74, 0x68, 0x12, 0x1e, 0x0a, 0x04, 0x74, 0x79, 0x70,
+	0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x0a, 0x2e, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x54,
+	0x79, 0x70, 0x65, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x12, 0x10, 0x0a, 0x03, 0x43, 0x49, 0x44,
+	0x18, 0x04, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x03, 0x43, 0x49, 0x44, 0x12, 0x1a, 0x0a, 0x08, 0x66,
+	0x69, 0x6c, 0x65, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x66,
+	0x69, 0x6c, 0x65, 0x6e, 0x61, 0x6d, 0x65, 0x2a, 0x20, 0x0a, 0x09, 0x42, 0x6c, 0x6f, 0x63, 0x6b,
+	0x54, 0x79, 0x70, 0x65, 0x12, 0x08, 0x0a, 0x04, 0x66, 0x69, 0x6c, 0x65, 0x10, 0x00, 0x12, 0x09,
+	0x0a, 0x05, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x10, 0x01, 0x42, 0x0f, 0x5a, 0x0d, 0x2e, 0x2f, 0x70,
+	0x6b, 0x67, 0x2f, 0x64, 0x61, 0x67, 0x73, 0x65, 0x72, 0x76, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x33,
 }
 
 var (
@@ -176,17 +246,20 @@ func file_pkg_dagserv_block_proto_rawDescGZIP() []byte {
 	return file_pkg_dagserv_block_proto_rawDescData
 }
 
+var file_pkg_dagserv_block_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_pkg_dagserv_block_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_pkg_dagserv_block_proto_goTypes = []interface{}{
-	(*Record)(nil), // 0: Record
-	(*Link)(nil),   // 1: Link
+	(BlockType)(0), // 0: BlockType
+	(*Record)(nil), // 1: Record
+	(*Block)(nil),  // 2: Block
 }
 var file_pkg_dagserv_block_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0, // 0: Block.type:type_name -> BlockType
+	1, // [1:1] is the sub-list for method output_type
+	1, // [1:1] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_pkg_dagserv_block_proto_init() }
@@ -208,7 +281,7 @@ func file_pkg_dagserv_block_proto_init() {
 			}
 		}
 		file_pkg_dagserv_block_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Link); i {
+			switch v := v.(*Block); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -225,13 +298,14 @@ func file_pkg_dagserv_block_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_pkg_dagserv_block_proto_rawDesc,
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_pkg_dagserv_block_proto_goTypes,
 		DependencyIndexes: file_pkg_dagserv_block_proto_depIdxs,
+		EnumInfos:         file_pkg_dagserv_block_proto_enumTypes,
 		MessageInfos:      file_pkg_dagserv_block_proto_msgTypes,
 	}.Build()
 	File_pkg_dagserv_block_proto = out.File

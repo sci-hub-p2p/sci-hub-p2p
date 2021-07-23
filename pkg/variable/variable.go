@@ -44,5 +44,9 @@ func GetTorrentStoragePath() string {
 }
 
 func NodeBucketName() []byte {
+	return []byte("node-v0")
+}
+
+func BlockBucketName() []byte {
 	return []byte("block-v0")
 }

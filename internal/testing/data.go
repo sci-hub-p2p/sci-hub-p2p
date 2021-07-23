@@ -51,6 +51,10 @@ func LoadTestData() {
 		if err != nil {
 			logger.Fatal(err)
 		}
+		err = dagserv.InitDB(db)
+		if err != nil {
+			logger.Fatal(err)
+		}
 		go func(db *bbolt.DB) {
 			for file := range c {
 				err = func() error {

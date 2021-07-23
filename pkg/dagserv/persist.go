@@ -30,6 +30,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"sci_hub_p2p/pkg/logger"
+	"sci_hub_p2p/pkg/variable"
 )
 
 func ReadFileStoreNode(b *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {
@@ -71,7 +72,9 @@ func ReadFileStoreNode(b *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {
 	return &merkledag.RawNode{Block: block}, errors.Wrap(err, "failed to create block")
 }
 
-func SaveFileStoreMeta(b *bbolt.Bucket, c cid.Cid, name string, offset, size uint64) error {
+func SaveFileStoreMeta(tx *bbolt.Tx, c cid.Cid, name string, offset, size uint64) error {
+	nb := tx.Bucket(variable.NodeBucketName())
+	bb := tx.Bucket(variable.BlockBucketName())
 	v := &Record{
 		Offset:   offset,
 		Length:   size,
@@ -82,11 +85,35 @@ func SaveFileStoreMeta(b *bbolt.Bucket, c cid.Cid, name string, offset, size uin
 		return errors.Wrap(err, "can't marshal persist.Record to binary")
 	}
 
-	return errors.Wrap(b.Put(c.Hash(), raw), "failed to save data to database")
+	var block = Block{Type: BlockType_file, CID: c.Bytes(), Offset: offset, Length: size, Filename: name}
+	value, err := proto.Marshal(&block)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal block record to bytes")
+	}
+
+	err = bb.Put(c.Hash(), value)
+	if err != nil {
+		return errors.Wrap(err, "failed to save block record to database")
+	}
+
+	return errors.Wrap(nb.Put(c.Hash(), raw), "failed to save data to database")
 }
 
-func SaveProtoNode(b *bbolt.Bucket, c cid.Cid, n *merkledag.ProtoNode) error {
-	return errors.Wrap(b.Put(c.Hash(), n.RawData()), "failed to save data to database")
+func SaveProtoNode(tx *bbolt.Tx, c cid.Cid, n *merkledag.ProtoNode) error {
+	nb := tx.Bucket(variable.NodeBucketName())
+	bb := tx.Bucket(variable.BlockBucketName())
+	var v = Block{Type: BlockType_proto, CID: c.Bytes()}
+	value, err := proto.Marshal(&v)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal block record to bytes")
+	}
+
+	err = bb.Put(c.Hash(), value)
+	if err != nil {
+		return errors.Wrap(err, "failed to save block record to database")
+	}
+
+	return errors.Wrap(nb.Put(c.Hash(), n.RawData()), "failed to save data to database")
 }
 
 func ReadProtoNode(b *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {

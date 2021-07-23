@@ -13,3 +13,5 @@ big_file.bin
 .leveldb/
 testdata/big_file.*
 *.bolt
+out/*.key
+*.log
