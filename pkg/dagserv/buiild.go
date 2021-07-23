@@ -17,6 +17,7 @@ package dagserv
 
 import (
 	"io"
+	"os"
 
 	"github.com/ipfs/go-cid"
 	chunker "github.com/ipfs/go-ipfs-chunker"
@@ -67,4 +68,47 @@ func DefaultPrefix() cid.Prefix {
 		MhType:   multihash.Names["blake2b-256"],
 		MhLength: -1,
 	}
+}
+
+func AddFile(db *bbolt.DB, abs string) (ipld.Node, error) {
+	s, err := os.Stat(abs)
+	if err != nil {
+		return nil, err
+	}
+	r, err := os.Open(abs)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+
+	size := uint64(s.Size())
+	dbp := helpers.DagBuilderParams{
+		Dagserv:    New(db, 0),
+		NoCopy:     true,
+		RawLeaves:  true,
+		Maxlinks:   helpers.DefaultLinksPerBlock,
+		CidBuilder: DefaultPrefix(),
+	}
+	// NoCopy require a `FileInfo` on chunker
+	f := CompressedFile{
+		reader:             r,
+		zipPath:            abs,
+		compressedFilePath: "path/in/zip/article.pdf",
+		size:               size,
+	}
+
+	chunk, err := chunker.FromString(f, "default")
+	if err != nil {
+		return nil, errors.Wrapf(err, "can't create default chunker")
+	}
+	dbh, err := dbp.New(chunk)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't create dag builder from chunker")
+	}
+	n, err := balanced.Layout(dbh)
+	if err != nil {
+		return nil, errors.Wrapf(err, "can't layout all chunk")
+	}
+
+	return n, errors.Wrap(db.Sync(), "failed to flush data to disk")
 }

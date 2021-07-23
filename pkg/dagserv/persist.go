@@ -22,16 +22,18 @@ import (
 
 	blocks "github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-cid"
-	posinfo "github.com/ipfs/go-ipfs-posinfo"
 	ipld "github.com/ipfs/go-ipld-format"
 	"github.com/ipfs/go-merkledag"
 	pb "github.com/ipfs/go-merkledag/pb"
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
 	"google.golang.org/protobuf/proto"
+
+	"sci_hub_p2p/pkg/logger"
 )
 
 func ReadFileStoreNode(b *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {
+	logger.Info("ReadFileStoreNode", c)
 	var v = &Record{}
 	data := b.Get(c.Bytes())
 	if data == nil {
@@ -42,6 +44,7 @@ func ReadFileStoreNode(b *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "can't marshal persist.Record to binary")
 	}
+
 	f, err := os.Open(v.Filename)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to open file %s", v.Filename)
@@ -59,10 +62,13 @@ func ReadFileStoreNode(b *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to read file %s", v.Filename)
 	}
-
+	// if c.String() == "bafk2bzacebcktc35bpqrurwqk5eadvgrdoswyzlpjjwol57sqgzqmj3himwr6" {
+	// 	fmt.Println(hex.Dump(p[:32]))
+	// }
+	//
 	block, err := blocks.NewBlockWithCid(p, c)
 
-	return &posinfo.FilestoreNode{Node: &merkledag.RawNode{Block: block}}, errors.Wrap(err, "failed to create block")
+	return &merkledag.RawNode{Block: block}, errors.Wrap(err, "failed to create block")
 }
 
 func SaveFileStoreMeta(b *bbolt.Bucket, c cid.Cid, name string, offset, size uint64) error {
@@ -89,8 +95,11 @@ func ReadProtoNode(b *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {
 		return nil, ErrNotFound
 	}
 	v, err := unmarshal(data, c)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal data to `merkledag.ProtoNode`")
+	}
 
-	return v, errors.Wrap(err, "failed to unmarshal data to `merkledag.ProtoNode`")
+	return v, nil
 }
 
 // from https://github.com/ipfs/go-merkledag/blob/v0.3.2/coding.go#L25-L46

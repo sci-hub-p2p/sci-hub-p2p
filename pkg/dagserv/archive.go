@@ -17,6 +17,7 @@ package dagserv
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/ipfs/go-cid"
@@ -26,6 +27,7 @@ import (
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
 
+	"sci_hub_p2p/pkg/logger"
 	"sci_hub_p2p/pkg/variable"
 )
 
@@ -46,6 +48,7 @@ type ZipArchive struct {
 }
 
 func (d ZipArchive) Get(ctx context.Context, c cid.Cid) (ipld.Node, error) {
+	logger.Info("Get", c)
 	d.m.Lock()
 	defer d.m.Unlock()
 	if c.Version() == 0 {
@@ -80,6 +83,7 @@ func (d ZipArchive) Get(ctx context.Context, c cid.Cid) (ipld.Node, error) {
 
 // GetMany TODO: need to parallel this, but I'm lazy.
 func (d ZipArchive) GetMany(ctx context.Context, cids []cid.Cid) <-chan *ipld.NodeOption {
+	fmt.Println("get many")
 	var c = make(chan *ipld.NodeOption)
 	go func() {
 		for _, cid := range cids {
@@ -166,7 +170,6 @@ func (d ZipArchive) add(b *bbolt.Bucket, node ipld.Node) error {
 	if v, ok := node.(*posinfo.FilestoreNode); ok {
 		length, _ := v.Size()
 		blockOffsetOfZip := v.PosInfo.Offset + d.baseOffset
-
 		return errors.Wrap(SaveFileStoreMeta(b, node.Cid(), v.PosInfo.FullPath, blockOffsetOfZip, length),
 			"can't save node to database")
 	}

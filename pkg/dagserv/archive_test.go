@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -46,8 +47,9 @@ func TestZipArchive(t *testing.T) {
 	assert.Nil(t, err)
 	defer db.Close()
 
-	_, err = dagserv.Add(db, bytes.NewReader(raw), "../../testdata/big_file.bin", uint64(len(raw)), 0)
+	n, err := dagserv.Add(db, bytes.NewReader(raw), "../../testdata/big_file.bin", uint64(len(raw)), 0)
 	assert.Nil(t, err)
+	fmt.Println(n.Cid())
 }
 
 func TestDagServ_Add(t *testing.T) {
@@ -107,6 +109,24 @@ func TestDagServ_Add(t *testing.T) {
 	assert.Nil(t, os.WriteFile(binary, raw, 0600))
 	node, err := dag.Get(context.TODO(), c)
 	assert.Nil(t, err)
+	
 	assert.True(t, bytes.Equal(node.RawData(), raw[baseOffset+blockOffset:baseOffset+blockOffset+length]),
 		"file content should match", len(node.RawData()), length)
+}
+
+func TestDagServ_Add_Get(t *testing.T) {
+	raw, err := os.ReadFile("./../../testdata/big_file.bin")
+	t.Parallel()
+	assert.Nil(t, err)
+
+	db, err := bbolt.Open(filepath.Join(t.TempDir(), "test.bolt"), constants.DefaultFilePerm, bbolt.DefaultOptions)
+	assert.Nil(t, err)
+	defer db.Close()
+
+	n, err := dagserv.Add(db, bytes.NewReader(raw), "../../testdata/big_file.bin", uint64(len(raw)), 0)
+	assert.Nil(t, err)
+	dag := dagserv.New(db, 0)
+	m, err := dag.Get(context.TODO(), n.Cid())
+	assert.Nil(t, err)
+	assert.True(t, bytes.Equal(n.RawData(), m.RawData()))
 }

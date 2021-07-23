@@ -24,6 +24,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
+	"sci_hub_p2p/cmd/daemon"
 	"sci_hub_p2p/cmd/flag"
 	"sci_hub_p2p/cmd/indexes"
 	"sci_hub_p2p/cmd/paper"
@@ -35,7 +36,7 @@ import (
 var rootCmd = &cobra.Command{
 	Use:   "sci-hub",
 	Short: "sci-hub-p2p is cli tool to fetch paper from p2p network.",
-	Long: "Complete documentation is available at" +
+	Long: "Complete documentation is available at " +
 		"https://github.com/Trim21/sci-hub-p2p/wiki",
 	Version:       variable.Ref,
 	SilenceUsage:  true,
@@ -54,6 +55,7 @@ var debugCmd = &cobra.Command{
 	Use:          "debug",
 	Short:        "show debug message",
 	SilenceUsage: true,
+	Hidden:       true,
 	Run: func(cmd *cobra.Command, args []string) {
 		var buf bytes.Buffer
 		buf.WriteString("=====build into=====\n")
@@ -70,7 +72,7 @@ var debugCmd = &cobra.Command{
 }
 
 func Execute() {
-	rootCmd.AddCommand(indexes.Cmd, torrent.Cmd, paper.Cmd, debugCmd)
+	rootCmd.AddCommand(daemon.Cmd, indexes.Cmd, torrent.Cmd, paper.Cmd, debugCmd)
 
 	rootCmd.PersistentFlags().BoolVar(&flag.Debug, "debug", false, "enable Debug")
 	var defaultParallel = 3
