@@ -131,7 +131,7 @@ linters-settings:
     checks: ["all"]
 
   importas:
-    no-unaliased: false
+    no-unaliased: true
     alias:
       - alias: ipld
         pkg: "github.com/ipfs/go-ipld-format"

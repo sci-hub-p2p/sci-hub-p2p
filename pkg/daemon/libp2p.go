@@ -18,7 +18,7 @@ package daemon
 import (
 	"context"
 
-	"github.com/ipfs/go-datastore"
+	ds "github.com/ipfs/go-datastore"
 	"github.com/ipfs/go-ipns"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -37,7 +37,7 @@ func SetupLibp2p(
 	hostKey crypto.PrivKey,
 	secret pnet.PSK,
 	listenAddrs []multiaddr.Multiaddr,
-	ds datastore.Batching,
+	ds ds.Batching,
 	opts ...libp2p.Option,
 ) (host.Host, *dual.DHT, error) {
 	var ddht *dual.DHT
@@ -65,7 +65,7 @@ func SetupLibp2p(
 	return h, ddht, nil
 }
 
-func newDHT(ctx context.Context, h host.Host, ds datastore.Batching) (*dual.DHT, error) {
+func newDHT(ctx context.Context, h host.Host, ds ds.Batching) (*dual.DHT, error) {
 	dhtOpts := []dual.Option{
 		dual.DHTOption(dht.NamespacedValidator("pk", record.PublicKeyValidator{})),
 		dual.DHTOption(dht.NamespacedValidator("ipns", ipns.Validator{KeyBook: h.Peerstore()})),
