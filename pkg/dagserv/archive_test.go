@@ -109,7 +109,7 @@ func TestDagServ_Add(t *testing.T) {
 	assert.Nil(t, os.WriteFile(binary, raw, 0600))
 	node, err := dag.Get(context.TODO(), c)
 	assert.Nil(t, err)
-	
+
 	assert.True(t, bytes.Equal(node.RawData(), raw[baseOffset+blockOffset:baseOffset+blockOffset+length]),
 		"file content should match", len(node.RawData()), length)
 }

@@ -82,11 +82,11 @@ func SaveFileStoreMeta(b *bbolt.Bucket, c cid.Cid, name string, offset, size uin
 		return errors.Wrap(err, "can't marshal persist.Record to binary")
 	}
 
-	return errors.Wrap(b.Put(c.Bytes(), raw), "failed to save data to database")
+	return errors.Wrap(b.Put(c.Hash(), raw), "failed to save data to database")
 }
 
 func SaveProtoNode(b *bbolt.Bucket, c cid.Cid, n *merkledag.ProtoNode) error {
-	return errors.Wrap(b.Put(c.Bytes(), n.RawData()), "failed to save data to database")
+	return errors.Wrap(b.Put(c.Hash(), n.RawData()), "failed to save data to database")
 }
 
 func ReadProtoNode(b *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {

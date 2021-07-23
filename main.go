@@ -35,10 +35,11 @@ import (
 )
 
 func main() {
-	var err = try()
-	if err != nil {
-		panic(err)
-	}
+	// testing.LoadTestData()
+	// var err = try()
+	// if err != nil {
+	// 	panic(err)
+	// }
 
 	// expectedKey := datastore.RawKey("/UDSAEIE5SHNQHV5U6G4HOPOWINVOOCVWBBRYVTZYKB3DZGT6QZGOWTSFE4")
 

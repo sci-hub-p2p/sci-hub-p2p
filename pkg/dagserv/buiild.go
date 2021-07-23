@@ -110,5 +110,5 @@ func AddFile(db *bbolt.DB, abs string) (ipld.Node, error) {
 		return nil, errors.Wrapf(err, "can't layout all chunk")
 	}
 
-	return n, errors.Wrap(db.Sync(), "failed to flush data to disk")
+	return n, nil
 }

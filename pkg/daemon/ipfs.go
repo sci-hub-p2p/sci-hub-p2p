@@ -46,7 +46,7 @@ func Start() error {
 		return err
 	}
 	defer db.Close()
-	
+
 	ds := dssync.MutexWrap(store.NewLogDatastore(store.NewMapDatastore(db), "debug"))
 	privateKey, _, err := crypto.GenerateKeyPair(crypto.RSA, 4096)
 	if err != nil {

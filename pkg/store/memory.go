@@ -16,15 +16,18 @@
 package store
 
 import (
+	"context"
 	"fmt"
 	"log"
 
-	"github.com/ipfs/go-cid"
 	ds "github.com/ipfs/go-datastore"
 	dsq "github.com/ipfs/go-datastore/query"
 	dshelp "github.com/ipfs/go-ipfs-ds-help"
+	ipld "github.com/ipfs/go-ipld-format"
+	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
 
+	"sci_hub_p2p/pkg/dagserv"
 	"sci_hub_p2p/pkg/variable"
 )
 
@@ -34,7 +37,10 @@ import (
 type MapDatastore struct {
 	values map[ds.Key][]byte
 	db     *bbolt.DB
+	dag    ipld.DAGService
 }
+
+var ErrWriteNotAllowed = errors.New("write data not allowed")
 
 // NewMapDatastore constructs a MapDatastore. It is _not_ thread-safe by
 // default, wrap using sync.MutexWrap if you need thread safety (the answer here
@@ -43,13 +49,13 @@ func NewMapDatastore(db *bbolt.DB) (d *MapDatastore) {
 	return &MapDatastore{
 		values: make(map[ds.Key][]byte),
 		db:     db,
+		dag:    dagserv.New(db, 0),
 	}
 }
 
 // Put implements Datastore.Put
 func (d *MapDatastore) Put(key ds.Key, value []byte) (err error) {
-	d.values[key] = value
-	return nil
+	return ErrWriteNotAllowed
 }
 
 // Sync implements Datastore.Sync
@@ -59,10 +65,11 @@ func (d *MapDatastore) Sync(prefix ds.Key) error {
 
 // Get implements Datastore.Get
 func (d *MapDatastore) Get(key ds.Key) (value []byte, err error) {
-	c, err := dshelp.DsKeyToCidV1(key, cid.Raw)
+	c, err := dshelp.DsKeyToMultihash(key)
 	if err != nil {
 		return nil, err
 	}
+	d.dag.Get(context.TODO(), c)
 	var val []byte
 	err = d.db.View(func(tx *bbolt.Tx) error {
 		b := tx.Bucket(variable.NodeBucketName())
