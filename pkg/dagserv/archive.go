@@ -169,15 +169,14 @@ func (d ZipArchive) RemoveMany(ctx context.Context, cids []cid.Cid) error {
 var errNotSupportNode = errors.New("not supported error")
 
 func (d ZipArchive) add(tx *bbolt.Tx, node ipld.Node) error {
-	if v, ok := node.(*merkledag.ProtoNode); ok {
-		return errors.Wrap(SaveProtoNode(tx, node.Cid(), v), "can't save node to database")
-	}
+	switch n := node.(type) {
+	case *merkledag.ProtoNode:
+		return errors.Wrap(SaveProtoNode(tx, node.Cid(), n), "can't save node to database")
+	case *posinfo.FilestoreNode:
+		length, _ := n.Size()
+		blockOffsetOfZip := n.PosInfo.Offset + d.baseOffset
 
-	if v, ok := node.(*posinfo.FilestoreNode); ok {
-		length, _ := v.Size()
-		blockOffsetOfZip := v.PosInfo.Offset + d.baseOffset
-
-		return errors.Wrap(SaveFileStoreMeta(tx, node.Cid(), v.PosInfo.FullPath, blockOffsetOfZip, length),
+		return errors.Wrap(SaveFileStoreMeta(tx, node.Cid(), n.PosInfo.FullPath, blockOffsetOfZip, length),
 			"can't save node to database")
 	}
 
