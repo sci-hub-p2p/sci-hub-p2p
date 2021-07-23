@@ -14,22 +14,28 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 // nolint
-package testing
+package main
 
 import (
 	"archive/zip"
 	"fmt"
+	"os"
 	"path/filepath"
 	"sync"
 	"time"
 
 	"github.com/cheggaaa/pb/v3"
+	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
 
 	"sci_hub_p2p/pkg/dagserv"
 	"sci_hub_p2p/pkg/logger"
 	"sci_hub_p2p/pkg/variable"
 )
+
+func main() {
+	LoadTestData()
+}
 
 func LoadTestData() {
 	const count = 8
@@ -39,18 +45,26 @@ func LoadTestData() {
 		logger.Fatal(err)
 	}
 
+	err = os.Remove("./test.bolt")
+	if err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			logger.Fatal(err)
+		}
+	}
+
 	c := make(chan string, count)
 	wg := sync.WaitGroup{}
 	wg.Add(count)
-
+	var dbSlice []*bbolt.DB
 	for i := 0; i < count; i++ {
-		db, err := bbolt.Open(fmt.Sprintf("./test-%d.bolt", i), 0600, &bbolt.Options{
+		db, err := bbolt.Open(fmt.Sprintf("./tmp/test-%d.bolt", i), 0600, &bbolt.Options{
 			FreelistType: bbolt.FreelistMapType,
 			NoSync:       true,
 		})
 		if err != nil {
 			logger.Fatal(err)
 		}
+		dbSlice = append(dbSlice, db)
 		err = dagserv.InitDB(db)
 		if err != nil {
 			logger.Fatal(err)
@@ -84,7 +98,6 @@ func LoadTestData() {
 				}
 			}
 			db.Sync()
-			db.Close()
 			wg.Done()
 		}(db)
 	}
@@ -106,24 +119,44 @@ func LoadTestData() {
 	if err != nil {
 		logger.Fatal(err)
 	}
-	for i := 0; i < count; i++ {
-		_db, err := bbolt.Open(fmt.Sprintf("./test-%d.bolt", i), 0600, &bbolt.Options{FreelistType: bbolt.FreelistMapType})
-		if err != nil {
-			logger.Fatal(err)
-		}
-		err = db.Batch(func(tx *bbolt.Tx) error {
-			db := tx.Bucket(variable.NodeBucketName())
-			return _db.View(func(_tx *bbolt.Tx) error {
-				_b := _tx.Bucket(variable.NodeBucketName())
-				return _b.ForEach(func(k, v []byte) error {
-					return db.Put(k, v)
-				})
-			})
-		})
+	err = dagserv.InitDB(db)
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	for _, srcDB := range dbSlice {
+		err = copyBucket(srcDB, db, variable.NodeBucketName())
+
 		if err != nil {
 			logger.Error(err)
 		}
-		_db.Close()
+
+		err = copyBucket(srcDB, db, variable.BlockBucketName())
+
+		if err != nil {
+			logger.Error(err)
+		}
+
+		srcDB.Close()
+		db.Sync()
 	}
+
 	db.Close()
+}
+
+func copyBucket(src, dst *bbolt.DB, name []byte) error {
+	return dst.Batch(func(dstTx *bbolt.Tx) error {
+		dstBucket, err := dstTx.CreateBucketIfNotExists(name)
+		if err != nil {
+			return errors.Wrap(err, "failed to create bucket in dst DB")
+		}
+
+		return src.View(func(srcTx *bbolt.Tx) error {
+			srcBucket := dstTx.Bucket(name)
+
+			return srcBucket.ForEach(func(k, v []byte) error {
+				return dstBucket.Put(k, v)
+			})
+		})
+	})
 }

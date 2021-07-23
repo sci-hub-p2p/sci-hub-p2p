@@ -17,8 +17,6 @@ package dagserv
 
 import (
 	"fmt"
-	"io"
-	"os"
 
 	blocks "github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-cid"
@@ -29,6 +27,7 @@ import (
 	"go.etcd.io/bbolt"
 	"google.golang.org/protobuf/proto"
 
+	"sci_hub_p2p/internal/utils"
 	"sci_hub_p2p/pkg/logger"
 	"sci_hub_p2p/pkg/variable"
 )
@@ -46,27 +45,11 @@ func ReadFileStoreNode(b *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {
 		return nil, errors.Wrap(err, "can't marshal persist.Record to binary")
 	}
 
-	f, err := os.Open(v.Filename)
+	p, err := utils.ReadFileAt(v.Filename, int64(v.Offset), int64(v.Length))
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to open file %s", v.Filename)
-	}
-	defer f.Close()
-
-	_, err = f.Seek(int64(v.Offset), io.SeekStart)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to seek file %s", v.Filename)
+		return nil, errors.Wrap(err, "filed to read from disk")
 	}
 
-	var p = make([]byte, v.Length)
-
-	_, err = io.ReadFull(f, p)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to read file %s", v.Filename)
-	}
-	// if c.String() == "bafk2bzacebcktc35bpqrurwqk5eadvgrdoswyzlpjjwol57sqgzqmj3himwr6" {
-	// 	fmt.Println(hex.Dump(p[:32]))
-	// }
-	//
 	block, err := blocks.NewBlockWithCid(p, c)
 
 	return &merkledag.RawNode{Block: block}, errors.Wrap(err, "failed to create block")
@@ -96,13 +79,14 @@ func SaveFileStoreMeta(tx *bbolt.Tx, c cid.Cid, name string, offset, size uint64
 		return errors.Wrap(err, "failed to save block record to database")
 	}
 
-	return errors.Wrap(nb.Put(c.Hash(), raw), "failed to save data to database")
+	return errors.Wrap(nb.Put(c.Bytes(), raw), "failed to save data to database")
 }
 
 func SaveProtoNode(tx *bbolt.Tx, c cid.Cid, n *merkledag.ProtoNode) error {
 	nb := tx.Bucket(variable.NodeBucketName())
 	bb := tx.Bucket(variable.BlockBucketName())
-	var v = Block{Type: BlockType_proto, CID: c.Bytes()}
+
+	var v = Block{Type: BlockType_proto, CID: c.Hash()}
 	value, err := proto.Marshal(&v)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal block record to bytes")
@@ -113,11 +97,11 @@ func SaveProtoNode(tx *bbolt.Tx, c cid.Cid, n *merkledag.ProtoNode) error {
 		return errors.Wrap(err, "failed to save block record to database")
 	}
 
-	return errors.Wrap(nb.Put(c.Hash(), n.RawData()), "failed to save data to database")
+	return errors.Wrap(nb.Put(c.Bytes(), n.RawData()), "failed to save node record to database")
 }
 
-func ReadProtoNode(b *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {
-	data := b.Get(c.Bytes())
+func ReadProtoNode(nb *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {
+	data := nb.Get(c.Bytes())
 	if data == nil {
 		return nil, ErrNotFound
 	}

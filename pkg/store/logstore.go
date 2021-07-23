@@ -79,15 +79,19 @@ func (d *LogDatastore) Get(key ds.Key) (value []byte, err error) {
 // Has implements Datastore.Has.
 func (d *LogDatastore) Has(key ds.Key) (exists bool, err error) {
 	fmt.Printf("%s: Has %s\n", d.Name, key)
+	exists, err = d.child.Has(key)
+	fmt.Println("debug: Has return", exists, err)
 
-	return d.child.Has(key)
+	return
 }
 
 // GetSize implements Datastore.GetSize.
 func (d *LogDatastore) GetSize(key ds.Key) (size int, err error) {
 	fmt.Printf("%s: GetSize %s\n", d.Name, key)
+	size, err = d.child.GetSize(key)
+	fmt.Println("debug: GetSize return", size, err)
 
-	return d.child.GetSize(key)
+	return
 }
 
 // Delete implements Datastore.Delete.

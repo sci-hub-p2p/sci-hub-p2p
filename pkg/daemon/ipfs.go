@@ -20,11 +20,16 @@ package daemon
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
+	"os"
 	"time"
 
 	ipfslite "github.com/hsanjuan/ipfs-lite"
+	"github.com/ipfs/go-cid"
+	"github.com/ipfs/go-datastore"
 	dssync "github.com/ipfs/go-datastore/sync"
+	dshelp "github.com/ipfs/go-ipfs-ds-help"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/multiformats/go-multiaddr"
 	"github.com/pkg/errors"
@@ -34,6 +39,7 @@ import (
 	"sci_hub_p2p/pkg/dagserv"
 	"sci_hub_p2p/pkg/logger"
 	"sci_hub_p2p/pkg/store"
+	"sci_hub_p2p/pkg/variable"
 )
 
 const dhtConcurrency = 10
@@ -83,6 +89,33 @@ func Start() error {
 	bootIPFSDaemon(lite)
 	logger.Info("listening")
 	fmt.Printf("/ip4/127.0.0.1/tcp/4005/p2p/%s\n", h.ID())
+
+	count := 0
+	_ = db.View(func(tx *bbolt.Tx) error {
+		return tx.Bucket(variable.NodeBucketName()).ForEach(func(k, v []byte) error {
+			c, err := cid.Parse(k)
+			if err != nil {
+				count++
+				logger.Error(err)
+				fmt.Println(hex.Dump(k))
+				if count > 4 {
+					os.Exit(1)
+				}
+			}
+			_ = datastore.NewKey("/blocks/").Child(dshelp.MultihashToDsKey(c.Hash()))
+			return nil
+		})
+		//
+		// 	if c.ByteLen() != 0 {
+		// 		b := tx.Bucket(variable.BlockBucketName())
+		// 		v := b.Get(c.Hash())
+		// 		if v == nil {
+		// 			panic("should not be nil")
+		// 		}
+		// 	}
+		//
+		// 	return nil
+	})
 
 	for {
 		time.Sleep(time.Second)

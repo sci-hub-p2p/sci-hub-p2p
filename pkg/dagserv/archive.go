@@ -142,7 +142,7 @@ func (d ZipArchive) Remove(ctx context.Context, c cid.Cid) error {
 			return nil
 		}
 
-		return b.Delete(c.Hash())
+		return b.Delete(c.Bytes())
 	})
 
 	return errors.Wrap(err, "can't delete node from database")
@@ -155,7 +155,7 @@ func (d ZipArchive) RemoveMany(ctx context.Context, cids []cid.Cid) error {
 			return nil
 		}
 		for _, c := range cids {
-			if err := b.Delete(c.Hash()); err != nil {
+			if err := b.Delete(c.Bytes()); err != nil {
 				return err
 			}
 		}

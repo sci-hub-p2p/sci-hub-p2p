@@ -88,3 +88,19 @@ func DirExist(name string) (bool, error) {
 
 	return true, err
 }
+
+func ReadFileAt(name string, offset, length int64) ([]byte, error) {
+	f, err := os.Open(name)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to open file %s", name)
+	}
+	defer f.Close()
+
+	var p = make([]byte, length)
+
+	if _, err = f.ReadAt(p, offset); err != nil {
+		return nil, errors.Wrapf(err, "failed to read file %s", name)
+	}
+
+	return p, nil
+}
