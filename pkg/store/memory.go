@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+//nolint:wrapcheck
 package store
 
 import (
@@ -31,6 +32,9 @@ import (
 )
 
 // Here are some basic store implementations.
+
+var _ ds.Datastore = &LogDatastore{}
+var _ ds.Datastore = &MapDatastore{}
 
 // MapDatastore uses a standard Go map for internal storage.
 type MapDatastore struct {
@@ -76,6 +80,7 @@ func NewMapDatastore(db *bbolt.DB) (d *MapDatastore) {
 // Put implements Datastore.Put.
 func (d *MapDatastore) Put(key ds.Key, value []byte) (err error) {
 	d.values[key] = value
+
 	return nil
 }
 
@@ -89,6 +94,7 @@ func (d *MapDatastore) Get(key ds.Key) (value []byte, err error) {
 	if !found {
 		return nil, ds.ErrNotFound
 	}
+
 	return val, nil
 
 	// c, err := dshelp.DsKeyToMultihash(key)
@@ -114,6 +120,7 @@ func (d *MapDatastore) Get(key ds.Key) (value []byte, err error) {
 // Has implements Datastore.Has.
 func (d *MapDatastore) Has(key ds.Key) (exists bool, err error) {
 	_, found := d.values[key]
+
 	return found, nil
 }
 
@@ -122,12 +129,14 @@ func (d *MapDatastore) GetSize(key ds.Key) (size int, err error) {
 	if v, found := d.values[key]; found {
 		return len(v), nil
 	}
+
 	return -1, ds.ErrNotFound
 }
 
 // Delete implements Datastore.Delete.
 func (d *MapDatastore) Delete(key ds.Key) (err error) {
 	delete(d.values, key)
+
 	return nil
 }
 
@@ -143,6 +152,7 @@ func (d *MapDatastore) Query(q dsq.Query) (dsq.Results, error) {
 	}
 	r := dsq.ResultsWithEntries(q, re)
 	r = dsq.NaiveQueryApply(q, r)
+
 	return r, nil
 }
 
@@ -156,14 +166,13 @@ func (d *MapDatastore) Close() error {
 
 // LogDatastore logs all accesses through the store.
 type LogDatastore struct {
-	Name  string
 	child ds.Datastore
+	Name  string
 }
 
 // Shim is a store which has a child.
 type Shim interface {
 	ds.Datastore
-
 	Children() []ds.Datastore
 }
 
@@ -172,6 +181,7 @@ func NewLogDatastore(ds ds.Datastore, name string) *LogDatastore {
 	if len(name) < 1 {
 		name = "LogDatastore"
 	}
+
 	return &LogDatastore{Name: name, child: ds}
 }
 
@@ -190,6 +200,7 @@ func (d *LogDatastore) Put(key ds.Key, value []byte) (err error) {
 // Sync implements Datastore.Sync.
 func (d *LogDatastore) Sync(prefix ds.Key) error {
 	log.Printf("%s: Sync %s\n", d.Name, prefix)
+
 	return d.child.Sync(prefix)
 }
 
@@ -206,24 +217,28 @@ func (d *LogDatastore) Get(key ds.Key) (value []byte, err error) {
 // Has implements Datastore.Has.
 func (d *LogDatastore) Has(key ds.Key) (exists bool, err error) {
 	log.Printf("%s: Has %s\n", d.Name, key)
+
 	return d.child.Has(key)
 }
 
 // GetSize implements Datastore.GetSize.
 func (d *LogDatastore) GetSize(key ds.Key) (size int, err error) {
 	log.Printf("%s: GetSize %s\n", d.Name, key)
+
 	return d.child.GetSize(key)
 }
 
 // Delete implements Datastore.Delete.
 func (d *LogDatastore) Delete(key ds.Key) (err error) {
 	log.Printf("%s: Delete %s\n", d.Name, key)
+
 	return d.child.Delete(key)
 }
 
 // DiskUsage implements the PersistentDatastore interface.
 func (d *LogDatastore) DiskUsage() (uint64, error) {
 	log.Printf("%s: DiskUsage\n", d.Name)
+
 	return ds.DiskUsage(d.child)
 }
 
@@ -241,8 +256,8 @@ func (d *LogDatastore) Query(q dsq.Query) (dsq.Results, error) {
 
 // LogBatch logs all accesses through the batch.
 type LogBatch struct {
-	Name  string
 	child ds.Batch
+	Name  string
 }
 
 func (d *LogDatastore) Batch() (ds.Batch, error) {
@@ -253,11 +268,13 @@ func (d *LogDatastore) Batch() (ds.Batch, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		return &LogBatch{
 			Name:  d.Name,
 			child: b,
 		}, nil
 	}
+
 	return nil, ds.ErrBatchUnsupported
 }
 
@@ -271,17 +288,20 @@ func (d *LogBatch) Put(key ds.Key, value []byte) (err error) {
 // Delete implements Batch.Delete.
 func (d *LogBatch) Delete(key ds.Key) (err error) {
 	log.Printf("%s: BatchDelete %s\n", d.Name, key)
+
 	return d.child.Delete(key)
 }
 
 // Commit implements Batch.Commit.
 func (d *LogBatch) Commit() (err error) {
 	log.Printf("%s: BatchCommit\n", d.Name)
+
 	return d.child.Commit()
 }
 
 func (d *LogDatastore) Close() error {
 	log.Printf("%s: Close\n", d.Name)
+
 	return d.child.Close()
 }
 
@@ -289,6 +309,7 @@ func (d *LogDatastore) Check() error {
 	if c, ok := d.child.(ds.CheckedDatastore); ok {
 		return c.Check()
 	}
+
 	return nil
 }
 
@@ -296,6 +317,7 @@ func (d *LogDatastore) Scrub() error {
 	if c, ok := d.child.(ds.ScrubbedDatastore); ok {
 		return c.Scrub()
 	}
+
 	return nil
 }
 
@@ -303,5 +325,6 @@ func (d *LogDatastore) CollectGarbage() error {
 	if c, ok := d.child.(ds.GCDatastore); ok {
 		return c.CollectGarbage()
 	}
+
 	return nil
 }

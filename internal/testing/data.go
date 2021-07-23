@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+// nolint
 package testing
 
 import (
@@ -32,7 +33,6 @@ import (
 
 func LoadTestData() {
 	const count = 8
-
 	bar := pb.StartNew(100000 - 4)
 	zipFiles, err := filepath.Glob("d:/data/11200*/*.zip")
 	if err != nil {
