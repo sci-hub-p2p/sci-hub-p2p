@@ -38,5 +38,5 @@ require (
 	go.etcd.io/bbolt v1.3.6
 	golang.org/x/crypto v0.0.0-20210506145944-38f3c27a63bf // indirect
 	golang.org/x/sys v0.0.0-20210511113859-b0526f3d8744 // indirect
-	google.golang.org/protobuf v1.26.0
+	google.golang.org/protobuf v1.27.1
 )
