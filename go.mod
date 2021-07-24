@@ -7,6 +7,8 @@ require (
 	github.com/anacrolix/log v0.9.0
 	github.com/anacrolix/torrent v1.29.1
 	github.com/cheggaaa/pb/v3 v3.0.8
+	github.com/davidlazar/go-crypto v0.0.0-20200604182044-b73af7476f6c
+	github.com/gorilla/mux v1.8.0
 	github.com/hsanjuan/ipfs-lite v1.1.21
 	github.com/ipfs/go-block-format v0.0.3
 	github.com/ipfs/go-cid v0.0.7

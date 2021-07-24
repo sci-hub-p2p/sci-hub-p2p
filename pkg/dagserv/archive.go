@@ -33,7 +33,7 @@ import (
 
 var _ ipld.DAGService = ZipArchive{}
 
-func New(db *bbolt.DB, baseOffset uint64) ZipArchive {
+func New(db *bbolt.DB, baseOffset int64) ZipArchive {
 	return ZipArchive{
 		m:          &sync.Mutex{},
 		db:         db,
@@ -59,7 +59,7 @@ func InitDB(db *bbolt.DB) error {
 type ZipArchive struct {
 	m          *sync.Mutex
 	db         *bbolt.DB
-	baseOffset uint64
+	baseOffset int64
 }
 
 func (d ZipArchive) Get(ctx context.Context, c cid.Cid) (ipld.Node, error) {
@@ -174,9 +174,9 @@ func (d ZipArchive) add(tx *bbolt.Tx, node ipld.Node) error {
 		return errors.Wrap(SaveProtoNode(tx, node.Cid(), n), "can't save node to database")
 	case *posinfo.FilestoreNode:
 		length, _ := n.Size()
-		blockOffsetOfZip := n.PosInfo.Offset + d.baseOffset
+		blockOffsetOfZip := d.baseOffset + int64(n.PosInfo.Offset)
 
-		return errors.Wrap(SaveFileStoreMeta(tx, node.Cid(), n.PosInfo.FullPath, blockOffsetOfZip, length),
+		return errors.Wrap(SaveFileStoreMeta(tx, node.Cid(), n.PosInfo.FullPath, blockOffsetOfZip, int64(length)),
 			"can't save node to database")
 	}
 

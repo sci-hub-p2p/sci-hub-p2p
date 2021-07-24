@@ -22,9 +22,12 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"time"
 
+	"github.com/gorilla/mux"
 	ipfslite "github.com/hsanjuan/ipfs-lite"
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-datastore"
@@ -91,6 +94,7 @@ func Start() error {
 	fmt.Printf("/ip4/127.0.0.1/tcp/4005/p2p/%s\n", h.ID())
 	ipfslite.NewInMemoryDatastore()
 	count := 0
+	cc := 0
 	_ = db.View(func(tx *bbolt.Tx) error {
 		return tx.Bucket(variable.NodeBucketName()).ForEach(func(k, v []byte) error {
 			c, err := cid.Parse(k)
@@ -102,7 +106,15 @@ func Start() error {
 					os.Exit(1)
 				}
 			}
-			_ = datastore.NewKey("/blocks/").Child(dshelp.MultihashToDsKey(c.Hash()))
+			if c.Type() == cid.Raw {
+				return nil
+			}
+			cc++
+			if cc > 10 {
+				return io.EOF
+			}
+			fmt.Println(datastore.NewKey("/blocks/").Child(dshelp.MultihashToDsKey(c.Hash())))
+			fmt.Println(c.String())
 			return nil
 		})
 		//
@@ -117,6 +129,20 @@ func Start() error {
 		// 	return nil
 	})
 
+	r := mux.NewRouter()
+	r.HandleFunc("/GET/blocks/{id}", func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		var key = "/blocks/" + vars["id"]
+		l, err := ds.GetSize(datastore.NewKey(key))
+		fmt.Fprintf(w, "Key: %s\n", key)
+		fmt.Fprintf(w, "Size %d\n", l)
+		fmt.Fprintf(w, "Error %s\n", err)
+	})
+	r.HandleFunc("/hi", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Hi")
+	})
+	http.ListenAndServe(":23333", r)
+
 	for {
 		bootIPFSDaemon(lite, h)
 		time.Sleep(time.Second)
@@ -126,7 +152,7 @@ func Start() error {
 // for local testing.
 func bootIPFSDaemon(lite *ipfslite.Peer, h host.Host) {
 	hostIpfs, err := multiaddr.NewMultiaddr(
-		"/ip4/127.0.0.1/tcp/4001/p2p/12D3KooWF8AC8XXVGcQZXjoQUpSgKHZMv71Nj8iCo9GSGrq3UFPt")
+		"/ip4/127.0.0.1/tcp/4001/p2p/12D3KooWCsZQqmqi42PXHKmAXAHvevp8HXnfViWg4Txp5ayJoqSq")
 	if err != nil {
 		panic(err)
 	}

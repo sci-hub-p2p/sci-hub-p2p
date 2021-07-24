@@ -47,7 +47,7 @@ func TestZipArchive(t *testing.T) {
 	assert.Nil(t, err)
 	defer db.Close()
 
-	n, err := dagserv.Add(db, bytes.NewReader(raw), "../../testdata/big_file.bin", uint64(len(raw)), 0)
+	n, err := dagserv.Add(db, bytes.NewReader(raw), "../../testdata/big_file.bin", int64(len(raw)), 0)
 	assert.Nil(t, err)
 	fmt.Println(n.Cid())
 }
@@ -96,11 +96,11 @@ func TestDagServ_Add(t *testing.T) {
 			assert.NotNil(t, b)
 			data := b.Get(c.Bytes())
 			assert.NotNil(t, data)
-			var v = &dagserv.Record{}
+			var v = &dagserv.Block{}
 			assert.Nil(t, proto.Unmarshal(data, v))
 			assert.Equal(t, binary, v.Filename, "filename should be equal")
-			assert.Equal(t, uint64(baseOffset+blockOffset), v.Offset, "offset should be equal")
-			assert.Equal(t, uint64(length), v.Length, "offset should be equal")
+			assert.Equal(t, int64(baseOffset+blockOffset), v.Offset, "offset should be equal")
+			assert.Equal(t, int64(length), v.Size, "offset should be equal")
 			return nil
 		}),
 	)
@@ -123,7 +123,7 @@ func TestDagServ_Add_Get(t *testing.T) {
 	assert.Nil(t, err)
 	defer db.Close()
 
-	n, err := dagserv.Add(db, bytes.NewReader(raw), "../../testdata/big_file.bin", uint64(len(raw)), 0)
+	n, err := dagserv.Add(db, bytes.NewReader(raw), "../../testdata/big_file.bin", int64(len(raw)), 0)
 	assert.Nil(t, err)
 	dag := dagserv.New(db, 0)
 	m, err := dag.Get(context.TODO(), n.Cid())

@@ -29,7 +29,7 @@ import (
 	"go.etcd.io/bbolt"
 )
 
-func Add(db *bbolt.DB, r io.Reader, abs string, size, baseOffset uint64) (ipld.Node, error) {
+func Add(db *bbolt.DB, r io.Reader, abs string, size, baseOffset int64) (ipld.Node, error) {
 	dbp := helpers.DagBuilderParams{
 		Dagserv:    New(db, baseOffset),
 		NoCopy:     true,
@@ -42,7 +42,7 @@ func Add(db *bbolt.DB, r io.Reader, abs string, size, baseOffset uint64) (ipld.N
 		reader:             r,
 		zipPath:            abs,
 		compressedFilePath: "path/in/zip/article.pdf",
-		size:               size,
+		size:               uint64(size),
 	}
 
 	chunk, err := chunker.FromString(f, "default")

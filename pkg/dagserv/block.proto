@@ -1,12 +1,6 @@
 syntax = "proto3";
 option go_package = "./pkg/dagserv";
 
-message Record {
-  uint64 offset = 1;
-  uint64 length = 2;
-  string filename = 3;
-}
-
 enum BlockType {
   file = 0;
   proto = 1;
@@ -14,8 +8,8 @@ enum BlockType {
 
 message Block{
   // ember Record
-  uint64 offset = 1;
-  uint64 length = 2;
+  int64 offset = 1;
+  int64 size = 2;
   BlockType type = 3;
   bytes CID = 4;
   string filename = 5;

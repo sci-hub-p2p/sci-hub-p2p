@@ -15,3 +15,4 @@ testdata/big_file.*
 *.bolt
 out/*.key
 *.log
+tmp/

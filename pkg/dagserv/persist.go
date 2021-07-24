@@ -34,7 +34,7 @@ import (
 
 func ReadFileStoreNode(b *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {
 	logger.Info("ReadFileStoreNode", c)
-	var v = &Record{}
+	var v = &Block{}
 	data := b.Get(c.Bytes())
 	if data == nil {
 		return nil, ErrNotFound
@@ -45,7 +45,7 @@ func ReadFileStoreNode(b *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {
 		return nil, errors.Wrap(err, "can't marshal persist.Record to binary")
 	}
 
-	p, err := utils.ReadFileAt(v.Filename, int64(v.Offset), int64(v.Length))
+	p, err := utils.ReadFileAt(v.Filename, v.Offset, v.Size)
 	if err != nil {
 		return nil, errors.Wrap(err, "filed to read from disk")
 	}
@@ -55,20 +55,12 @@ func ReadFileStoreNode(b *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {
 	return &merkledag.RawNode{Block: block}, errors.Wrap(err, "failed to create block")
 }
 
-func SaveFileStoreMeta(tx *bbolt.Tx, c cid.Cid, name string, offset, size uint64) error {
+func SaveFileStoreMeta(tx *bbolt.Tx, c cid.Cid, name string, offset, size int64) error {
 	nb := tx.Bucket(variable.NodeBucketName())
 	bb := tx.Bucket(variable.BlockBucketName())
-	v := &Record{
-		Offset:   offset,
-		Length:   size,
-		Filename: name,
-	}
-	raw, err := proto.Marshal(v)
-	if err != nil {
-		return errors.Wrap(err, "can't marshal persist.Record to binary")
-	}
 
-	var block = Block{Type: BlockType_file, CID: c.Bytes(), Offset: offset, Length: size, Filename: name}
+	var block = Block{Type: BlockType_file, CID: c.Bytes(), Offset: offset, Size: size, Filename: name}
+
 	value, err := proto.Marshal(&block)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal block record to bytes")
@@ -79,14 +71,14 @@ func SaveFileStoreMeta(tx *bbolt.Tx, c cid.Cid, name string, offset, size uint64
 		return errors.Wrap(err, "failed to save block record to database")
 	}
 
-	return errors.Wrap(nb.Put(c.Bytes(), raw), "failed to save data to database")
+	return errors.Wrap(nb.Put(c.Bytes(), value), "failed to save data to database")
 }
 
 func SaveProtoNode(tx *bbolt.Tx, c cid.Cid, n *merkledag.ProtoNode) error {
 	nb := tx.Bucket(variable.NodeBucketName())
 	bb := tx.Bucket(variable.BlockBucketName())
 
-	var v = Block{Type: BlockType_proto, CID: c.Hash()}
+	var v = Block{Type: BlockType_proto, CID: c.Bytes(), Size: int64(len(n.RawData()))}
 	value, err := proto.Marshal(&v)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal block record to bytes")

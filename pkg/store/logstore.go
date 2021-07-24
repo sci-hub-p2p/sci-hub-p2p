@@ -110,12 +110,7 @@ func (d *LogDatastore) DiskUsage() (uint64, error) {
 
 // Query implements Datastore.Query.
 func (d *LogDatastore) Query(q dsq.Query) (dsq.Results, error) {
-	fmt.Printf("%s: Query\n", d.Name)
-	fmt.Printf("%s: q.Prefix: %s\n", d.Name, q.Prefix)
-	fmt.Printf("%s: q.KeysOnly: %v\n", d.Name, q.KeysOnly)
-	fmt.Printf("%s: q.Filters: %d\n", d.Name, len(q.Filters))
-	fmt.Printf("%s: q.Orders: %d\n", d.Name, len(q.Orders))
-	fmt.Printf("%s: q.Offset: %d\n", d.Name, q.Offset)
+	fmt.Printf("%s: Query {Prefix: %s}\n", d.Name, q.Prefix)
 
 	return d.child.Query(q)
 }
