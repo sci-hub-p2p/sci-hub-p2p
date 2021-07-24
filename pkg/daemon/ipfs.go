@@ -30,6 +30,7 @@ import (
 	"github.com/ipfs/go-datastore"
 	dssync "github.com/ipfs/go-datastore/sync"
 	dshelp "github.com/ipfs/go-ipfs-ds-help"
+	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/multiformats/go-multiaddr"
 	"github.com/pkg/errors"
@@ -86,10 +87,9 @@ func Start() error {
 	}
 
 	// lite.Bootstrap(ipfslite.DefaultBootstrapPeers())
-	bootIPFSDaemon(lite)
 	logger.Info("listening")
 	fmt.Printf("/ip4/127.0.0.1/tcp/4005/p2p/%s\n", h.ID())
-
+	ipfslite.NewInMemoryDatastore()
 	count := 0
 	_ = db.View(func(tx *bbolt.Tx) error {
 		return tx.Bucket(variable.NodeBucketName()).ForEach(func(k, v []byte) error {
@@ -118,12 +118,13 @@ func Start() error {
 	})
 
 	for {
+		bootIPFSDaemon(lite, h)
 		time.Sleep(time.Second)
 	}
 }
 
 // for local testing.
-func bootIPFSDaemon(lite *ipfslite.Peer) {
+func bootIPFSDaemon(lite *ipfslite.Peer, h host.Host) {
 	hostIpfs, err := multiaddr.NewMultiaddr(
 		"/ip4/127.0.0.1/tcp/4001/p2p/12D3KooWF8AC8XXVGcQZXjoQUpSgKHZMv71Nj8iCo9GSGrq3UFPt")
 	if err != nil {
@@ -134,4 +135,7 @@ func bootIPFSDaemon(lite *ipfslite.Peer) {
 		panic(err)
 	}
 	lite.Bootstrap(p)
+	for _, info := range p {
+		h.Connect(context.TODO(), info)
+	}
 }

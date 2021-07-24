@@ -18,7 +18,6 @@ package store
 import (
 	"encoding/hex"
 	"fmt"
-	"strings"
 	"sync"
 
 	ds "github.com/ipfs/go-datastore"
@@ -44,9 +43,9 @@ var _ ds.Datastore = &MapDatastore{}
 type MapDatastore struct {
 	values    map[ds.Key][]byte
 	db        *bbolt.DB
+	ds        *bbolt.DB // for non-block keys
 	dag       ipld.DAGService
 	keysCache sync.Map
-	keyCached bool
 	sync.RWMutex
 }
 
@@ -100,69 +99,55 @@ func (d *MapDatastore) Sync(prefix ds.Key) error {
 }
 
 func (d *MapDatastore) Get(key ds.Key) ([]byte, error) {
-	if key.IsDescendantOf(topLevelBlockKey) {
-		fmt.Println("try to get block, check it in memory first")
+	if !key.IsDescendantOf(topLevelBlockKey) {
+		// non block keysCache
 		d.RLock()
-		if val, ok := d.values[key]; ok {
-			d.RUnlock()
-
-			return val, nil
-		}
+		val, found := d.values[key]
 		d.RUnlock()
-		fmt.Println("didn't find in memory, now check it in KV database")
-		mh, err := dshelp.DsKeyToMultihash(ds.NewKey(key.BaseNamespace()))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to decode key to multihash")
+
+		if !found {
+			return nil, ds.ErrNotFound
 		}
 
-		var p []byte
-
-		err = d.db.View(func(tx *bbolt.Tx) error {
-			b := tx.Bucket(variable.BlockBucketName())
-			p, err = readBlock(b, mh)
-
-			return err
-		})
-		if err != nil {
-			if errors.Is(err, ds.ErrNotFound) {
-				fmt.Println("can't find", key)
-				return nil, err
-			}
-			fmt.Println("read block got", err)
-			return nil, errors.Wrap(err, "can't read from disk")
-		}
-
-		return p, nil
+		return val, nil
 	}
-	// non block keysCache
+
+	// /blocks/{multi hash}
+
+	fmt.Println("try to get block, check it in memory first")
 	d.RLock()
-	val, found := d.values[key]
-	d.RUnlock()
+	if val, ok := d.values[key]; ok {
+		d.RUnlock()
 
-	if !found {
-		return nil, ds.ErrNotFound
+		return val, nil
+	}
+	d.RUnlock()
+	fmt.Println("didn't find in memory, now check it in KV database")
+	mh, err := dshelp.DsKeyToMultihash(ds.NewKey(key.BaseNamespace()))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode key to multihash")
 	}
 
-	return val, nil
+	var p []byte
 
-	// c, err := dshelp.DsKeyToMultihash(key)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// var val []byte
-	// err = d.db.View(func(tx *bbolt.Tx) error {
-	// 	b := tx.Bucket(variable.NodeBucketName())
-	// 	val = b.Get(c)
-	// 	return nil
-	// })
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// if val == nil {
-	//
-	// 	return nil, ds.ErrNotFound
-	// }
-	// return val, nil
+	err = d.db.View(func(tx *bbolt.Tx) error {
+		b := tx.Bucket(variable.BlockBucketName())
+		p, err = readBlock(b, mh)
+
+		return err
+	})
+	if err != nil {
+		if errors.Is(err, ds.ErrNotFound) {
+			fmt.Println("can't find", key)
+
+			return nil, err
+		}
+		fmt.Println("read block got", err)
+
+		return nil, errors.Wrap(err, "can't read from disk")
+	}
+
+	return p, nil
 }
 
 // Has implements Datastore.Has.
@@ -204,7 +189,7 @@ func (d *MapDatastore) GetSize(key ds.Key) (size int, err error) {
 		return len(v), nil
 	}
 
-	var l int = -1
+	var l = -1
 	if !found {
 		mh, err := dshelp.DsKeyToMultihash(ds.NewKey(key.BaseNamespace()))
 		if err != nil {
@@ -214,6 +199,7 @@ func (d *MapDatastore) GetSize(key ds.Key) (size int, err error) {
 			logger.WithField("func", "readLen").Infoln("start read len", key)
 			l, err = readLen(tx.Bucket(variable.BlockBucketName()), mh)
 			logger.WithField("func", "readLen").Infoln("end read len", key)
+
 			return err
 		})
 	}
@@ -230,9 +216,9 @@ func (d *MapDatastore) Delete(key ds.Key) (err error) {
 	return nil
 }
 
-var errStop = errors.New("stop iter")
-
-// Query implements Datastore.Query
+// var errStop = errors.New("stop iter")
+//
+// // Query implements Datastore.Query
 // func (d *MapDatastore) Query(q dsq.Query) (dsq.Results, error) {
 // 	d.RLock()
 //
@@ -248,104 +234,187 @@ var errStop = errors.New("stop iter")
 // 	r = dsq.NaiveQueryApply(q, r)
 // 	return r, nil
 // }
+//
+
+// Query is copied from go-ds-bolt and modified.
+func (d *MapDatastore) Query(q dsq.Query) (dsq.Results, error) {
+	// Special case order by key.
+	orders := q.Orders
+	if len(orders) > 0 {
+		switch q.Orders[0].(type) {
+		case dsq.OrderByKey, *dsq.OrderByKey:
+			// Already ordered by key.
+			orders = nil
+		}
+	}
+
+	qrb := dsq.NewResultBuilder(q)
+	qrb.Process.Go(func(worker goprocess.Process) {
+		d.db.View(func(tx *bbolt.Tx) error {
+			buck := tx.Bucket(variable.BlockBucketName())
+			c := buck.Cursor()
+
+			var prefix []byte
+			if qrb.Query.Prefix != "" {
+				prefix = []byte(qrb.Query.Prefix)
+			}
+
+			// If we need to sort, we'll need to collect all the
+			// results up-front.
+			if len(orders) > 0 {
+				// Query and filter.
+				var entries []dsq.Entry
+				for k, v := c.Seek(prefix); k != nil; k, v = c.Next() {
+					dk := ds.NewKey(string(k)).String()
+					e := dsq.Entry{Key: dk}
+					if !qrb.Query.KeysOnly {
+						// We copy _after_ filtering/sorting.
+						e.Value = v
+					}
+					if filter(q.Filters, e) {
+						continue
+					}
+					entries = append(entries, e)
+				}
+
+				// sort
+				dsq.Sort(orders, entries)
+
+				// offset/limit
+				entries = entries[qrb.Query.Offset:]
+				if qrb.Query.Limit > 0 {
+					if qrb.Query.Limit < len(entries) {
+						entries = entries[:qrb.Query.Limit]
+					}
+				}
+
+				// Send
+				for _, e := range entries {
+					// Copy late so we don't have to copy
+					// values we don't use.
+					e.Value = append(e.Value[0:0:0], e.Value...)
+					select {
+					case qrb.Output <- dsq.Result{Entry: e}:
+					case <-worker.Closing(): // client told us to end early.
+						return nil
+					}
+				}
+			} else {
+				// Otherwise, send results as we get them.
+				offset := 0
+				for k, v := c.Seek(prefix); k != nil; k, v = c.Next() {
+					dk := ds.NewKey(string(k)).String()
+					e := dsq.Entry{Key: dk, Value: v}
+					if !qrb.Query.KeysOnly {
+						// We copy _after_ filtering.
+						e.Value = v
+					}
+
+					// pre-filter
+					if filter(q.Filters, e) {
+						continue
+					}
+
+					// now count this item towards the results
+					offset++
+
+					// check the offset
+					if offset < qrb.Query.Offset {
+						continue
+					}
+
+					e.Value = append(e.Value[0:0:0], e.Value...)
+					select {
+					case qrb.Output <- dsq.Result{Entry: e}:
+						offset++
+					case <-worker.Closing():
+						return nil
+					}
+
+					if qrb.Query.Limit > 0 &&
+						offset >= (qrb.Query.Offset+qrb.Query.Limit) {
+						// all done.
+						return nil
+					}
+				}
+			}
+
+			return nil
+		})
+	})
+
+	// go wait on the worker (without signaling close)
+
+	go qrb.Process.CloseAfterChildren()
+
+	return qrb.Results(), nil
+}
+
+// from go-ds-bolt
+// filter checks if we should filter out the query.
+func filter(filters []dsq.Filter, entry dsq.Entry) bool {
+	for _, filter := range filters {
+		if !filter.Filter(entry) {
+			return true
+		}
+	}
+
+	return false
+}
 
 // Query implements Datastore.Query.
-func (d *MapDatastore) Query(q dsq.Query) (dsq.Results, error) {
-	d.RLock()
-	re := make([]dsq.Entry, 0, len(d.values))
-	for k, v := range d.values {
-		e := dsq.Entry{Key: k.String(), Size: len(v)}
-		if !q.KeysOnly {
-			e.Value = v
-		}
-		re = append(re, e)
-	}
-	d.RUnlock()
-	var c = make(chan dsq.Result, 10)
-	r := result{
-		closed: false,
-		c:      c,
-		q:      q,
-	}
-
-	go func() {
-		if strings.HasPrefix(q.Prefix, "/blocks") {
-			if d.keyCached && q.KeysOnly {
-				d.keysCache.Range(func(key, value interface{}) bool {
-					if r.closed {
-						return true
-					}
-					e := dsq.Entry{Key: key.(string), Size: value.(int)}
-					c <- dsq.Result{Entry: e}
-					return false
-				})
-			} else {
-				_ = d.db.View(func(tx *bbolt.Tx) error {
-					_ = tx.Bucket(variable.BlockBucketName()).ForEach(func(k, v []byte) error {
-						if r.closed {
-							return errStop
-						}
-						e := dsq.Entry{Key: topLevelBlockKey.Child(dshelp.MultihashToDsKey(k)).String(), Size: len(v)}
-						d.keysCache.Store(e.Key, len(v))
-						if !q.KeysOnly {
-							e.Value = v
-						}
-						c <- dsq.Result{Entry: e}
-						return nil
-					})
-					return nil
-				})
-				d.keyCached = true
-			}
-		}
-	}()
-
-	return r, nil
-}
-
-type result struct {
-	closed bool
-	c      chan dsq.Result
-	q      dsq.Query
-}
-
-func (r result) Query() dsq.Query {
-	return r.q
-}
-
-func (r result) Next() <-chan dsq.Result {
-	return r.c
-}
-
-func (r result) NextSync() (dsq.Result, bool) {
-	if r.closed {
-		return dsq.Result{}, true
-	}
-	for i := range r.c {
-		return i, false
-	}
-	return dsq.Result{}, true
-}
-
-func (r result) Rest() ([]dsq.Entry, error) {
-	var re []dsq.Entry
-	for i := range r.c {
-		if i.Error != nil {
-			return nil, i.Error
-		}
-		re = append(re, i.Entry)
-	}
-	return re, nil
-}
-
-func (r result) Close() error {
-	r.closed = true
-	return nil
-}
-
-func (r result) Process() goprocess.Process {
-	return nil
-}
+// func (d *MapDatastore) Query(q dsq.Query) (dsq.Results, error) {
+// 	d.RLock()
+// 	re := make([]dsq.Entry, 0, len(d.values))
+// 	for k, v := range d.values {
+// 		e := dsq.Entry{Key: k.String(), Size: len(v)}
+// 		if !q.KeysOnly {
+// 			e.Value = v
+// 		}
+// 		re = append(re, e)
+// 	}
+// 	d.RUnlock()
+// 	var c = make(chan dsq.Result, 10)
+// 	r := result{
+// 		closed: false,
+// 		c:      c,
+// 		q:      q,
+// 	}
+//
+// 	go func() {
+// 		if strings.HasPrefix(q.Prefix, "/blocks") {
+// 			if d.keyCached && q.KeysOnly {
+// 				d.keysCache.Range(func(key, value interface{}) bool {
+// 					if r.closed {
+// 						return true
+// 					}
+// 					e := dsq.Entry{Key: key.(string), Size: value.(int)}
+// 					c <- dsq.Result{Entry: e}
+// 					return false
+// 				})
+// 			} else {
+// 				_ = d.db.View(func(tx *bbolt.Tx) error {
+// 					_ = tx.Bucket(variable.BlockBucketName()).ForEach(func(k, v []byte) error {
+// 						if r.closed {
+// 							return errStop
+// 						}
+// 						e := dsq.Entry{Key: topLevelBlockKey.Child(dshelp.MultihashToDsKey(k)).String(), Size: len(v)}
+// 						d.keysCache.Store(e.Key, len(v))
+// 						if !q.KeysOnly {
+// 							e.Value = v
+// 						}
+// 						c <- dsq.Result{Entry: e}
+// 						return nil
+// 					})
+// 					return nil
+// 				})
+// 				d.keyCached = true
+// 			}
+// 		}
+// 	}()
+//
+// 	return r, nil
+// }
 
 func (d *MapDatastore) Batch() (ds.Batch, error) {
 	return ds.NewBasicBatch(d), nil

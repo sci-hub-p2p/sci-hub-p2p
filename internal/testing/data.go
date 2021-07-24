@@ -18,6 +18,8 @@ package main
 
 import (
 	"archive/zip"
+	"bytes"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -25,6 +27,7 @@ import (
 	"time"
 
 	"github.com/cheggaaa/pb/v3"
+	"github.com/ipfs/go-cid"
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
 
@@ -65,6 +68,17 @@ func LoadTestData() {
 			logger.Fatal(err)
 		}
 		dbSlice = append(dbSlice, db)
+		db.Update(func(tx *bbolt.Tx) error {
+			err := tx.DeleteBucket(variable.BlockBucketName())
+			if err != nil {
+				logger.Fatal(err)
+			}
+			err = tx.DeleteBucket(variable.NodeBucketName())
+			if err != nil {
+				logger.Fatal(err)
+			}
+			return nil
+		})
 		err = dagserv.InitDB(db)
 		if err != nil {
 			logger.Fatal(err)
@@ -87,9 +101,10 @@ func LoadTestData() {
 						}
 						_, err = dagserv.Add(db, r, file, size, uint64(offset))
 						if err != nil {
+							_ = r.Close()
 							return err
 						}
-						r.Close()
+						_ = r.Close()
 					}
 					return nil
 				}()
@@ -97,7 +112,11 @@ func LoadTestData() {
 					logger.Error(err)
 				}
 			}
-			db.Sync()
+
+			err := db.Sync()
+			if err != nil {
+				logger.Error(err)
+			}
 			wg.Done()
 		}(db)
 	}
@@ -115,7 +134,10 @@ func LoadTestData() {
 	wg.Wait()
 	bar.Finish()
 
-	db, err := bbolt.Open("./test.bolt", 0600, &bbolt.Options{FreelistType: bbolt.FreelistMapType})
+	db, err := bbolt.Open("./test.bolt", 0600, &bbolt.Options{
+		FreelistType: bbolt.FreelistMapType,
+		NoSync:       true,
+	})
 	if err != nil {
 		logger.Fatal(err)
 	}
@@ -124,7 +146,8 @@ func LoadTestData() {
 		logger.Fatal(err)
 	}
 
-	for _, srcDB := range dbSlice {
+	for i, srcDB := range dbSlice {
+		fmt.Println("copy db", i)
 		err = copyBucket(srcDB, db, variable.NodeBucketName())
 
 		if err != nil {
@@ -137,11 +160,22 @@ func LoadTestData() {
 			logger.Error(err)
 		}
 
-		srcDB.Close()
-		db.Sync()
+		err = srcDB.Close()
+		if err != nil {
+			logger.Fatal(err)
+		}
+
+		err := db.Sync()
+		if err != nil {
+			logger.Fatal(err)
+		}
+
 	}
 
-	db.Close()
+	err = db.Close()
+	if err != nil {
+		logger.Fatal(err)
+	}
 }
 
 func copyBucket(src, dst *bbolt.DB, name []byte) error {
@@ -152,9 +186,17 @@ func copyBucket(src, dst *bbolt.DB, name []byte) error {
 		}
 
 		return src.View(func(srcTx *bbolt.Tx) error {
-			srcBucket := dstTx.Bucket(name)
+			srcBucket := srcTx.Bucket(name)
 
 			return srcBucket.ForEach(func(k, v []byte) error {
+				if bytes.Equal(name, variable.NodeBucketName()) {
+					_, err := cid.Parse(k)
+					if err != nil {
+						logger.Error(err)
+						fmt.Println(hex.Dump(k))
+					}
+				}
+
 				return dstBucket.Put(k, v)
 			})
 		})
