@@ -268,8 +268,7 @@ func readBlock(tx *bbolt.Tx, mh []byte) ([]byte, error) {
 	}
 
 	var r = &dagserv.Block{}
-	err := proto.Unmarshal(v, r)
-	if err != nil {
+	if err := proto.Unmarshal(v, r); err != nil {
 		return nil, errors.Wrap(err, "failed to decode block Record from database raw value")
 	}
 	switch r.Type {

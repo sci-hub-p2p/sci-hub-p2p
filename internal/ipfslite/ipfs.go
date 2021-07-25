@@ -228,8 +228,7 @@ func (p *Peer) Bootstrap(peers []peer.AddrInfo) {
 		logger.Warnf("only connected to %d bootstrap peers out of %d", i, nPeers)
 	}
 
-	err := p.dht.Bootstrap(p.ctx)
-	if err != nil {
+	if err := p.dht.Bootstrap(p.ctx); err != nil {
 		logger.Error(err)
 
 		return

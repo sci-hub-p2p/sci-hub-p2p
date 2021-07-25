@@ -208,7 +208,7 @@ linters-settings:
       - "func (*go.etcd.io/bbolt.DB).Batch"
       - "func (*go.etcd.io/bbolt.DB).View"
       - "func (*go.etcd.io/bbolt.Bucket).ForEach"
-
+  
 linters:
   enable-all: true
   disable:
