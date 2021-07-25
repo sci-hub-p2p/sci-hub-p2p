@@ -79,7 +79,7 @@ func (r pieceReader) readPiece(i int) ([]byte, error) {
 		pieceExpectedLength = pieceLength
 	)
 	if i == r.t.PieceCount()-1 {
-		var count int64 = 0
+		var count int64
 		for _, file := range r.t.Files {
 			count += file.Length
 		}

@@ -19,8 +19,11 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"time"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"github.com/snowzach/rotatefilehook"
 
 	"sci_hub_p2p/cmd/flag"
 )
@@ -41,6 +44,19 @@ func Setup() error {
 		DisableLevelTruncation: false,
 		ForceColors:            true,
 	})
+	if flag.LogFile != "" {
+		rotateFileHook, err := rotatefilehook.NewRotateFileHook(rotatefilehook.RotateFileConfig{
+			Filename: flag.LogFile,
+			Level:    log.InfoLevel,
+			Formatter: &log.JSONFormatter{
+				TimestampFormat: time.RFC822,
+			},
+		})
+		if err != nil {
+			return errors.Wrap(err, "can't save log to file")
+		}
+		log.AddHook(rotateFileHook)
+	}
 
 	return nil
 }

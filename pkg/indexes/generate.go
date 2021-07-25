@@ -17,9 +17,15 @@ package indexes
 
 import (
 	"archive/zip"
+	"bytes"
+	"crypto/md5"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
+	"hash/crc32"
+	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -89,7 +95,7 @@ func IndexZipFile(c chan *PDFFileOffSet, dataDir string, index int, t *torrent.T
 		if f.CompressedSize64 == 0 {
 			continue
 		}
-		i, err := zipFileToRecord(f, currentZipOffset, t.PieceLength)
+		i, err := zipFileToRecord(f, currentZipOffset, t.PieceLength, path.Join(t.Name, filepath.Base(abs)))
 		if err != nil {
 			return err
 		}
@@ -100,7 +106,7 @@ func IndexZipFile(c chan *PDFFileOffSet, dataDir string, index int, t *torrent.T
 	return nil
 }
 
-func zipFileToRecord(file *zip.File, currentZipOffset, pieceLength int64) (*PDFFileOffSet, error) {
+func zipFileToRecord(file *zip.File, currentZipOffset, pieceLength int64, zipFileName string) (*PDFFileOffSet, error) {
 	i := &PDFFileOffSet{
 		DOI: file.Name, // file name is just doi
 		Record: Record{
@@ -119,16 +125,42 @@ func zipFileToRecord(file *zip.File, currentZipOffset, pieceLength int64) (*PDFF
 	i.PieceStart = uint32((offset + currentZipOffset) / pieceLength)
 	i.OffsetInPiece = (offset + currentZipOffset) % pieceLength
 
+	// this will disable the CRC32 checksum of zip file reader
+	// there are some file (especially 59100000-59199999, info hash`1a96f296cfec8a326a94b8d984f7378949ef7dfb` )
+	// has bad crc32, we will do it manually and log a error.
+	oldCrc32 := file.CRC32
+	file.CRC32 = 0
+
 	f, err := file.Open()
 	if err != nil {
-		return nil, errors.Wrapf(err, "can't decompress file %s", file.Name)
+		return nil, errors.Wrapf(err, "failed to decompress file %s", file.Name)
 	}
 	defer f.Close()
 
-	cid, err := hash.Black2dBalancedSized256K(f)
+	raw, err := io.ReadAll(f)
 	if err != nil {
-		return nil, errors.Wrapf(err, "can't decompress file %s", file.Name)
+		return nil, errors.Wrapf(err, "failed to decompress file %s", file.Name)
 	}
+
+	go func() {
+		crc := crc32.NewIEEE()
+		_, _ = crc.Write(raw)
+		if crc.Sum32() != oldCrc32 {
+			m := md5.New()
+			m.Write(raw)
+			md5Sum := m.Sum(nil)
+			logger.WithField("file", path.Clean(file.Name)).
+				WithField("zip", zipFileName).
+				WithField("m", hex.EncodeToString(md5Sum)).
+				Error("crc32 checksum mismatch")
+		}
+	}()
+
+	cid, err := hash.Black2dBalancedSized256K(bytes.NewReader(raw))
+	if err != nil {
+		return nil, errors.Wrapf(err, "can't generate CID for file %s", file.Name)
+	}
+
 	copy(i.CID[:], cid)
 
 	return i, nil

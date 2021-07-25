@@ -112,6 +112,7 @@ linters-settings:
     excludes:
       - G401
       - G505
+      - G501 # md5
 
   gomnd:
     settings:
