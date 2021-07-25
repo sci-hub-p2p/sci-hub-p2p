@@ -139,11 +139,13 @@ func zipFileToRecord(file *zip.File, currentZipOffset, pieceLength int64) (*PDFF
 		return nil, errors.Wrapf(err, "failed to decompress file %s", file.Name)
 	}
 
-	crc := crc32.NewIEEE()
-	_, _ = crc.Write(raw)
-	if crc.Sum32() != oldCrc32 {
-		logger.Errorf("crc32 checksum on file %s can't match", file.Name)
-	}
+	go func() {
+		crc := crc32.NewIEEE()
+		_, _ = crc.Write(raw)
+		if crc.Sum32() != oldCrc32 {
+			logger.Errorf("crc32 checksum on file %s can't match", file.Name)
+		}
+	}()
 
 	cid, err := hash.Black2dBalancedSized256K(bytes.NewReader(raw))
 	if err != nil {
