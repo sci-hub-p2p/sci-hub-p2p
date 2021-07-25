@@ -23,6 +23,7 @@ import (
 	"hash/crc32"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -92,7 +93,7 @@ func IndexZipFile(c chan *PDFFileOffSet, dataDir string, index int, t *torrent.T
 		if f.CompressedSize64 == 0 {
 			continue
 		}
-		i, err := zipFileToRecord(f, currentZipOffset, t.PieceLength)
+		i, err := zipFileToRecord(f, currentZipOffset, t.PieceLength, path.Join(t.Name, filepath.Base(abs)))
 		if err != nil {
 			return err
 		}
@@ -103,7 +104,7 @@ func IndexZipFile(c chan *PDFFileOffSet, dataDir string, index int, t *torrent.T
 	return nil
 }
 
-func zipFileToRecord(file *zip.File, currentZipOffset, pieceLength int64) (*PDFFileOffSet, error) {
+func zipFileToRecord(file *zip.File, currentZipOffset, pieceLength int64, zipFileName string) (*PDFFileOffSet, error) {
 	i := &PDFFileOffSet{
 		DOI: file.Name, // file name is just doi
 		Record: Record{
@@ -143,7 +144,9 @@ func zipFileToRecord(file *zip.File, currentZipOffset, pieceLength int64) (*PDFF
 		crc := crc32.NewIEEE()
 		_, _ = crc.Write(raw)
 		if crc.Sum32() != oldCrc32 {
-			logger.Errorf("crc32 checksum on file %s can't match", file.Name)
+			logger.WithField("file", path.Clean(file.Name)).
+				WithField("zip", zipFileName).
+				Error("crc32 checksum mismatch")
 		}
 	}()
 
