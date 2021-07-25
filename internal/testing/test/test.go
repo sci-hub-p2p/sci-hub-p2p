@@ -27,7 +27,7 @@ import (
 
 	"sci_hub_p2p/pkg/dagserv"
 	"sci_hub_p2p/pkg/logger"
-	"sci_hub_p2p/pkg/variable"
+	"sci_hub_p2p/pkg/vars"
 )
 
 func main() {
@@ -76,7 +76,7 @@ func LoadTestData() {
 			}
 
 			db.View(func(tx *bbolt.Tx) error {
-				return tx.Bucket(variable.NodeBucketName()).ForEach(func(k, v []byte) error {
+				return tx.Bucket(vars.NodeBucketName()).ForEach(func(k, v []byte) error {
 					_, err := cid.Cast(k)
 					if err != nil {
 						logger.Fatal(err, file)

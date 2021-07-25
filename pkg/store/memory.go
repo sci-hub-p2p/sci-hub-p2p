@@ -16,77 +16,54 @@
 package store
 
 import (
-	"encoding/hex"
-	"fmt"
 	"sync"
 
-	"github.com/davidlazar/go-crypto/encoding/base32"
 	"github.com/ipfs/go-cid"
 	ds "github.com/ipfs/go-datastore"
 	dsq "github.com/ipfs/go-datastore/query"
 	dshelp "github.com/ipfs/go-ipfs-ds-help"
 	ipld "github.com/ipfs/go-ipld-format"
-	"github.com/jbenet/goprocess"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"go.etcd.io/bbolt"
 	"google.golang.org/protobuf/proto"
 
 	"sci_hub_p2p/internal/utils"
 	"sci_hub_p2p/pkg/dagserv"
 	"sci_hub_p2p/pkg/logger"
-	"sci_hub_p2p/pkg/variable"
+	"sci_hub_p2p/pkg/vars"
 )
 
 // Here are some basic store implementations.
 
-var _ ds.Datastore = &MapDatastore{}
+var _ ds.Datastore = &MapDataStore{}
 
-// MapDatastore uses a standard Go map for internal storage.
-type MapDatastore struct {
+// MapDataStore uses a standard Go map for internal storage.
+type MapDataStore struct {
 	values    map[ds.Key][]byte
 	db        *bbolt.DB
-	ds        *bbolt.DB // for non-block keys
 	dag       ipld.DAGService
 	keysCache sync.Map
+	logger    *logrus.Entry
 	sync.RWMutex
 }
 
-func showFirst32(p []byte) {
-	l := len(p)
-	if l == 0 {
-		return
-	}
-	if l >= 32 {
-		fmt.Println(hex.Dump(p[:32]))
-	} else {
-		fmt.Println(hex.Dump(p))
-	}
-}
-
-func List(s *MapDatastore) {
-	fmt.Println("start list key")
-	for key, value := range s.values {
-		fmt.Println(key)
-		showFirst32(value)
-	}
-	fmt.Println("stop list key")
-}
-
-// NewMapDatastore constructs a MapDatastore. It is _not_ thread-safe by
+// NewMapDatastore constructs a MapDataStore. It is _not_ thread-safe by
 // default, wrap using sync.MutexWrap if you need thread safety (the answer here
 // is usually yes).
-func NewMapDatastore(db *bbolt.DB) (d *MapDatastore) {
-	return &MapDatastore{
+func NewMapDatastore(db *bbolt.DB) (d *MapDataStore) {
+	return &MapDataStore{
 		values: make(map[ds.Key][]byte),
 		db:     db,
 		dag:    dagserv.New(db, 0),
+		logger: logger.WithField("logger", "MapDataStore"),
 	}
 }
 
 // Put implements Datastore.Put.
-func (d *MapDatastore) Put(key ds.Key, value []byte) (err error) {
+func (d *MapDataStore) Put(key ds.Key, value []byte) (err error) {
 	if key.IsDescendantOf(topLevelBlockKey) {
-		fmt.Println("try to put block, put it in memory")
+		logger.Debug("try to put block, put it in memory")
 	}
 	d.Lock()
 	d.values[key] = value
@@ -96,17 +73,18 @@ func (d *MapDatastore) Put(key ds.Key, value []byte) (err error) {
 }
 
 // Sync implements Datastore.Sync.
-func (d *MapDatastore) Sync(prefix ds.Key) error {
+func (d *MapDataStore) Sync(prefix ds.Key) error {
 	return errors.Wrap(d.db.Sync(), "failed to sync bbolt DB")
 }
 
-func (d *MapDatastore) Get(key ds.Key) ([]byte, error) {
+func (d *MapDataStore) Get(key ds.Key) ([]byte, error) {
+	var log = logger.WithField("key", key)
+	log.Trace("try to get block, check it in memory first")
+
 	if !key.IsDescendantOf(topLevelBlockKey) {
-		// non block keysCache
 		d.RLock()
 		val, found := d.values[key]
 		d.RUnlock()
-
 		if !found {
 			return nil, ds.ErrNotFound
 		}
@@ -116,33 +94,27 @@ func (d *MapDatastore) Get(key ds.Key) ([]byte, error) {
 
 	// /blocks/{multi hash}
 
-	fmt.Println("try to get block, check it in memory first")
-	d.RLock()
-	if val, ok := d.values[key]; ok {
-		d.RUnlock()
-
-		return val, nil
-	}
-	d.RUnlock()
-	fmt.Println("didn't find in memory, now check it in KV database")
+	log.Trace("didn't find in memory, now check it in KV database")
 	mh, err := dshelp.DsKeyToMultihash(ds.NewKey(key.BaseNamespace()))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode key to multihash")
+		log.Error("block key is not a valid multi hash", err)
+		return nil, errors.Wrapf(err, "failed to decode key to multihash for key %s", key)
 	}
 
 	var p []byte
 
 	err = d.db.View(func(tx *bbolt.Tx) error {
 		p, err = readBlock(tx, mh)
+		if p != nil {
+			log.Trace("find in KV")
+		}
 		return err
 	})
 	if err != nil {
 		if errors.Is(err, ds.ErrNotFound) {
-			fmt.Println("can't find", key)
-
 			return nil, err
 		}
-		fmt.Println("read block got", err)
+		log.Trace("read block got", err)
 
 		return nil, errors.Wrap(err, "can't read from disk")
 	}
@@ -151,7 +123,7 @@ func (d *MapDatastore) Get(key ds.Key) ([]byte, error) {
 }
 
 // Has implements Datastore.Has.
-func (d *MapDatastore) Has(key ds.Key) (exists bool, err error) {
+func (d *MapDataStore) Has(key ds.Key) (exists bool, err error) {
 	d.RLock()
 	_, found := d.values[key]
 	d.RUnlock()
@@ -167,7 +139,7 @@ func (d *MapDatastore) Has(key ds.Key) (exists bool, err error) {
 			return false, errors.Wrap(err, "failed to decode key to multi HASH")
 		}
 		_ = d.db.View(func(tx *bbolt.Tx) error {
-			b := tx.Bucket(variable.BlockBucketName())
+			b := tx.Bucket(vars.BlockBucketName())
 			if b.Get(mh) != nil {
 				found = true
 			}
@@ -180,25 +152,28 @@ func (d *MapDatastore) Has(key ds.Key) (exists bool, err error) {
 }
 
 // GetSize implements Datastore.GetSize.
-func (d *MapDatastore) GetSize(key ds.Key) (size int, err error) {
+func (d *MapDataStore) GetSize(key ds.Key) (size int, err error) {
 	d.RLock()
-	defer d.RUnlock()
 
 	v, found := d.values[key]
 	if found {
+		d.RUnlock()
+
 		return len(v), nil
 	}
+	d.RUnlock()
 
-	logger.Debug("get size of", key, "from kV")
+	d.logger.WithField("key", key).Debug("get size of from kV")
 	var l = -1
+	var mh []byte
 	if !found {
-		logger.Debug("block ID", key.BaseNamespace())
-		mh, err := dshelp.DsKeyToMultihash(ds.NewKey(key.BaseNamespace()))
+		mh, err = dshelp.DsKeyToMultihash(ds.NewKey(key.BaseNamespace()))
 		if err != nil {
 			return 0, errors.Wrap(err, "failed to decode key to multi HASH")
 		}
+
 		err = d.db.View(func(tx *bbolt.Tx) error {
-			l, err = readLen(tx, mh)
+			l, err = readLen(tx, d.logger, mh)
 
 			return err
 		})
@@ -208,7 +183,7 @@ func (d *MapDatastore) GetSize(key ds.Key) (size int, err error) {
 }
 
 // Delete implements Datastore.Delete.
-func (d *MapDatastore) Delete(key ds.Key) (err error) {
+func (d *MapDataStore) Delete(key ds.Key) (err error) {
 	d.Lock()
 	delete(d.values, key)
 	d.Unlock()
@@ -216,29 +191,11 @@ func (d *MapDatastore) Delete(key ds.Key) (err error) {
 	return nil
 }
 
-// var errStop = errors.New("stop iter")
-//
-// // Query implements Datastore.Query
-// func (d *MapDatastore) Query(q dsq.Query) (dsq.Results, error) {
-// 	d.RLock()
-//
-// 	re := make([]dsq.Entry, 0, len(d.values))
-// 	for k, v := range d.values {
-// 		e := dsq.Entry{Key: k.String(), Size: len(v)}
-// 		if !q.KeysOnly {
-// 			e.Value = v
-// 		}
-// 		re = append(re, e)
-// 	}
-// 	r := dsq.ResultsWithEntries(q, re)
-// 	r = dsq.NaiveQueryApply(q, r)
-// 	return r, nil
-// }
-//
-
 // Query is copied from go-ds-bolt and modified.
-func (d *MapDatastore) Query(q dsq.Query) (dsq.Results, error) {
+func (d *MapDataStore) Query(q dsq.Query) (dsq.Results, error) {
+	var log = logger.WithLogger("MapDataStore.Query").WithField("prefix", q.Prefix)
 	if q.Prefix != "/blocks" {
+		log.Trace("none `/blocks` query, only search in memory")
 		d.RLock()
 		defer d.RUnlock()
 		re := make([]dsq.Entry, 0, len(d.values))
@@ -251,158 +208,38 @@ func (d *MapDatastore) Query(q dsq.Query) (dsq.Results, error) {
 		}
 		r := dsq.ResultsWithEntries(q, re)
 		r = dsq.NaiveQueryApply(q, r)
+
 		return r, nil
 	}
 
-	// iter blocks
+	log.Trace("try to query from KV")
 
-	// Special case order by key.
-	orders := q.Orders
-	if len(orders) > 0 {
-		switch q.Orders[0].(type) {
-		case dsq.OrderByKey, *dsq.OrderByKey:
-			// Already ordered by key.
-			orders = nil
-		}
-	}
-
-	qrb := dsq.NewResultBuilder(q)
-	qrb.Process.Go(func(worker goprocess.Process) {
-		d.db.View(func(tx *bbolt.Tx) error {
-			buck := tx.Bucket(variable.BlockBucketName())
-			c := buck.Cursor()
-
-			// If we need to sort, we'll need to collect all the
-			// results up-front.
-			if len(orders) > 0 {
-				// Query and filter.
-				var entries []dsq.Entry
-				for k, v := c.First(); k != nil; k, v = c.Next() {
-					dk := topLevelBlockKey.Child(dshelp.MultihashToDsKey(k)).String()
-					// dk := ds.NewKey(string(k)).String()
-					e := dsq.Entry{Key: dk}
-					if !qrb.Query.KeysOnly {
-						// We copy _after_ filtering/sorting.
-						e.Value = v
-					}
-					if filter(q.Filters, e) {
-						continue
-					}
-					entries = append(entries, e)
-				}
-
-				// sort
-				dsq.Sort(orders, entries)
-
-				// offset/limit
-				entries = entries[qrb.Query.Offset:]
-				if qrb.Query.Limit > 0 {
-					if qrb.Query.Limit < len(entries) {
-						entries = entries[:qrb.Query.Limit]
-					}
-				}
-
-				// Send
-				for _, e := range entries {
-					// Copy late so we don't have to copy
-					// values we don't use.
-					e.Value = append(e.Value[0:0:0], e.Value...)
-					select {
-					case qrb.Output <- dsq.Result{Entry: e}:
-					case <-worker.Closing(): // client told us to end early.
-						return nil
-					}
-				}
-			} else {
-				// Otherwise, send results as we get them.
-				offset := 0
-				for k, v := c.First(); k != nil; k, v = c.Next() {
-					dk := topLevelBlockKey.Child(dshelp.MultihashToDsKey(k)).String()
-					e := dsq.Entry{Key: dk, Value: v}
-					if !qrb.Query.KeysOnly {
-						// We copy _after_ filtering.
-						e.Value = v
-					}
-
-					// pre-filter
-					if filter(q.Filters, e) {
-						continue
-					}
-
-					// now count this item towards the results
-					offset++
-
-					// check the offset
-					if offset < qrb.Query.Offset {
-						continue
-					}
-
-					e.Value = append(e.Value[0:0:0], e.Value...)
-					select {
-					case qrb.Output <- dsq.Result{Entry: e}:
-						offset++
-					case <-worker.Closing():
-						return nil
-					}
-
-					if qrb.Query.Limit > 0 &&
-						offset >= (qrb.Query.Offset+qrb.Query.Limit) {
-						// all done.
-						return nil
-					}
-				}
-			}
-
-			return nil
-		})
-	})
-
-	// go wait on the worker (without signaling close)
-
-	go qrb.Process.CloseAfterChildren()
-
-	return qrb.Results(), nil
+	return queryBolt(d, q, log)
 }
 
-// from go-ds-bolt
-// filter checks if we should filter out the query.
-func filter(filters []dsq.Filter, entry dsq.Entry) bool {
-	for _, filter := range filters {
-		if !filter.Filter(entry) {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (d *MapDatastore) Batch() (ds.Batch, error) {
+func (d *MapDataStore) Batch() (ds.Batch, error) {
 	return ds.NewBasicBatch(d), nil
 }
 
-func (d *MapDatastore) Close() error {
+func (d *MapDataStore) Close() error {
 	return nil
 }
 
-func readLen(tx *bbolt.Tx, mh []byte) (int, error) {
-	logger.Debug("try to get size of ", mh)
-	bb := tx.Bucket(variable.BlockBucketName())
-	nb := tx.Bucket(variable.NodeBucketName())
-
-	defer fmt.Println("exit readLen function")
+func readLen(tx *bbolt.Tx, log *logrus.Entry, mh []byte) (int, error) {
+	bb := tx.Bucket(vars.BlockBucketName())
+	nb := tx.Bucket(vars.NodeBucketName())
 
 	v := bb.Get(mh)
 	if v == nil {
-		logger.Debug("didn't find block", mh)
 		return -1, ds.ErrNotFound
 	}
 
 	var r = &dagserv.Block{}
-	err := proto.Unmarshal(v, r)
-	if err != nil {
+
+	if err := proto.Unmarshal(v, r); err != nil {
 		return -1, errors.Wrap(err, "failed to decode block Record from database raw value")
 	}
-	logger.Debug("get block with type", r.Type.String())
+	log.Debug("find block in KV, type", r.Type.String())
 	switch r.Type {
 	case dagserv.BlockType_proto:
 		logger.Debug(cid.Parse(r.CID))
@@ -410,6 +247,7 @@ func readLen(tx *bbolt.Tx, mh []byte) (int, error) {
 		if n == nil {
 			return -1, ds.ErrNotFound
 		}
+
 		return len(n), nil
 	case dagserv.BlockType_file:
 		return int(r.Size), nil
@@ -419,15 +257,11 @@ func readLen(tx *bbolt.Tx, mh []byte) (int, error) {
 }
 
 func readBlock(tx *bbolt.Tx, mh []byte) ([]byte, error) {
-	bb := tx.Bucket(variable.BlockBucketName())
-	nb := tx.Bucket(variable.NodeBucketName())
-
-	fmt.Println("readBlock: try to read metadata from KV")
-	defer fmt.Println("exit readBlock function")
+	bb := tx.Bucket(vars.BlockBucketName())
+	nb := tx.Bucket(vars.NodeBucketName())
 
 	v := bb.Get(mh)
 	if v == nil {
-		logger.Debugf("can't find block: mh %s", base32.EncodeToString(mh))
 		return nil, ds.ErrNotFound
 	}
 
@@ -438,14 +272,14 @@ func readBlock(tx *bbolt.Tx, mh []byte) ([]byte, error) {
 	}
 	switch r.Type {
 	case dagserv.BlockType_proto:
-		fmt.Println(cid.Parse(r.CID))
 		p := nb.Get(r.CID)
 		if p == nil {
 			return nil, errors.Wrap(ds.ErrNotFound, "can't read proto node from node bucket")
 		}
+
 		return p, nil
 	case dagserv.BlockType_file:
-		var p, err = utils.ReadFileAt(r.Filename, int64(r.Offset), int64(r.Size))
+		var p, err = utils.ReadFileAt(r.Filename, r.Offset, r.Size)
 
 		return p, errors.Wrap(err, "can't read file block from disk")
 	}

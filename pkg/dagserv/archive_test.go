@@ -35,7 +35,7 @@ import (
 
 	"sci_hub_p2p/pkg/constants"
 	"sci_hub_p2p/pkg/dagserv"
-	"sci_hub_p2p/pkg/variable"
+	"sci_hub_p2p/pkg/vars"
 )
 
 func TestZipArchive(t *testing.T) {
@@ -92,7 +92,7 @@ func TestDagServ_Add(t *testing.T) {
 
 	assert.Nil(t,
 		db.View(func(tx *bbolt.Tx) error {
-			b := tx.Bucket(variable.NodeBucketName())
+			b := tx.Bucket(vars.NodeBucketName())
 			assert.NotNil(t, b)
 			data := b.Get(c.Bytes())
 			assert.NotNil(t, data)

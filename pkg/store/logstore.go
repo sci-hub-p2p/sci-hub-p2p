@@ -17,11 +17,11 @@
 package store
 
 import (
-	"fmt"
-
 	ds "github.com/ipfs/go-datastore"
 	dsq "github.com/ipfs/go-datastore/query"
-	dshelp "github.com/ipfs/go-ipfs-ds-help"
+	"github.com/pkg/errors"
+
+	"sci_hub_p2p/pkg/logger"
 )
 
 var _ ds.Datastore = &LogDatastore{}
@@ -54,63 +54,75 @@ func (d *LogDatastore) Children() []ds.Datastore {
 
 // Put implements Datastore.Put.
 func (d *LogDatastore) Put(key ds.Key, value []byte) (err error) {
-	fmt.Printf("%s: Put %s\n", d.Name, key)
-	// fmt.Printf("%s: Put %s ```%s```", d.Name, key, value)
+	logger.Tracef("%s: Put %s\n", d.Name, key)
+	// logger.Tracef("%s: Put %s ```%s```", d.Name, key, value)
 	return d.child.Put(key, value)
 }
 
 // Sync implements Datastore.Sync.
 func (d *LogDatastore) Sync(prefix ds.Key) error {
-	fmt.Printf("%s: Sync %s\n", d.Name, prefix)
+	logger.Tracef("%s: Sync %s\n", d.Name, prefix)
 
 	return d.child.Sync(prefix)
 }
 
 // Get implements Datastore.Get.
 func (d *LogDatastore) Get(key ds.Key) (value []byte, err error) {
-	fmt.Printf("%s: Get %s\n", d.Name, key)
-	if mh, err := dshelp.DsKeyToMultihash(key); err == nil {
-		fmt.Println(mh)
+	var log = logger.WithField("logger", "LogDatastore").WithField("key", key)
+	log.Trace("Get")
+
+	value, err = d.child.Get(key)
+	
+	if errors.Is(err, ds.ErrNotFound) {
+		log.Trace("missing block")
 	}
 
-	return d.child.Get(key)
+	return
 }
 
 // Has implements Datastore.Has.
 func (d *LogDatastore) Has(key ds.Key) (exists bool, err error) {
-	fmt.Printf("%s: Has %s\n", d.Name, key)
+	logger.Tracef("%s: Has %s\n", d.Name, key)
 	exists, err = d.child.Has(key)
-	fmt.Println("debug: Has return", exists, err)
+	logger.Trace("debug: Has return", exists, err)
 
 	return
 }
 
 // GetSize implements Datastore.GetSize.
 func (d *LogDatastore) GetSize(key ds.Key) (size int, err error) {
-	fmt.Printf("%s: GetSize %s\n", d.Name, key)
+	var log = logger.WithField("logger", "LogDatastore").WithField("key", key)
+	log.Trace("GetSize")
+
 	size, err = d.child.GetSize(key)
-	fmt.Println("debug: GetSize return", size, err)
+
+	if errors.Is(err, ds.ErrNotFound) {
+		log.Trace("missing block ")
+	}
 
 	return
 }
 
 // Delete implements Datastore.Delete.
 func (d *LogDatastore) Delete(key ds.Key) (err error) {
-	fmt.Printf("%s: Delete %s\n", d.Name, key)
+	logger.Tracef("%s: Delete %s\n", d.Name, key)
 
 	return d.child.Delete(key)
 }
 
 // DiskUsage implements the PersistentDatastore interface.
 func (d *LogDatastore) DiskUsage() (uint64, error) {
-	fmt.Printf("%s: DiskUsage\n", d.Name)
+	logger.WithField("logger", "LogDatastore").Trace("DiskUsage")
 
 	return ds.DiskUsage(d.child)
 }
 
 // Query implements Datastore.Query.
 func (d *LogDatastore) Query(q dsq.Query) (dsq.Results, error) {
-	fmt.Printf("%s: Query {Prefix: %s}\n", d.Name, q.Prefix)
+	logger.WithField("logger", "LogDatastore").
+		WithField("prefix", q.Prefix).
+		WithField("keysOnly", q.KeysOnly).
+		Trace("Query")
 
 	return d.child.Query(q)
 }
@@ -122,7 +134,7 @@ type LogBatch struct {
 }
 
 func (d *LogDatastore) Batch() (ds.Batch, error) {
-	fmt.Printf("%s: Batch\n", d.Name)
+	logger.Tracef("%s: Batch\n", d.Name)
 	if bds, ok := d.child.(ds.Batching); ok {
 		b, err := bds.Batch()
 
@@ -141,27 +153,27 @@ func (d *LogDatastore) Batch() (ds.Batch, error) {
 
 // Put implements Batch.Put.
 func (d *LogBatch) Put(key ds.Key, value []byte) (err error) {
-	fmt.Printf("%s: BatchPut %s\n", d.Name, key)
-	// fmt.Printf("%s: Put %s ```%s```", d.Name, key, value)
+	logger.Tracef("%s: BatchPut %s\n", d.Name, key)
+	// logger.Tracef("%s: Put %s ```%s```", d.Name, key, value)
 	return d.child.Put(key, value)
 }
 
 // Delete implements Batch.Delete.
 func (d *LogBatch) Delete(key ds.Key) (err error) {
-	fmt.Printf("%s: BatchDelete %s\n", d.Name, key)
+	logger.Tracef("%s: BatchDelete %s\n", d.Name, key)
 
 	return d.child.Delete(key)
 }
 
 // Commit implements Batch.Commit.
 func (d *LogBatch) Commit() (err error) {
-	fmt.Printf("%s: BatchCommit\n", d.Name)
+	logger.Tracef("%s: BatchCommit\n", d.Name)
 
 	return d.child.Commit()
 }
 
 func (d *LogDatastore) Close() error {
-	fmt.Printf("%s: Close\n", d.Name)
+	logger.Tracef("%s: Close\n", d.Name)
 
 	return d.child.Close()
 }

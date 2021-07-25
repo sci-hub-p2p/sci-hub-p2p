@@ -33,7 +33,7 @@ import (
 
 	"sci_hub_p2p/pkg/dagserv"
 	"sci_hub_p2p/pkg/logger"
-	"sci_hub_p2p/pkg/variable"
+	"sci_hub_p2p/pkg/vars"
 )
 
 func main() {
@@ -69,11 +69,11 @@ func LoadTestData() {
 		}
 		dbSlice = append(dbSlice, db)
 		db.Update(func(tx *bbolt.Tx) error {
-			err := tx.DeleteBucket(variable.BlockBucketName())
+			err := tx.DeleteBucket(vars.BlockBucketName())
 			if err != nil {
 				logger.Fatal(err)
 			}
-			err = tx.DeleteBucket(variable.NodeBucketName())
+			err = tx.DeleteBucket(vars.NodeBucketName())
 			if err != nil {
 				logger.Fatal(err)
 			}
@@ -148,13 +148,13 @@ func LoadTestData() {
 
 	for i, srcDB := range dbSlice {
 		fmt.Println("copy db", i)
-		err = copyBucket(srcDB, db, variable.NodeBucketName())
+		err = copyBucket(srcDB, db, vars.NodeBucketName())
 
 		if err != nil {
 			logger.Error(err)
 		}
 
-		err = copyBucket(srcDB, db, variable.BlockBucketName())
+		err = copyBucket(srcDB, db, vars.BlockBucketName())
 
 		if err != nil {
 			logger.Error(err)
@@ -189,7 +189,7 @@ func copyBucket(src, dst *bbolt.DB, name []byte) error {
 			srcBucket := srcTx.Bucket(name)
 
 			return srcBucket.ForEach(func(k, v []byte) error {
-				if bytes.Equal(name, variable.NodeBucketName()) {
+				if bytes.Equal(name, vars.NodeBucketName()) {
 					_, err := cid.Parse(k)
 					if err != nil {
 						logger.Error(err)

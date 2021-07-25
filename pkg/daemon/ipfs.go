@@ -22,33 +22,30 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"io"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/gorilla/mux"
-	ipfslite "github.com/hsanjuan/ipfs-lite"
-	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-datastore"
-	dssync "github.com/ipfs/go-datastore/sync"
-	dshelp "github.com/ipfs/go-ipfs-ds-help"
-	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/peer"
+	config "github.com/ipfs/go-ipfs-config"
+	log2 "github.com/ipfs/go-log"
+	"github.com/libp2p/go-libp2p-core/routing"
+	discovery "github.com/libp2p/go-libp2p-discovery"
 	"github.com/multiformats/go-multiaddr"
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
 
+	"sci_hub_p2p/internal/ipfslite"
 	"sci_hub_p2p/pkg/constants"
 	"sci_hub_p2p/pkg/dagserv"
 	"sci_hub_p2p/pkg/logger"
 	"sci_hub_p2p/pkg/store"
-	"sci_hub_p2p/pkg/variable"
+	"sci_hub_p2p/pkg/vars"
 )
 
-const dhtConcurrency = 10
-
 func Start() error {
+	setupLogger()
+	ctx := context.Background()
 	db, err := bbolt.Open("./test.bolt", constants.DefaultFilePerm, bbolt.DefaultOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to open database")
@@ -59,8 +56,9 @@ func Start() error {
 		return errors.Wrap(err, "can't init database")
 	}
 	rawDS := store.NewMapDatastore(db)
-	mutexDS := dssync.MutexWrap(rawDS)
-	ds := store.NewLogDatastore(mutexDS, "debug")
+	ds := store.NewLogDatastore(rawDS, "debug")
+	startHTTPServer(ds)
+
 	privKey, err := genKey()
 	if err != nil {
 		return err
@@ -72,8 +70,8 @@ func Start() error {
 		return err
 	}
 
-	h, dht, err := SetupLibp2p(
-		context.TODO(),
+	h, dht, err := ipfslite.SetupLibp2p(
+		ctx,
 		privKey,
 		pnetKey,
 		[]multiaddr.Multiaddr{listen},
@@ -84,84 +82,92 @@ func Start() error {
 		return err
 	}
 
-	lite, err := ipfslite.New(context.TODO(), ds, h, dht, nil)
+	lite, err := ipfslite.New(ctx, ds, h, dht, nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to create new peer")
 	}
 
-	// lite.Bootstrap(ipfslite.DefaultBootstrapPeers())
-	logger.Info("listening")
+	logger.Info("ipfs peer started")
 	fmt.Printf("/ip4/127.0.0.1/tcp/4005/p2p/%s\n", h.ID())
-	ipfslite.NewInMemoryDatastore()
-	count := 0
-	cc := 0
-	_ = db.View(func(tx *bbolt.Tx) error {
-		return tx.Bucket(variable.NodeBucketName()).ForEach(func(k, v []byte) error {
-			c, err := cid.Parse(k)
-			if err != nil {
-				count++
-				logger.Error(err)
-				fmt.Println(hex.Dump(k))
-				if count > 4 {
-					os.Exit(1)
-				}
-			}
-			if c.Type() == cid.Raw {
-				return nil
-			}
-			cc++
-			if cc > 10 {
-				return io.EOF
-			}
-			fmt.Println(datastore.NewKey("/blocks/").Child(dshelp.MultihashToDsKey(c.Hash())))
-			fmt.Println(c.String())
-			return nil
-		})
-		//
-		// 	if c.ByteLen() != 0 {
-		// 		b := tx.Bucket(variable.BlockBucketName())
-		// 		v := b.Get(c.Hash())
-		// 		if v == nil {
-		// 			panic("should not be nil")
-		// 		}
-		// 	}
-		//
-		// 	return nil
-	})
 
-	r := mux.NewRouter()
-	r.HandleFunc("/GET/blocks/{id}", func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		var key = "/blocks/" + vars["id"]
-		l, err := ds.GetSize(datastore.NewKey(key))
-		fmt.Fprintf(w, "Key: %s\n", key)
-		fmt.Fprintf(w, "Size %d\n", l)
-		fmt.Fprintf(w, "Error %s\n", err)
+	lite.Bootstrap(ipfslite.DefaultBootstrapPeers())
+	p, err := config.ParseBootstrapPeers([]string{
+		"/ip4/127.0.0.1/tcp/4001/p2p/12D3KooWCsZQqmqi42PXHKmAXAHvevp8HXnfViWg4Txp5ayJoqSq",
 	})
-	r.HandleFunc("/hi", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hi")
-	})
-	http.ListenAndServe(":23333", r)
+	if err != nil {
+		panic(err)
+	}
 
+	lite.Bootstrap(p)
+	// lite.Bootstrap(ipfslite.DefaultBootstrapPeers())
+	// db.View(func(tx *bbolt.Tx) error {
+	// 	return tx.Bucket(vars.BlockBucketName()).ForEach(func(k, v []byte) error {
+	// 		var r = &dagserv.Block{}
+	// 		err := proto.Unmarshal(v, r)
+	// 		if err != nil {
+	// 			panic(err)
+	// 		}
+	//
+	// 		c, err := cid.Parse(r.CID)
+	// 		if err != nil {
+	// 			panic(err)
+	// 		}
+	//
+	// 		if rand.Intn(10000) < 2 {
+	// 			if r.Type == dagserv.BlockType_proto {
+	// 				fmt.Println(c)
+	// 				fmt.Println(store.MultiHashToKey(k))
+	// 				fmt.Println(dshelp.MultihashToDsKey(c.Hash()))
+	// 			}
+	// 		}
+	// 		return nil
+	// 	})
+	// })
 	for {
-		bootIPFSDaemon(lite, h)
-		time.Sleep(time.Second)
+		bootIPFSDaemon(context.Background(), dht)
+		time.Sleep(time.Second * 20)
 	}
 }
 
-// for local testing.
-func bootIPFSDaemon(lite *ipfslite.Peer, h host.Host) {
-	hostIpfs, err := multiaddr.NewMultiaddr(
-		"/ip4/127.0.0.1/tcp/4001/p2p/12D3KooWCsZQqmqi42PXHKmAXAHvevp8HXnfViWg4Txp5ayJoqSq")
+func setupLogger() {
+	err := log2.SetLogLevel("*", "error")
 	if err != nil {
 		panic(err)
 	}
-	p, err := peer.AddrInfosFromP2pAddrs(hostIpfs)
-	if err != nil {
-		panic(err)
-	}
-	lite.Bootstrap(p)
-	for _, info := range p {
-		h.Connect(context.TODO(), info)
-	}
+}
+
+func startHTTPServer(d datastore.Datastore) {
+	var m = mux.NewRouter()
+	m.HandleFunc("/GET/blocks/{key}", func(w http.ResponseWriter, r *http.Request) {
+		var v = mux.Vars(r)
+		node, err := d.Get(datastore.NewKey("/blocks/" + v["key"]))
+		if errors.Is(err, datastore.ErrNotFound) {
+			fmt.Fprintf(w, "missing block %s", err)
+			return
+		}
+		fmt.Fprintf(w, "length %d\n", len(node))
+		fmt.Fprintf(w, "hex:\n")
+		hex.Dumper(w).Write(node)
+
+	})
+
+	m.HandleFunc("/GETSIZE/blocks/{key}", func(w http.ResponseWriter, r *http.Request) {
+		var v = mux.Vars(r)
+		l, err := d.GetSize(datastore.NewKey("/blocks/" + v["key"]))
+		if errors.Is(err, datastore.ErrNotFound) {
+			fmt.Fprintf(w, "missing block %s", err)
+			return
+		}
+		fmt.Fprintf(w, "length %d", l)
+	})
+
+	go http.ListenAndServe(":2333", m)
+}
+
+func bootIPFSDaemon(ctx context.Context, dht routing.ContentRouting) {
+	nodeName := fmt.Sprintf("sci-hub-p2p %s", vars.Ref)
+	logger.Debug("Announcing ourselves...")
+	routingDiscovery := discovery.NewRoutingDiscovery(dht)
+	discovery.Advertise(ctx, routingDiscovery, nodeName)
+	logger.Debug("Successfully announced!")
 }

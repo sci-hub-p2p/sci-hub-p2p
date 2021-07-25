@@ -39,13 +39,15 @@ func pnetKey() (pnet.PSK, error) {
 	r, err := os.Open(keyPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
+			logger.WithLogger("ipfs").Info("didn't find pnet key in ~/.ipfs/swam.key, skip")
+
 			return nil, nil
 		}
 
 		return nil, errors.Wrapf(err, "failed to read pnet key %s", keyPath)
 	}
 	defer r.Close()
-	logger.Info("using pnet key")
+	logger.WithLogger("ipfs").Info("using pnet key")
 	k, err := pnet.DecodeV1PSK(r)
 
 	return k, errors.Wrap(err, "failed to decode pnet KEY")

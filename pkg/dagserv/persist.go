@@ -29,7 +29,7 @@ import (
 
 	"sci_hub_p2p/internal/utils"
 	"sci_hub_p2p/pkg/logger"
-	"sci_hub_p2p/pkg/variable"
+	"sci_hub_p2p/pkg/vars"
 )
 
 func ReadFileStoreNode(b *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {
@@ -56,8 +56,8 @@ func ReadFileStoreNode(b *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {
 }
 
 func SaveFileStoreMeta(tx *bbolt.Tx, c cid.Cid, name string, offset, size int64) error {
-	nb := tx.Bucket(variable.NodeBucketName())
-	bb := tx.Bucket(variable.BlockBucketName())
+	nb := tx.Bucket(vars.NodeBucketName())
+	bb := tx.Bucket(vars.BlockBucketName())
 
 	var block = Block{Type: BlockType_file, CID: c.Bytes(), Offset: offset, Size: size, Filename: name}
 
@@ -75,8 +75,8 @@ func SaveFileStoreMeta(tx *bbolt.Tx, c cid.Cid, name string, offset, size int64)
 }
 
 func SaveProtoNode(tx *bbolt.Tx, c cid.Cid, n *merkledag.ProtoNode) error {
-	nb := tx.Bucket(variable.NodeBucketName())
-	bb := tx.Bucket(variable.BlockBucketName())
+	nb := tx.Bucket(vars.NodeBucketName())
+	bb := tx.Bucket(vars.BlockBucketName())
 
 	var v = Block{Type: BlockType_proto, CID: c.Bytes(), Size: int64(len(n.RawData()))}
 	value, err := proto.Marshal(&v)
