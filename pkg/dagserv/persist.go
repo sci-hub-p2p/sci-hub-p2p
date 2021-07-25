@@ -32,8 +32,10 @@ import (
 	"sci_hub_p2p/pkg/vars"
 )
 
+var log = logger.WithLogger("dagserv.persist")
+
 func ReadFileStoreNode(b *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {
-	logger.Info("ReadFileStoreNode", c)
+	log.Trace("ReadFileStoreNode", c)
 	var v = &Block{}
 	data := b.Get(c.Bytes())
 	if data == nil {

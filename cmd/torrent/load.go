@@ -45,19 +45,16 @@ var loadCmd = &cobra.Command{
 	SilenceErrors: false,
 	PreRunE:       utils.EnsureDir(vars.GetTorrentStoragePath()),
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		var s []string
-		if glob != "" {
-			s, err = utils.GlobWithExpand(glob)
-			if err != nil {
-				return errors.Wrapf(err, "can't search torrents with glob '%s'", glob)
-			}
+		args, err = utils.MergeGlob(args, glob)
+		if err != nil {
+			return errors.Wrap(err, "can't load any torrent files")
 		}
 
 		db, err := bbolt.Open(filepath.Join(vars.GetAppBaseDir(), "torrent.bolt"),
 			constants.DefaultFilePerm, bbolt.DefaultOptions)
 
 		if err != nil {
-			return errors.Wrap(err, "cant' open database file, maybe another process is running")
+			return errors.Wrap(err, "can't open database file, maybe another process is running")
 		}
 		defer func(db *bbolt.DB) {
 			if e := db.Close(); e != nil {
@@ -69,16 +66,13 @@ var loadCmd = &cobra.Command{
 				}
 			}
 		}(db)
-		s = utils.Unique(append(args, s...))
-		if len(s) == 0 {
-			return fmt.Errorf("cant' find any torrent file to load")
-		}
+
 		err = db.Batch(func(tx *bbolt.Tx) error {
 			b, err := tx.CreateBucketIfNotExists(constants.TorrentBucket())
 			if err != nil {
 				return errors.Wrap(err, "can't create bucket in database")
 			}
-			for _, file := range s {
+			for _, file := range args {
 				f, err := torrent.ParseFile(file)
 				if err != nil {
 					return err
@@ -99,7 +93,7 @@ var loadCmd = &cobra.Command{
 		if err != nil {
 			return errors.Wrap(err, "can't save torrent data to database")
 		}
-		fmt.Printf("successfully load %d torrents into database\n", len(s))
+		fmt.Printf("successfully load %d torrents into database\n", len(args))
 
 		return nil
 	},

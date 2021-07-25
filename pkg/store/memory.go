@@ -55,7 +55,7 @@ func NewMapDatastore(db *bbolt.DB) (d *MapDataStore) {
 	return &MapDataStore{
 		values: make(map[ds.Key][]byte),
 		db:     db,
-		dag:    dagserv.New(db, 0),
+		dag:    dagserv.New(db),
 		logger: logger.WithField("logger", "MapDataStore"),
 	}
 }

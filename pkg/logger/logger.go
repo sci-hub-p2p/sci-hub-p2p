@@ -58,9 +58,7 @@ func WithLogger(value string) *log.Entry {
 }
 
 func WithField(key string, value interface{}) *log.Entry {
-	f := getFrame()
-
-	return log.WithField(key, value).WithField("file", f.File).WithField("line", f.Line)
+	return log.WithField(key, value)
 }
 
 func Infof(format string, args ...interface{}) {

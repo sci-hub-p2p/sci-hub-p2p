@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"runtime/pprof"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -27,6 +28,7 @@ import (
 	"sci_hub_p2p/cmd/daemon"
 	"sci_hub_p2p/cmd/flag"
 	"sci_hub_p2p/cmd/indexes"
+	"sci_hub_p2p/cmd/ipfs"
 	"sci_hub_p2p/cmd/paper"
 	"sci_hub_p2p/cmd/torrent"
 	"sci_hub_p2p/pkg/logger"
@@ -46,8 +48,23 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			return errors.Wrap(err, "Can't setup logger")
 		}
+		if flag.CPUProfile {
+			logger.Info("start profile, save data to ./cpu_profile")
+			f, err := os.Create("cpu_profile")
+			if err != nil {
+				logger.Fatal(err)
+			}
+
+			err = pprof.StartCPUProfile(f)
+			if err != nil {
+				logger.Error(err)
+			}
+		}
 
 		return nil
+	},
+	PersistentPostRun: func(cmd *cobra.Command, args []string) {
+		pprof.StopCPUProfile()
 	},
 }
 
@@ -72,13 +89,15 @@ var debugCmd = &cobra.Command{
 }
 
 func Execute() {
-	rootCmd.AddCommand(daemon.Cmd, indexes.Cmd, torrent.Cmd, paper.Cmd, debugCmd)
+	rootCmd.AddCommand(daemon.Cmd, indexes.Cmd, torrent.Cmd, paper.Cmd, debugCmd, ipfs.Cmd)
 
 	rootCmd.PersistentFlags().BoolVar(&flag.Debug, "debug", false, "enable Debug")
 	var defaultParallel = 3
 
 	rootCmd.PersistentFlags().IntVarP(&flag.Parallel, "parallel", "n",
 		defaultParallel, "how many CPU will be used")
+
+	rootCmd.PersistentFlags().BoolVar(&flag.CPUProfile, "cpu-profile", false, "generate a cpu profile")
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)

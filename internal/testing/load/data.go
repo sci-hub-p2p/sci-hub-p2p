@@ -17,9 +17,6 @@
 package main
 
 import (
-	"archive/zip"
-	"bytes"
-	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -27,12 +24,12 @@ import (
 	"time"
 
 	"github.com/cheggaaa/pb/v3"
-	"github.com/ipfs/go-cid"
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
 
 	"sci_hub_p2p/pkg/dagserv"
 	"sci_hub_p2p/pkg/logger"
+	"sci_hub_p2p/pkg/persist"
 	"sci_hub_p2p/pkg/vars"
 )
 
@@ -85,29 +82,7 @@ func LoadTestData() {
 		}
 		go func(db *bbolt.DB) {
 			for file := range c {
-				err = func() error {
-					r, err := zip.OpenReader(file)
-					if err != nil {
-						return err
-					}
-					defer r.Close()
-					for _, f := range r.File {
-						bar.Increment()
-						offset, err := f.DataOffset()
-						size := f.CompressedSize64
-						r, err := f.Open()
-						if err != nil {
-							return err
-						}
-						_, err = dagserv.Add(db, r, file, int64(size), offset)
-						if err != nil {
-							_ = r.Close()
-							return err
-						}
-						_ = r.Close()
-					}
-					return nil
-				}()
+				err := dagserv.AddZip(db, file)
 				if err != nil {
 					logger.Error(err)
 				}
@@ -148,13 +123,13 @@ func LoadTestData() {
 
 	for i, srcDB := range dbSlice {
 		fmt.Println("copy db", i)
-		err = copyBucket(srcDB, db, vars.NodeBucketName())
+		err = persist.CopyBucket(srcDB, db, vars.NodeBucketName())
 
 		if err != nil {
 			logger.Error(err)
 		}
 
-		err = copyBucket(srcDB, db, vars.BlockBucketName())
+		err = persist.CopyBucket(srcDB, db, vars.BlockBucketName())
 
 		if err != nil {
 			logger.Error(err)
@@ -176,29 +151,4 @@ func LoadTestData() {
 	if err != nil {
 		logger.Fatal(err)
 	}
-}
-
-func copyBucket(src, dst *bbolt.DB, name []byte) error {
-	return dst.Batch(func(dstTx *bbolt.Tx) error {
-		dstBucket, err := dstTx.CreateBucketIfNotExists(name)
-		if err != nil {
-			return errors.Wrap(err, "failed to create bucket in dst DB")
-		}
-
-		return src.View(func(srcTx *bbolt.Tx) error {
-			srcBucket := srcTx.Bucket(name)
-
-			return srcBucket.ForEach(func(k, v []byte) error {
-				if bytes.Equal(name, vars.NodeBucketName()) {
-					_, err := cid.Parse(k)
-					if err != nil {
-						logger.Error(err)
-						fmt.Println(hex.Dump(k))
-					}
-				}
-
-				return dstBucket.Put(k, v)
-			})
-		})
-	})
 }

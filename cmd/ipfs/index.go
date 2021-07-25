@@ -13,26 +13,16 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package daemon
+package ipfs
 
 import (
 	"github.com/spf13/cobra"
-
-	"sci_hub_p2p/pkg/daemon"
 )
 
 var Cmd = &cobra.Command{
-	Use: "daemon",
-}
-
-var startCmd = &cobra.Command{
-	Use:   "start",
-	Short: "start daemon",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return daemon.Start()
-	},
+	Use: "ipfs",
 }
 
 func init() {
-	Cmd.AddCommand(startCmd, loadCmd)
+	Cmd.AddCommand(addCmd)
 }

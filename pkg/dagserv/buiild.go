@@ -16,8 +16,8 @@
 package dagserv
 
 import (
+	"archive/zip"
 	"io"
-	"os"
 
 	"github.com/ipfs/go-cid"
 	chunker "github.com/ipfs/go-ipfs-chunker"
@@ -29,37 +29,7 @@ import (
 	"go.etcd.io/bbolt"
 )
 
-func Add(db *bbolt.DB, r io.Reader, abs string, size, baseOffset int64) (ipld.Node, error) {
-	dbp := helpers.DagBuilderParams{
-		Dagserv:    New(db, baseOffset),
-		NoCopy:     true,
-		RawLeaves:  true,
-		Maxlinks:   helpers.DefaultLinksPerBlock,
-		CidBuilder: DefaultPrefix(),
-	}
-	// NoCopy require a `FileInfo` on chunker
-	f := CompressedFile{
-		reader:             r,
-		zipPath:            abs,
-		compressedFilePath: "path/in/zip/article.pdf",
-		size:               uint64(size),
-	}
-
-	chunk, err := chunker.FromString(f, "default")
-	if err != nil {
-		return nil, errors.Wrapf(err, "can't create default chunker")
-	}
-	dbh, err := dbp.New(chunk)
-	if err != nil {
-		return nil, errors.Wrap(err, "can't create dag builder from chunker")
-	}
-	n, err := balanced.Layout(dbh)
-	if err != nil {
-		return nil, errors.Wrapf(err, "can't layout all chunk")
-	}
-
-	return n, errors.Wrap(db.Sync(), "failed to flush data to disk")
-}
+const DefaultChunkSize = 256 * 1024
 
 func DefaultPrefix() cid.Prefix {
 	return cid.Prefix{
@@ -70,37 +40,53 @@ func DefaultPrefix() cid.Prefix {
 	}
 }
 
-func AddFile(db *bbolt.DB, abs string) (ipld.Node, error) {
-	s, err := os.Stat(abs)
+func AddZip(db *bbolt.DB, abs string) error {
+	return errors.Wrap(db.Batch(func(tx *bbolt.Tx) error {
+		r, err := zip.OpenReader(abs)
+		if err != nil {
+			return errors.Wrap(err, "failed to open zip file")
+		}
+		defer r.Close()
+		for _, f := range r.File {
+			err := addZipContentFile(tx, abs, f)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}), "failed to add contents from files.")
+}
+
+func addZipContentFile(tx *bbolt.Tx, abs string, f *zip.File) error {
+	offset, err := f.DataOffset()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get file stat")
+		return errors.Wrap(err, "failed to get decompress file from zip")
 	}
-	r, err := os.Open(abs)
+
+	r, err := f.Open()
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to open file %s", abs)
+		return errors.Wrap(err, "failed to read compressed file")
 	}
 	defer r.Close()
+	_, err = addSingleFile(tx, abs, r, offset, f.CompressedSize64)
 
-	size := uint64(s.Size())
+	return err
+}
+
+func addSingleFile(tx *bbolt.Tx, abs string, r io.Reader, offset int64, size uint64) (ipld.Node, error) {
 	dbp := helpers.DagBuilderParams{
-		Dagserv:    New(db, 0),
+		Dagserv:    NewAdder(tx, offset),
 		NoCopy:     true,
 		RawLeaves:  true,
 		Maxlinks:   helpers.DefaultLinksPerBlock,
 		CidBuilder: DefaultPrefix(),
 	}
-	// NoCopy require a `FileInfo` on chunker
-	f := CompressedFile{
-		reader:             r,
-		zipPath:            abs,
-		compressedFilePath: "path/in/zip/article.pdf",
-		size:               size,
-	}
 
-	chunk, err := chunker.FromString(f, "default")
-	if err != nil {
-		return nil, errors.Wrapf(err, "can't create default chunker")
-	}
+	// NoCopy require a `FileInfo` on chunker
+	cf := wrapZipFile(r, abs, size)
+
+	chunk := chunker.NewSizeSplitter(cf, DefaultChunkSize)
 	dbh, err := dbp.New(chunk)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't create dag builder from chunker")

@@ -17,7 +17,6 @@ package dagserv
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/ipfs/go-cid"
@@ -31,13 +30,12 @@ import (
 	"sci_hub_p2p/pkg/vars"
 )
 
-var _ ipld.DAGService = ZipArchive{}
+var _ ipld.DAGService = (*ZipArchive)(nil)
 
-func New(db *bbolt.DB, baseOffset int64) ZipArchive {
+func New(db *bbolt.DB) ZipArchive {
 	return ZipArchive{
-		m:          &sync.Mutex{},
-		db:         db,
-		baseOffset: baseOffset,
+		m:  &sync.Mutex{},
+		db: db,
 	}
 }
 
@@ -57,9 +55,8 @@ func InitDB(db *bbolt.DB) error {
 }
 
 type ZipArchive struct {
-	m          *sync.Mutex
-	db         *bbolt.DB
-	baseOffset int64
+	m  *sync.Mutex
+	db *bbolt.DB
 }
 
 func (d ZipArchive) Get(ctx context.Context, c cid.Cid) (ipld.Node, error) {
@@ -98,7 +95,6 @@ func (d ZipArchive) Get(ctx context.Context, c cid.Cid) (ipld.Node, error) {
 
 // GetMany TODO: need to parallel this, but I'm lazy.
 func (d ZipArchive) GetMany(ctx context.Context, cids []cid.Cid) <-chan *ipld.NodeOption {
-	fmt.Println("get many")
 	var c = make(chan *ipld.NodeOption)
 	go func() {
 		for _, cid := range cids {
@@ -111,28 +107,11 @@ func (d ZipArchive) GetMany(ctx context.Context, cids []cid.Cid) <-chan *ipld.No
 }
 
 func (d ZipArchive) Add(ctx context.Context, node ipld.Node) error {
-	d.m.Lock()
-	defer d.m.Unlock()
-	err := d.db.Update(func(tx *bbolt.Tx) error {
-		return d.add(tx, node)
-	})
-
-	return errors.Wrap(err, "can't save node to database")
+	panic("should not add node to ZipArchive dagserv")
 }
 
 func (d ZipArchive) AddMany(ctx context.Context, nodes []ipld.Node) error {
-	err := d.db.Batch(func(tx *bbolt.Tx) error {
-		for _, node := range nodes {
-			err := d.add(tx, node)
-			if err != nil {
-				return err
-			}
-		}
-
-		return nil
-	})
-
-	return errors.Wrap(err, "can't save node to database")
+	panic("should not add node to ZipArchive dagserv")
 }
 
 func (d ZipArchive) Remove(ctx context.Context, c cid.Cid) error {
@@ -168,13 +147,13 @@ func (d ZipArchive) RemoveMany(ctx context.Context, cids []cid.Cid) error {
 
 var errNotSupportNode = errors.New("not supported error")
 
-func (d ZipArchive) add(tx *bbolt.Tx, node ipld.Node) error {
+func add(tx *bbolt.Tx, node ipld.Node, baseOffset int64) error {
 	switch n := node.(type) {
 	case *merkledag.ProtoNode:
 		return errors.Wrap(SaveProtoNode(tx, node.Cid(), n), "can't save node to database")
 	case *posinfo.FilestoreNode:
 		length, _ := n.Size()
-		blockOffsetOfZip := d.baseOffset + int64(n.PosInfo.Offset)
+		blockOffsetOfZip := baseOffset + int64(n.PosInfo.Offset)
 
 		return errors.Wrap(SaveFileStoreMeta(tx, node.Cid(), n.PosInfo.FullPath, blockOffsetOfZip, int64(length)),
 			"can't save node to database")

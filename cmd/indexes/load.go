@@ -42,12 +42,9 @@ var loadCmd = &cobra.Command{
 	SilenceErrors: false,
 	PreRunE:       utils.EnsureDir(vars.GetAppBaseDir()),
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		var s []string
-		if glob != "" {
-			s, err = utils.GlobWithExpand(glob)
-			if err != nil {
-				return errors.Wrapf(err, "can't search torrents with glob '%s'", glob)
-			}
+		args, err = utils.MergeGlob(args, glob)
+		if err != nil {
+			return errors.Wrap(err, "can't load any index files")
 		}
 		db, err := bbolt.Open(vars.GetPaperBoltPath(), constants.DefaultFilePerm, bbolt.DefaultOptions)
 		if err != nil {
@@ -64,10 +61,6 @@ var loadCmd = &cobra.Command{
 			}
 		}(db)
 
-		s = utils.Unique(append(args, s...))
-		if len(s) == 0 {
-			return fmt.Errorf("cant' find any index file to load")
-		}
 		var count int
 		err = db.Batch(func(tx *bbolt.Tx) error {
 			b, err := tx.CreateBucketIfNotExists(constants.PaperBucket())
@@ -75,7 +68,7 @@ var loadCmd = &cobra.Command{
 				return errors.Wrap(err, "can't create bucket in database")
 			}
 
-			for _, file := range s {
+			for _, file := range args {
 				c, err := loadIndexFile(b, file)
 				if err != nil {
 					return errors.Wrap(err, "can't load indexes file "+file)
@@ -89,7 +82,7 @@ var loadCmd = &cobra.Command{
 		if err != nil {
 			return errors.Wrap(err, "can't save torrent data to database")
 		}
-		fmt.Printf("successfully load %d index file into database\n", len(s))
+		fmt.Printf("successfully load %d index file into database\n", len(args))
 		fmt.Printf("%d records\n", count)
 
 		return nil

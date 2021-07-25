@@ -17,22 +17,13 @@ package daemon
 
 import (
 	"github.com/spf13/cobra"
-
-	"sci_hub_p2p/pkg/daemon"
 )
 
-var Cmd = &cobra.Command{
-	Use: "daemon",
-}
-
-var startCmd = &cobra.Command{
-	Use:   "start",
-	Short: "start daemon",
+var loadCmd = &cobra.Command{
+	Use:   "add",
+	Short: "add download ",
+	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return daemon.Start()
+		return nil
 	},
-}
-
-func init() {
-	Cmd.AddCommand(startCmd, loadCmd)
 }

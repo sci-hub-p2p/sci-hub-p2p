@@ -19,4 +19,5 @@ var (
 	Parallel           int
 	Debug              bool
 	DisableProgressBar bool
+	CPUProfile         bool
 )
