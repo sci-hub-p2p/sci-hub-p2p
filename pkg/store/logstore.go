@@ -72,7 +72,7 @@ func (d *LogDatastore) Get(key ds.Key) (value []byte, err error) {
 	log.Trace("Get")
 
 	value, err = d.child.Get(key)
-	
+
 	if errors.Is(err, ds.ErrNotFound) {
 		log.Trace("missing block")
 	}

@@ -93,7 +93,6 @@ func New(
 	dht routing.Routing,
 	cfg *Config,
 ) (*Peer, error) {
-
 	if cfg == nil {
 		cfg = &Config{}
 	}

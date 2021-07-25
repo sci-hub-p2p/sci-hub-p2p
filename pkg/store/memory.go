@@ -40,11 +40,11 @@ var _ ds.Datastore = &MapDataStore{}
 
 // MapDataStore uses a standard Go map for internal storage.
 type MapDataStore struct {
-	values    map[ds.Key][]byte
-	db        *bbolt.DB
 	dag       ipld.DAGService
-	keysCache sync.Map
+	db        *bbolt.DB
+	values    map[ds.Key][]byte
 	logger    *logrus.Entry
+	keysCache sync.Map
 	sync.RWMutex
 }
 
@@ -98,6 +98,7 @@ func (d *MapDataStore) Get(key ds.Key) ([]byte, error) {
 	mh, err := dshelp.DsKeyToMultihash(ds.NewKey(key.BaseNamespace()))
 	if err != nil {
 		log.Error("block key is not a valid multi hash", err)
+
 		return nil, errors.Wrapf(err, "failed to decode key to multihash for key %s", key)
 	}
 
@@ -108,6 +109,7 @@ func (d *MapDataStore) Get(key ds.Key) ([]byte, error) {
 		if p != nil {
 			log.Trace("find in KV")
 		}
+
 		return err
 	})
 	if err != nil {

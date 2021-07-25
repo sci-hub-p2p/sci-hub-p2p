@@ -67,7 +67,7 @@ func LoadTestData() {
 				if err != nil {
 					return err
 				}
-				_, err = dagserv.Add(db, r, file, size, uint64(offset))
+				_, err = dagserv.Add(db, r, file, int64(size), offset)
 				if err != nil {
 					_ = r.Close()
 					return err

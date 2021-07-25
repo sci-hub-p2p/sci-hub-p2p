@@ -24,18 +24,17 @@ import (
 	"github.com/ipfs/go-ipns"
 	"github.com/libp2p/go-libp2p"
 	connmgr "github.com/libp2p/go-libp2p-connmgr"
+	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/pnet"
 	"github.com/libp2p/go-libp2p-core/routing"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
+	dualdht "github.com/libp2p/go-libp2p-kad-dht/dual"
 	libp2pquic "github.com/libp2p/go-libp2p-quic-transport"
 	record "github.com/libp2p/go-libp2p-record"
 	libp2ptls "github.com/libp2p/go-libp2p-tls"
 	"github.com/multiformats/go-multiaddr"
-
-	"github.com/libp2p/go-libp2p-core/crypto"
-	dualdht "github.com/libp2p/go-libp2p-kad-dht/dual"
 )
 
 // DefaultBootstrapPeers returns the default go-ipfs bootstrap peers (for use
@@ -79,7 +78,6 @@ func SetupLibp2p(
 	ds datastore.Batching,
 	opts ...libp2p.Option,
 ) (host.Host, *dualdht.DHT, error) {
-
 	var ddht *dualdht.DHT
 	var err error
 
@@ -118,7 +116,6 @@ func newDHT(ctx context.Context, h host.Host, ds datastore.Batching) (*dualdht.D
 	}
 
 	return dualdht.New(ctx, h, dhtOpts...)
-
 }
 
 const dhtConcurrency = 30

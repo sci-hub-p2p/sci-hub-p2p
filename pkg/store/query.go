@@ -91,7 +91,6 @@ func queryBolt(d *MapDataStore, q dsq.Query, log *logrus.Entry) (dsq.Results, er
 				// Otherwise, send results as we get them.
 				offset := 0
 				for k, v := c.First(); k != nil; k, v = c.Next() {
-
 					dk := MultiHashToKey(k).String()
 					e := dsq.Entry{Key: dk, Value: v}
 					if !qrb.Query.KeysOnly {
