@@ -251,5 +251,5 @@ issues:
     - path: 'internal[/\\]ipfslite[/\\].*'
       linters: [gochecknoinits, gochecknoglobals, importas, wrapcheck]
 
-    - source: 'var log'
+    - source: "var log"
       linters: [gochecknoglobals]
