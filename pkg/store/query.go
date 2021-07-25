@@ -28,6 +28,39 @@ import (
 )
 
 func queryBolt(d *MapDataStore, q dsq.Query, log *logrus.Entry) (dsq.Results, error) {
+	qrb := dsq.NewResultBuilder(q)
+	qrb.Process.Go(resultGenerator(log, d.db, q, qrb))
+
+	// go wait on the worker (without signaling close)
+
+	go func() {
+		err := qrb.Process.CloseAfterChildren()
+		if err != nil {
+			logger.Error(err)
+		}
+	}()
+
+	return qrb.Results(), nil
+}
+
+func MultiHashToKey(k []byte) ds.Key {
+	return topLevelBlockKey.Child(dshelp.MultihashToDsKey(k))
+}
+
+// filter checks if we should filter out the query.
+func filter(filters []dsq.Filter, entry dsq.Entry) bool {
+	for _, filter := range filters {
+		if !filter.Filter(entry) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func resultGenerator(
+	log *logrus.Entry, db *bbolt.DB, q dsq.Query, qrb *dsq.ResultBuilder,
+) func(worker goprocess.Process) {
 	// Special case order by key.
 	orders := q.Orders
 	if len(orders) > 0 {
@@ -38,12 +71,11 @@ func queryBolt(d *MapDataStore, q dsq.Query, log *logrus.Entry) (dsq.Results, er
 		}
 	}
 
-	qrb := dsq.NewResultBuilder(q)
-	qrb.Process.Go(func(worker goprocess.Process) {
+	return func(worker goprocess.Process) {
 		log.Debug("start process")
 		defer log.Debug("stop process")
 
-		err := d.db.View(func(tx *bbolt.Tx) error {
+		err := db.View(func(tx *bbolt.Tx) error {
 			buck := tx.Bucket(vars.BlockBucketName())
 			c := buck.Cursor()
 
@@ -132,31 +164,5 @@ func queryBolt(d *MapDataStore, q dsq.Query, log *logrus.Entry) (dsq.Results, er
 		if err != nil {
 			log.Error(err)
 		}
-	})
-
-	// go wait on the worker (without signaling close)
-
-	go func() {
-		err := qrb.Process.CloseAfterChildren()
-		if err != nil {
-			logger.Error(err)
-		}
-	}()
-
-	return qrb.Results(), nil
-}
-
-func MultiHashToKey(k []byte) ds.Key {
-	return topLevelBlockKey.Child(dshelp.MultihashToDsKey(k))
-}
-
-// filter checks if we should filter out the query.
-func filter(filters []dsq.Filter, entry dsq.Entry) bool {
-	for _, filter := range filters {
-		if !filter.Filter(entry) {
-			return true
-		}
 	}
-
-	return false
 }
