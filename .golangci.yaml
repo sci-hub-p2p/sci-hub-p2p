@@ -172,6 +172,10 @@ linters-settings:
     dot-import-whitelist:
       - fmt
 
+  testpackage:
+    # regexp pattern to skip files
+    skip-regexp: (export|internal)_test\.go
+
   unused:
     # Select the Go version to target. The default is '1.13'.
     go: "1.16"
