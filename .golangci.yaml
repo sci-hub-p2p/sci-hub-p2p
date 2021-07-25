@@ -209,6 +209,13 @@ linters-settings:
       - "func (*go.etcd.io/bbolt.DB).View"
       - "func (*go.etcd.io/bbolt.Bucket).ForEach"
 
+  ifshort:
+    # Maximum length of variable declaration measured in number of lines, after which linter won't suggest using short syntax.
+    # Has higher priority than max-decl-chars.
+    max-decl-lines: 1
+    # Maximum length of variable declaration measured in number of characters, after which linter won't suggest using short syntax.
+    max-decl-chars: 30
+
 linters:
   enable-all: true
   disable:
