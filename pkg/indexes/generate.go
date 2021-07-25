@@ -18,7 +18,9 @@ package indexes
 import (
 	"archive/zip"
 	"bytes"
+	"crypto/md5"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"hash/crc32"
 	"io"
@@ -144,8 +146,12 @@ func zipFileToRecord(file *zip.File, currentZipOffset, pieceLength int64, zipFil
 		crc := crc32.NewIEEE()
 		_, _ = crc.Write(raw)
 		if crc.Sum32() != oldCrc32 {
+			m := md5.New()
+			m.Write(raw)
+			md5Sum := m.Sum(nil)
 			logger.WithField("file", path.Clean(file.Name)).
 				WithField("zip", zipFileName).
+				WithField("m", hex.EncodeToString(md5Sum)).
 				Error("crc32 checksum mismatch")
 		}
 	}()
