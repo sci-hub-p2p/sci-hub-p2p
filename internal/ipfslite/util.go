@@ -35,12 +35,19 @@ import (
 	record "github.com/libp2p/go-libp2p-record"
 	libp2ptls "github.com/libp2p/go-libp2p-tls"
 	"github.com/multiformats/go-multiaddr"
+	"github.com/pkg/errors"
+)
+
+const (
+	defaultLowConnectionNum  = 100
+	defaultHighConnectionNum = 600
 )
 
 // DefaultBootstrapPeers returns the default go-ipfs bootstrap peers (for use
 // with NewLibp2pHost.
 func DefaultBootstrapPeers() []peer.AddrInfo {
 	defaults, _ := config.DefaultBootstrapPeers()
+
 	return defaults
 }
 
@@ -49,7 +56,7 @@ func DefaultBootstrapPeers() []peer.AddrInfo {
 // SetupLibp2p.
 var Libp2pOptionsExtra = []libp2p.Option{
 	libp2p.NATPortMap(),
-	libp2p.ConnectionManager(connmgr.NewConnManager(10, 600, time.Minute)),
+	libp2p.ConnectionManager(connmgr.NewConnManager(defaultLowConnectionNum, defaultHighConnectionNum, time.Minute)),
 	libp2p.EnableAutoRelay(),
 	libp2p.EnableNATService(),
 	libp2p.Security(libp2ptls.ID, libp2ptls.New),
@@ -87,7 +94,8 @@ func SetupLibp2p(
 		libp2p.PrivateNetwork(secret),
 		libp2p.Routing(func(h host.Host) (routing.PeerRouting, error) {
 			ddht, err = newDHT(ctx, h, ds)
-			return ddht, err
+
+			return ddht, errors.Wrap(err, "failed to start new DHT service")
 		}),
 	}
 	finalOpts = append(finalOpts, opts...)

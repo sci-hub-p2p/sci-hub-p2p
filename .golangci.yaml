@@ -246,3 +246,7 @@ issues:
     - path: '.*variable\.go'
       linters:
         - gochecknoglobals
+
+    # these code are copied from external
+    - path: 'internal[/\\]ipfslite[/\\].*'
+      linters: [gochecknoinits, gochecknoglobals, importas, wrapcheck]

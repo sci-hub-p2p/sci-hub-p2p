@@ -47,7 +47,7 @@ func init() {
 	ipld.Register(cid.DagCBOR, cbor.DecodeBlock) // need to decode CBOR
 }
 
-var (
+const (
 	defaultReprovideInterval = 12 * time.Hour
 )
 
@@ -111,18 +111,12 @@ func New(
 	if err != nil {
 		return nil, err
 	}
-	err = p.setupBlockService()
-	if err != nil {
-		return nil, err
-	}
-	err = p.setupDAGService()
-	if err != nil {
-		p.bserv.Close()
-		return nil, err
-	}
+	p.setupBlockService()
+	p.setupDAGService()
 	err = p.setupReprovider()
 	if err != nil {
 		p.bserv.Close()
+
 		return nil, err
 	}
 
@@ -139,29 +133,30 @@ func (p *Peer) setupBlockstore() error {
 		return err
 	}
 	p.bstore = cachedbs
+
 	return nil
 }
 
-func (p *Peer) setupBlockService() error {
+func (p *Peer) setupBlockService() {
 	if p.cfg.Offline {
 		p.bserv = blockservice.New(p.bstore, offline.Exchange(p.bstore))
-		return nil
+
+		return
 	}
 
 	bswapnet := network.NewFromIpfsHost(p.host, p.dht)
 	bswap := bitswap.New(p.ctx, bswapnet, p.bstore)
 	p.bserv = blockservice.New(p.bstore, bswap)
-	return nil
 }
 
-func (p *Peer) setupDAGService() error {
+func (p *Peer) setupDAGService() {
 	p.DAGService = merkledag.NewDAGService(p.bserv)
-	return nil
 }
 
 func (p *Peer) setupReprovider() error {
 	if p.cfg.Offline || p.cfg.ReprovideInterval < 0 {
 		p.reprovider = provider.NewOfflineProvider()
+
 		return nil
 	}
 
@@ -185,6 +180,7 @@ func (p *Peer) setupReprovider() error {
 
 	p.reprovider = provider.NewSystem(prov, reprov)
 	p.reprovider.Run()
+
 	return nil
 }
 
@@ -211,6 +207,7 @@ func (p *Peer) Bootstrap(peers []peer.AddrInfo) {
 			err := p.host.Connect(p.ctx, pinfo)
 			if err != nil {
 				logger.Warn(err)
+
 				return
 			}
 			logger.Info("Connected to", pinfo.ID)
@@ -234,6 +231,7 @@ func (p *Peer) Bootstrap(peers []peer.AddrInfo) {
 	err := p.dht.Bootstrap(p.ctx)
 	if err != nil {
 		logger.Error(err)
+
 		return
 	}
 }
@@ -244,6 +242,7 @@ func (p *Peer) Session(ctx context.Context) ipld.NodeGetter {
 	if ng == p.DAGService {
 		logger.Warn("DAGService does not support sessions")
 	}
+
 	return ng
 }
 
@@ -252,11 +251,11 @@ func (p *Peer) Session(ctx context.Context) ipld.NodeGetter {
 type AddParams struct {
 	Layout    string
 	Chunker   string
+	HashFun   string
 	RawLeaves bool
 	Hidden    bool
 	Shard     bool
 	NoCopy    bool
-	HashFun   string
 }
 
 // GetFile returns a reader to a file as identified by its root CID. The file
@@ -266,6 +265,7 @@ func (p *Peer) GetFile(ctx context.Context, c cid.Cid) (ufsio.ReadSeekCloser, er
 	if err != nil {
 		return nil, err
 	}
+
 	return ufsio.NewDagReader(ctx, n, p)
 }
 
