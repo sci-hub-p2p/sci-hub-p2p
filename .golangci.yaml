@@ -222,7 +222,6 @@ linters:
     - golint
     - maligned
     - interfacer
-    - testpackage
 
   fast: false
 
