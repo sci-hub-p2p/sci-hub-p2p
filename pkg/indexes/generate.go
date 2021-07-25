@@ -17,8 +17,11 @@ package indexes
 
 import (
 	"archive/zip"
+	"bytes"
 	"encoding/base64"
 	"fmt"
+	"hash/crc32"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -119,16 +122,34 @@ func zipFileToRecord(file *zip.File, currentZipOffset, pieceLength int64) (*PDFF
 	i.PieceStart = uint32((offset + currentZipOffset) / pieceLength)
 	i.OffsetInPiece = (offset + currentZipOffset) % pieceLength
 
+	// this will disable the CRC32 checksum of zip file reader
+	// there are some file (especially 59100000-59199999, info hash`1a96f296cfec8a326a94b8d984f7378949ef7dfb` )
+	// has bad crc32, we will do it manually and log a error.
+	oldCrc32 := file.CRC32
+	file.CRC32 = 0
+
 	f, err := file.Open()
 	if err != nil {
-		return nil, errors.Wrapf(err, "can't decompress file %s", file.Name)
+		return nil, errors.Wrapf(err, "failed to decompress file %s", file.Name)
 	}
 	defer f.Close()
 
-	cid, err := hash.Black2dBalancedSized256K(f)
+	raw, err := io.ReadAll(f)
 	if err != nil {
-		return nil, errors.Wrapf(err, "can't decompress file %s", file.Name)
+		return nil, errors.Wrapf(err, "failed to decompress file %s", file.Name)
 	}
+
+	crc := crc32.NewIEEE()
+	_, _ = crc.Write(raw)
+	if crc.Sum32() != oldCrc32 {
+		logger.Errorf("crc32 checksum on file %s can't match", file.Name)
+	}
+
+	cid, err := hash.Black2dBalancedSized256K(bytes.NewReader(raw))
+	if err != nil {
+		return nil, errors.Wrapf(err, "can't generate CID for file %s", file.Name)
+	}
+
 	copy(i.CID[:], cid)
 
 	return i, nil
