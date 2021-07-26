@@ -36,13 +36,14 @@ import (
 
 var Cmd = &cobra.Command{
 	Use:           "torrent",
+	Short:         "load torrent into database",
 	SilenceErrors: false,
 }
 
 var loadCmd = &cobra.Command{
 	Use:           "load",
 	Short:         "Load torrents into database.",
-	Example:       "torrent load /path/to/*.torrents [--glob '/path/to/data/*.torrents']",
+	Example:       "torrent load 1.torrent 2.torrent [--glob '/path/to/data/*.torrent']",
 	SilenceErrors: false,
 	PreRunE:       utils.EnsureDir(variable.GetTorrentStoragePath()),
 	RunE: func(cmd *cobra.Command, args []string) (err error) {

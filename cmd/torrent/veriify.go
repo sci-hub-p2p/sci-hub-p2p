@@ -28,23 +28,33 @@ import (
 	"go.uber.org/zap"
 
 	"sci_hub_p2p/internal/torrent"
+	"sci_hub_p2p/internal/utils"
 	"sci_hub_p2p/pkg/hash"
 	"sci_hub_p2p/pkg/logger"
 )
 
 var verifyCmd = &cobra.Command{
 	Use:           "verify",
-	Short:         "verify data of a torrent.",
-	Example:       "torrent verify /path/to.torrent /path/to/data/dir/",
+	Short:         "verify downloaded data of a torrent.",
+	Example:       "torrent verify -t /path/123456.torrent -d /path/to/data/123456/",
 	SilenceErrors: false,
-	Args:          cobra.ExactArgs(2),
+	Args:          cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		torrentPath := args[0]
 		t, err := torrent.ParseFile(torrentPath)
 		if err != nil {
 			return errors.Wrap(err, "failed to parse torrent")
 		}
-		dataDir := filepath.Join(args[1], t.Name)
+
+		ok, err := utils.DirExist(filepath.Join(dataDir, t.Name))
+		if err != nil {
+			return errors.Wrap(err, "failed to find data directory")
+		}
+		if ok {
+			dataDir = filepath.Join(dataDir, t.Name)
+		}
+
+		logger.Info("find torrent data in " + dataDir)
+
 		bar := pb.StartNew(t.PieceCount())
 		r := pieceReader{t: t, path: dataDir}
 		for i, piece := range t.Pieces {
@@ -64,12 +74,24 @@ var verifyCmd = &cobra.Command{
 	},
 }
 
+var dataDir string
+var torrentPath string
+
+func init() {
+	verifyCmd.Flags().StringVarP(&torrentPath, "torrent", "t", "", "torrent path")
+	verifyCmd.Flags().StringVarP(&dataDir, "data", "d", "", "path to data directory")
+
+	if err := utils.MarkFlagsRequired(verifyCmd, "torrent", "data"); err != nil {
+		panic(err)
+	}
+}
+
 type pieceReader struct {
 	t    *torrent.Torrent
 	path string
 }
 
-// todo: this can be better, because we won't need to verify a single piece, we just need to verify whole torrent.
+// this can be better, because we won't need to verify a single piece, we just need to verify whole torrent.
 func (r pieceReader) readPiece(i int) ([]byte, error) {
 	var (
 		currentFileStart    int64

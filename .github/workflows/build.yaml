@@ -34,8 +34,9 @@ jobs:
           path: |
             ${{ env.GOCACHE }}
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-1-${{ hashFiles('**/go.sum') }}
+          key: ${{ runner.os }}-go-1-${{ hashFiles('**/go.sum') }}-build
           restore-keys: |
+            ${{ runner.os }}-go-1-${{ hashFiles('**/go.sum') }}-
             ${{ runner.os }}-go-1-
 
       - name: Install Protoc
