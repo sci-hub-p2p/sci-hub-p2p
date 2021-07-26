@@ -18,13 +18,15 @@ package logger
 import (
 	"os"
 
+	"github.com/natefinch/lumberjack"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
 	"sci_hub_p2p/cmd/flag"
-	"sci_hub_p2p/pkg/constants"
 )
+
+const defaultLogFileMaxSize = 100 // MB
 
 var log *zap.Logger
 
@@ -40,7 +42,7 @@ func Setup() error {
 		EncodeLevel:    zapcore.LowercaseColorLevelEncoder,
 		EncodeTime:     zapcore.TimeEncoderOfLayout("01-02 15:04:05"),
 		EncodeDuration: zapcore.SecondsDurationEncoder,
-		EncodeCaller:   zapcore.ShortCallerEncoder, // 全路径编码器
+		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
 	jsonEncoding := zapcore.EncoderConfig{
 		TimeKey:        "time",
@@ -48,12 +50,11 @@ func Setup() error {
 		NameKey:        "logger",
 		CallerKey:      "caller",
 		MessageKey:     "msg",
-		StacktraceKey:  "",
 		LineEnding:     zapcore.DefaultLineEnding,
-		EncodeLevel:    zapcore.LowercaseLevelEncoder, // 小写编码器
-		EncodeTime:     zapcore.ISO8601TimeEncoder,    // ISO8601 UTC 时间格式
+		EncodeLevel:    zapcore.LowercaseLevelEncoder,
+		EncodeTime:     zapcore.ISO8601TimeEncoder,
 		EncodeDuration: zapcore.SecondsDurationEncoder,
-		EncodeCaller:   zapcore.ShortCallerEncoder, // 全路径编码器
+		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
 
 	var infoLevel = zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
@@ -65,27 +66,25 @@ func Setup() error {
 	var errorLevel = zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
 		return lvl >= zapcore.ErrorLevel
 	})
-
 	if !flag.Debug {
 		onlyInfo = func(lvl zapcore.Level) bool {
 			return lvl == zapcore.InfoLevel
 		}
 	}
-
 	cores := []zapcore.Core{
 		zapcore.NewCore(zapcore.NewConsoleEncoder(consoleEncoding), zapcore.NewMultiWriteSyncer(os.Stdout), onlyInfo),
 		zapcore.NewCore(zapcore.NewConsoleEncoder(consoleEncoding), zapcore.NewMultiWriteSyncer(os.Stderr), errorLevel),
 	}
 
 	if flag.LogFile != "" {
-		f, err := os.OpenFile(flag.LogFile, os.O_CREATE|os.O_APPEND, constants.DefaultFilePerm)
-		if err != nil {
-			return errors.Wrap(err, "failed to open log file")
+		lumberJackLogger := &lumberjack.Logger{
+			Filename: flag.LogFile,
+			MaxSize:  defaultLogFileMaxSize,
+			Compress: false,
 		}
 		cores = append(cores,
-			zapcore.NewCore(zapcore.NewJSONEncoder(jsonEncoding), zapcore.NewMultiWriteSyncer(f), infoLevel))
+			zapcore.NewCore(zapcore.NewJSONEncoder(jsonEncoding), zapcore.AddSync(lumberJackLogger), infoLevel))
 	}
-
 	log = zap.New(zapcore.NewTee(cores...))
 
 	return nil

@@ -24,6 +24,7 @@ require (
 	github.com/libp2p/go-libp2p v0.14.3 // indirect
 	github.com/libp2p/go-libp2p-record v0.1.3 // indirect
 	github.com/multiformats/go-multihash v0.0.15
+	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/polydawn/refmt v0.0.0-20201211092308-30ac6d18308e // indirect
 	github.com/smartystreets/assertions v1.0.1 // indirect
@@ -36,4 +37,5 @@ require (
 	golang.org/x/crypto v0.0.0-20210506145944-38f3c27a63bf // indirect
 	golang.org/x/sys v0.0.0-20210511113859-b0526f3d8744 // indirect
 	google.golang.org/protobuf v1.27.1
+	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 )
