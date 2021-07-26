@@ -16,7 +16,9 @@
 package utils
 
 import (
+	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -71,4 +73,34 @@ func Unique(s []string) []string {
 	}
 
 	return n
+}
+
+var ErrEmptyResult = errors.New("glob and args contain 0 files")
+
+func MergeGlob(args []string, glob string) ([]string, error) {
+	args = expandToABS(args)
+	if glob != "" {
+		s, err := GlobWithExpand(glob)
+		if err != nil {
+			return nil, errors.Wrapf(err, "can't search torrents with glob '%s'", glob)
+		}
+		args = Unique(append(args, expandToABS(s)...))
+	}
+	if len(args) == 0 {
+		return nil, ErrEmptyResult
+	}
+
+	return args, nil
+}
+
+func expandToABS(s []string) []string {
+	for i, s2 := range s {
+		ss, err := filepath.Abs(s2)
+		if err != nil {
+			panic(fmt.Errorf("can't get it's absolute path %w", err))
+		}
+		s[i] = ss
+	}
+
+	return s
 }

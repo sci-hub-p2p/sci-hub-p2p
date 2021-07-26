@@ -88,7 +88,7 @@ func (t *Torrent) SetPieces(s string) error {
 }
 
 func (t Torrent) PieceCount() int {
-	return len(t.Pieces) / size.Sha1Bytes
+	return len(t.Pieces)
 }
 
 func (t Torrent) Hex(i int) string {

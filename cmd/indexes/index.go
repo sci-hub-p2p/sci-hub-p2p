@@ -105,6 +105,6 @@ func init() {
 		log.Fatalln(err)
 	}
 	if err := genCmd.MarkFlagFilename("torrent", "torrentPath"); err != nil {
-		log.Fatalln(err)
+		panic(err)
 	}
 }
