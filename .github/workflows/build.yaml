@@ -34,9 +34,9 @@ jobs:
           path: |
             ${{ env.GOCACHE }}
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-1-${{ hashFiles('**/go.sum') }}
+          key: ${{ runner.os }}-go-1-build-${{ hashFiles('**/go.sum') }}
           restore-keys: |
-            ${{ runner.os }}-go-1-
+            ${{ runner.os }}-go-1-build-
 
       - name: Install Protoc
         uses: arduino/setup-protoc@v1
