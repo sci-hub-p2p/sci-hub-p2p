@@ -20,14 +20,14 @@ import (
 	dsq "github.com/ipfs/go-datastore/query"
 	dshelp "github.com/ipfs/go-ipfs-ds-help"
 	"github.com/jbenet/goprocess"
-	"github.com/sirupsen/logrus"
 	"go.etcd.io/bbolt"
+	"go.uber.org/zap"
 
 	"sci_hub_p2p/pkg/logger"
 	"sci_hub_p2p/pkg/vars"
 )
 
-func queryBolt(d *MapDataStore, q dsq.Query, log *logrus.Entry) (dsq.Results, error) {
+func queryBolt(d *MapDataStore, q dsq.Query, log *zap.Logger) (dsq.Results, error) {
 	qrb := dsq.NewResultBuilder(q)
 	qrb.Process.Go(resultGenerator(log, d.db, q, qrb))
 
@@ -36,7 +36,7 @@ func queryBolt(d *MapDataStore, q dsq.Query, log *logrus.Entry) (dsq.Results, er
 	go func() {
 		err := qrb.Process.CloseAfterChildren()
 		if err != nil {
-			logger.Error(err)
+			logger.Error("child work not exit success", zap.Error(err))
 		}
 	}()
 
@@ -59,7 +59,7 @@ func filter(filters []dsq.Filter, entry dsq.Entry) bool {
 }
 
 func resultGenerator(
-	log *logrus.Entry, db *bbolt.DB, q dsq.Query, qrb *dsq.ResultBuilder,
+	log *zap.Logger, db *bbolt.DB, q dsq.Query, qrb *dsq.ResultBuilder,
 ) func(worker goprocess.Process) {
 	// Special case order by key.
 	orders := q.Orders
@@ -162,7 +162,7 @@ func resultGenerator(
 			return nil
 		})
 		if err != nil {
-			log.Error(err)
+			log.Error("failed to Query keys from DB", zap.Error(err))
 		}
 	}
 }

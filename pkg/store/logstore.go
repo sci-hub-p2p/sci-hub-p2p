@@ -20,6 +20,7 @@ import (
 	ds "github.com/ipfs/go-datastore"
 	dsq "github.com/ipfs/go-datastore/query"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"sci_hub_p2p/pkg/logger"
 )
@@ -28,8 +29,9 @@ var _ ds.Datastore = &LogDatastore{}
 
 // LogDatastore logs all accesses through the store.
 type LogDatastore struct {
-	child ds.Datastore
-	Name  string
+	child  ds.Datastore
+	Name   string
+	logger *zap.Logger
 }
 
 // Shim is a store which has a child.
@@ -44,7 +46,7 @@ func NewLogDatastore(ds ds.Datastore, name string) *LogDatastore {
 		name = "LogDatastore"
 	}
 
-	return &LogDatastore{Name: name, child: ds}
+	return &LogDatastore{Name: name, child: ds, logger: logger.WithLogger(name)}
 }
 
 // Children implements Shim.
@@ -54,27 +56,26 @@ func (d *LogDatastore) Children() []ds.Datastore {
 
 // Put implements Datastore.Put.
 func (d *LogDatastore) Put(key ds.Key, value []byte) (err error) {
-	logger.Tracef("%s: Put %s\n", d.Name, key)
-	// logger.Tracef("%s: Put %s ```%s```", d.Name, key, value)
+	d.logger.Debug("Put", zap.String("key", key.String()))
+
 	return d.child.Put(key, value)
 }
 
 // Sync implements Datastore.Sync.
 func (d *LogDatastore) Sync(prefix ds.Key) error {
-	logger.Tracef("%s: Sync %s\n", d.Name, prefix)
+	d.logger.Debug("Sync", zap.String("prefix", prefix.String()))
 
 	return d.child.Sync(prefix)
 }
 
 // Get implements Datastore.Get.
 func (d *LogDatastore) Get(key ds.Key) (value []byte, err error) {
-	var log = logger.WithField("logger", "LogDatastore").WithField("key", key)
-	log.Trace("Get")
+	d.logger.Debug("Get", zap.String("key", key.String()))
 
 	value, err = d.child.Get(key)
 
 	if errors.Is(err, ds.ErrNotFound) {
-		log.Trace("missing block")
+		d.logger.Debug("Get missing block", zap.String("key", key.String()))
 	}
 
 	return
@@ -82,22 +83,26 @@ func (d *LogDatastore) Get(key ds.Key) (value []byte, err error) {
 
 // Has implements Datastore.Has.
 func (d *LogDatastore) Has(key ds.Key) (exists bool, err error) {
-	logger.Tracef("%s: Has %s\n", d.Name, key)
 	exists, err = d.child.Has(key)
-	logger.Trace("debug: Has return", exists, err)
+	if err != nil {
+		d.logger.Error("Has", zap.String("key", key.String()), zap.Bool("return", exists), zap.Error(err))
+	} else {
+		d.logger.Debug("Has", zap.String("key", key.String()), zap.Bool("return", exists))
+	}
 
 	return
 }
 
 // GetSize implements Datastore.GetSize.
 func (d *LogDatastore) GetSize(key ds.Key) (size int, err error) {
-	var log = logger.WithField("logger", "LogDatastore").WithField("key", key)
-	log.Trace("GetSize")
+	d.logger.Debug("GetSize", zap.String("key", key.String()))
 
 	size, err = d.child.GetSize(key)
 
-	if errors.Is(err, ds.ErrNotFound) {
-		log.Trace("missing block ")
+	if err != nil {
+		if !errors.Is(err, ds.ErrNotFound) {
+			d.logger.Error("GetSize", zap.String("key", key.String()), zap.Error(err))
+		}
 	}
 
 	return
@@ -105,36 +110,34 @@ func (d *LogDatastore) GetSize(key ds.Key) (size int, err error) {
 
 // Delete implements Datastore.Delete.
 func (d *LogDatastore) Delete(key ds.Key) (err error) {
-	logger.Tracef("%s: Delete %s\n", d.Name, key)
+	d.logWithKey(key).Debug("Delete")
 
 	return d.child.Delete(key)
 }
 
 // DiskUsage implements the PersistentDatastore interface.
 func (d *LogDatastore) DiskUsage() (uint64, error) {
-	logger.WithField("logger", "LogDatastore").Trace("DiskUsage")
+	d.logger.Debug("DiskUsage")
 
 	return ds.DiskUsage(d.child)
 }
 
 // Query implements Datastore.Query.
 func (d *LogDatastore) Query(q dsq.Query) (dsq.Results, error) {
-	logger.WithField("logger", "LogDatastore").
-		WithField("prefix", q.Prefix).
-		WithField("keysOnly", q.KeysOnly).
-		Trace("Query")
+	d.logger.Debug("Query", zap.String("prefix", q.Prefix), zap.Bool("keysOnly", q.KeysOnly))
 
 	return d.child.Query(q)
 }
 
 // LogBatch logs all accesses through the batch.
 type LogBatch struct {
-	child ds.Batch
-	Name  string
+	child  ds.Batch
+	Name   string
+	logger *zap.Logger
 }
 
 func (d *LogDatastore) Batch() (ds.Batch, error) {
-	logger.Tracef("%s: Batch\n", d.Name)
+	d.logger.Debug("Batch")
 	if bds, ok := d.child.(ds.Batching); ok {
 		b, err := bds.Batch()
 
@@ -143,8 +146,9 @@ func (d *LogDatastore) Batch() (ds.Batch, error) {
 		}
 
 		return &LogBatch{
-			Name:  d.Name,
-			child: b,
+			Name:   d.Name,
+			child:  b,
+			logger: d.logger.Named("LogBatch"),
 		}, nil
 	}
 
@@ -153,27 +157,27 @@ func (d *LogDatastore) Batch() (ds.Batch, error) {
 
 // Put implements Batch.Put.
 func (d *LogBatch) Put(key ds.Key, value []byte) (err error) {
-	logger.Tracef("%s: BatchPut %s\n", d.Name, key)
-	// logger.Tracef("%s: Put %s ```%s```", d.Name, key, value)
+	d.logger.Debug("BatchPut", zap.String("key", key.String()))
+
 	return d.child.Put(key, value)
 }
 
 // Delete implements Batch.Delete.
 func (d *LogBatch) Delete(key ds.Key) (err error) {
-	logger.Tracef("%s: BatchDelete %s\n", d.Name, key)
+	d.logger.Debug("BatchDelete", zap.String("key", key.String()))
 
 	return d.child.Delete(key)
 }
 
 // Commit implements Batch.Commit.
 func (d *LogBatch) Commit() (err error) {
-	logger.Tracef("%s: BatchCommit\n", d.Name)
+	d.logger.Debug("BatchCommit")
 
 	return d.child.Commit()
 }
 
 func (d *LogDatastore) Close() error {
-	logger.Tracef("%s: Close\n", d.Name)
+	d.logger.Debug("Close")
 
 	return d.child.Close()
 }
@@ -200,4 +204,8 @@ func (d *LogDatastore) CollectGarbage() error {
 	}
 
 	return nil
+}
+
+func (d *LogDatastore) logWithKey(key ds.Key) *zap.Logger {
+	return d.logger.With(zap.String("key", key.String()))
 }

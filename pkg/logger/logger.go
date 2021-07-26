@@ -17,148 +17,108 @@ package logger
 
 import (
 	"os"
-	"runtime"
-	"strings"
-	"time"
 
+	ds "github.com/ipfs/go-datastore"
+	"github.com/natefinch/lumberjack"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
-	"github.com/snowzach/rotatefilehook"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	"sci_hub_p2p/cmd/flag"
 )
 
+const defaultLogFileMaxSize = 100 // MB
+
+var log *zap.Logger
+
 func Setup() error {
-	if flag.Debug {
-		log.SetLevel(log.DebugLevel)
+	consoleEncoding := zapcore.EncoderConfig{
+		TimeKey:        "time",
+		LevelKey:       "level",
+		NameKey:        "logger",
+		CallerKey:      "caller",
+		MessageKey:     "msg",
+		StacktraceKey:  "",
+		LineEnding:     zapcore.DefaultLineEnding,
+		EncodeLevel:    zapcore.LowercaseColorLevelEncoder,
+		EncodeTime:     zapcore.TimeEncoderOfLayout("01-02 15:04:05"),
+		EncodeDuration: zapcore.SecondsDurationEncoder,
+		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
-	if strings.Contains(strings.ToLower(os.Getenv("LOG_LEVEL")), "trace") {
-		log.SetLevel(log.TraceLevel)
+	jsonEncoding := zapcore.EncoderConfig{
+		TimeKey:        "time",
+		LevelKey:       "level",
+		NameKey:        "logger",
+		CallerKey:      "caller",
+		MessageKey:     "msg",
+		LineEnding:     zapcore.DefaultLineEnding,
+		EncodeLevel:    zapcore.LowercaseLevelEncoder,
+		EncodeTime:     zapcore.ISO8601TimeEncoder,
+		EncodeDuration: zapcore.SecondsDurationEncoder,
+		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
-	log.SetFormatter(&log.TextFormatter{
-		ForceQuote:             true,
-		TimestampFormat:        "2006-01-02 15:04:05.000",
-		DisableSorting:         false,
-		PadLevelText:           true,
-		QuoteEmptyFields:       true,
-		DisableLevelTruncation: false,
-		ForceColors:            true,
+
+	var infoLevel = zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+		return lvl >= zapcore.InfoLevel
 	})
-	if flag.LogFile != "" {
-		rotateFileHook, err := rotatefilehook.NewRotateFileHook(rotatefilehook.RotateFileConfig{
-			Filename: flag.LogFile,
-			Level:    log.InfoLevel,
-			Formatter: &log.JSONFormatter{
-				TimestampFormat: time.RFC822,
-			},
-		})
-		if err != nil {
-			return errors.Wrap(err, "can't save log to file")
+	var onlyInfo = zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+		return lvl <= zapcore.InfoLevel
+	})
+	var errorLevel = zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+		return lvl >= zapcore.ErrorLevel
+	})
+	if !flag.Debug {
+		onlyInfo = func(lvl zapcore.Level) bool {
+			return lvl == zapcore.InfoLevel
 		}
-		log.AddHook(rotateFileHook)
 	}
+	cores := []zapcore.Core{
+		zapcore.NewCore(zapcore.NewConsoleEncoder(consoleEncoding), zapcore.NewMultiWriteSyncer(os.Stdout), onlyInfo),
+		zapcore.NewCore(zapcore.NewConsoleEncoder(consoleEncoding), zapcore.NewMultiWriteSyncer(os.Stderr), errorLevel),
+	}
+
+	if flag.LogFile != "" {
+		lumberJackLogger := &lumberjack.Logger{
+			Filename: flag.LogFile,
+			MaxSize:  defaultLogFileMaxSize,
+			Compress: false,
+		}
+		cores = append(cores,
+			zapcore.NewCore(zapcore.NewJSONEncoder(jsonEncoding), zapcore.AddSync(lumberJackLogger), infoLevel))
+	}
+	log = zap.New(zapcore.NewTee(cores...))
 
 	return nil
 }
 
-func Func(value string) *log.Entry {
-	f := getFrame()
-
-	return log.WithField("func", value).WithField("file", f.File).WithField("line", f.Line)
+func WithLogger(name string) *zap.Logger {
+	return log.Named(name)
 }
 
-func WithLogger(value string) *log.Entry {
-	f := getFrame()
-
-	return log.WithField("logger", value).WithField("file", f.File).WithField("line", f.Line)
+func Debug(msg string, fields ...zapcore.Field) {
+	log.Debug(msg, fields...)
 }
 
-func WithField(key string, value interface{}) *log.Entry {
-	return log.WithField(key, value)
+func Info(msg string, fields ...zapcore.Field) {
+	log.Info(msg, fields...)
 }
 
-func Infof(format string, args ...interface{}) {
-	log.Infof(format, args...)
+func Warn(msg string, fields ...zapcore.Field) {
+	log.Warn(msg, fields...)
 }
 
-func Info(msg ...interface{}) {
-	log.Infoln(msg...)
+func Error(msg string, fields ...zapcore.Field) {
+	log.Error(msg, fields...)
 }
 
-func Debugf(format string, args ...interface{}) {
-	f := getFrame()
-	log.WithField("file", f.File).WithField("line", f.Line).Debugf(format, args...)
+func Fatal(msg string, fields ...zapcore.Field) {
+	log.Fatal(msg, fields...)
 }
 
-func Trace(args ...interface{}) {
-	f := getFrame()
-	log.WithField("file", f.File).WithField("line", f.Line).Traceln(args...)
-}
-func Tracef(format string, args ...interface{}) {
-	f := getFrame()
-	log.WithField("file", f.File).WithField("line", f.Line).Tracef(format, args...)
-}
-func Debug(args ...interface{}) {
-	f := getFrame()
-	log.WithField("file", f.File).WithField("line", f.Line).Debugln(args...)
+func Sync() error {
+	return errors.Wrap(log.Sync(), "failed to flush log to disk")
 }
 
-func Warn(args ...interface{}) {
-	f := getFrame()
-	log.WithField("file", f.File).WithField("line", f.Line).Warnln(args...)
-}
-
-func Warnf(format string, args ...interface{}) {
-	f := getFrame()
-	log.WithField("file", f.File).WithField("line", f.Line).Warnf(format, args...)
-}
-
-func Fatal(args ...interface{}) {
-	log.Fatalln(args...)
-}
-
-func Error(args ...interface{}) {
-	log.Error(args...)
-}
-
-func Errorf(format string, args ...interface{}) {
-	log.Errorf(format, args...)
-}
-
-const skip = 2
-
-func getFrame() runtime.Frame {
-	// We need the frame at index skipFrames+2, since we never want runtime.Callers and getFrame
-	targetFrameIndex := 1 + skip
-
-	// Set size to targetFrameIndex+2 to ensure we have room for one more caller than we need
-	programCounters := make([]uintptr, targetFrameIndex+skip)
-	n := runtime.Callers(0, programCounters)
-
-	frame := runtime.Frame{Function: "unknown"}
-	if n > 0 {
-		frames := runtime.CallersFrames(programCounters[:n])
-		for more, frameIndex := true, 0; more && frameIndex <= targetFrameIndex; frameIndex++ {
-			var frameCandidate runtime.Frame
-			frameCandidate, more = frames.Next()
-			if frameIndex == targetFrameIndex {
-				frame = frameCandidate
-			}
-		}
-	}
-
-	frame.File = strings.TrimPrefix(frame.File, wd)
-
-	return frame
-}
-
-var wd string // nolint
-
-func init() { // nolint
-	var err error
-	wd, err = os.Getwd()
-	if err != nil {
-		panic("can't get CWD")
-	}
-	wd = strings.ReplaceAll(wd, string(os.PathSeparator), "/")
+func Key(key ds.Key) zapcore.Field {
+	return zap.String("key", key.String())
 }

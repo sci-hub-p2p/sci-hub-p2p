@@ -24,6 +24,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 
 	"sci_hub_p2p/cmd/daemon"
 	"sci_hub_p2p/cmd/flag"
@@ -52,19 +53,20 @@ var rootCmd = &cobra.Command{
 			logger.Info("start profile, save data to ./cpu_profile")
 			f, err := os.Create("cpu_profile")
 			if err != nil {
-				logger.Fatal(err)
-			}
-
-			err = pprof.StartCPUProfile(f)
-			if err != nil {
-				logger.Error(err)
+				logger.Error("failed to open ./cpu_profile to write profile data", zap.Error(err))
+			} else {
+				err = pprof.StartCPUProfile(f)
+				if err != nil {
+					logger.Error("failed to start profile", zap.Error(err))
+				}
 			}
 		}
 
 		return nil
 	},
-	PersistentPostRun: func(cmd *cobra.Command, args []string) {
+	PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
 		pprof.StopCPUProfile()
+		return logger.Sync()
 	},
 }
 

@@ -25,6 +25,7 @@ import (
 	pb "github.com/ipfs/go-merkledag/pb"
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 
 	"sci_hub_p2p/internal/utils"
@@ -32,10 +33,8 @@ import (
 	"sci_hub_p2p/pkg/vars"
 )
 
-var log = logger.WithLogger("dagserv.persist")
-
 func ReadFileStoreNode(b *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {
-	log.Trace("ReadFileStoreNode", c)
+	logger.WithLogger("dagserv.persist").Debug("ReadFileStoreNode", zap.String("CID", c.String()))
 	var v = &Block{}
 	data := b.Get(c.Bytes())
 	if data == nil {

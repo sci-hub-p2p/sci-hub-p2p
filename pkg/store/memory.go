@@ -18,14 +18,13 @@ package store
 import (
 	"sync"
 
-	"github.com/ipfs/go-cid"
 	ds "github.com/ipfs/go-datastore"
 	dsq "github.com/ipfs/go-datastore/query"
 	dshelp "github.com/ipfs/go-ipfs-ds-help"
 	ipld "github.com/ipfs/go-ipld-format"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"go.etcd.io/bbolt"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 
 	"sci_hub_p2p/internal/utils"
@@ -43,7 +42,7 @@ type MapDataStore struct {
 	dag       ipld.DAGService
 	db        *bbolt.DB
 	values    map[ds.Key][]byte
-	logger    *logrus.Entry
+	logger    *zap.Logger
 	keysCache sync.Map
 	sync.RWMutex
 }
@@ -56,7 +55,7 @@ func NewMapDatastore(db *bbolt.DB) (d *MapDataStore) {
 		values: make(map[ds.Key][]byte),
 		db:     db,
 		dag:    dagserv.New(db),
-		logger: logger.WithField("logger", "MapDataStore"),
+		logger: logger.WithLogger("MapDataStore"),
 	}
 }
 
@@ -78,8 +77,8 @@ func (d *MapDataStore) Sync(prefix ds.Key) error {
 }
 
 func (d *MapDataStore) Get(key ds.Key) ([]byte, error) {
-	var log = logger.WithField("key", key)
-	log.Trace("try to get block, check it in memory first")
+	var log = d.logger.With(logger.Key(key))
+	log.Debug("try to get block, check it in memory first")
 
 	if !key.IsDescendantOf(topLevelBlockKey) {
 		d.RLock()
@@ -94,10 +93,10 @@ func (d *MapDataStore) Get(key ds.Key) ([]byte, error) {
 
 	// /blocks/{multi hash}
 
-	log.Trace("didn't find in memory, now check it in KV database")
+	log.Debug("didn't find in memory, now check it in KV database")
 	mh, err := dshelp.DsKeyToMultihash(ds.NewKey(key.BaseNamespace()))
 	if err != nil {
-		log.Error("block key is not a valid multi hash", err)
+		d.logger.Error("block key is not a valid multi hash", zap.Error(err))
 
 		return nil, errors.Wrapf(err, "failed to decode key to multihash for key %s", key)
 	}
@@ -107,7 +106,7 @@ func (d *MapDataStore) Get(key ds.Key) ([]byte, error) {
 	err = d.db.View(func(tx *bbolt.Tx) error {
 		p, err = readBlock(tx, mh)
 		if p != nil {
-			log.Trace("find in KV")
+			log.Debug("find in KV")
 		}
 
 		return err
@@ -116,7 +115,7 @@ func (d *MapDataStore) Get(key ds.Key) ([]byte, error) {
 		if errors.Is(err, ds.ErrNotFound) {
 			return nil, err
 		}
-		log.Trace("read block got", err)
+		log.Debug("read block got", zap.Error(err))
 
 		return nil, errors.Wrap(err, "can't read from disk")
 	}
@@ -165,7 +164,7 @@ func (d *MapDataStore) GetSize(key ds.Key) (size int, err error) {
 	}
 	d.RUnlock()
 
-	d.logger.WithField("key", key).Debug("get size of from kV")
+	d.logger.Debug("get size of from kV", logger.Key(key))
 	var l = -1
 	var mh []byte
 	if !found {
@@ -195,9 +194,9 @@ func (d *MapDataStore) Delete(key ds.Key) (err error) {
 
 // Query is copied from go-ds-bolt and modified.
 func (d *MapDataStore) Query(q dsq.Query) (dsq.Results, error) {
-	var log = logger.WithLogger("MapDataStore.Query").WithField("prefix", q.Prefix)
+	var log = d.logger.Named("Query").With(zap.String("prefix", q.Prefix))
 	if q.Prefix != "/blocks" {
-		log.Trace("none `/blocks` query, only search in memory")
+		log.Debug("none `/blocks` query, only search in memory")
 		d.RLock()
 		defer d.RUnlock()
 		re := make([]dsq.Entry, 0, len(d.values))
@@ -214,7 +213,7 @@ func (d *MapDataStore) Query(q dsq.Query) (dsq.Results, error) {
 		return r, nil
 	}
 
-	log.Trace("try to query from KV")
+	log.Debug("try to query from KV")
 
 	return queryBolt(d, q, log)
 }
@@ -227,7 +226,7 @@ func (d *MapDataStore) Close() error {
 	return nil
 }
 
-func readLen(tx *bbolt.Tx, log *logrus.Entry, mh []byte) (int, error) {
+func readLen(tx *bbolt.Tx, log *zap.Logger, mh []byte) (int, error) {
 	bb := tx.Bucket(vars.BlockBucketName())
 	nb := tx.Bucket(vars.NodeBucketName())
 
@@ -241,10 +240,9 @@ func readLen(tx *bbolt.Tx, log *logrus.Entry, mh []byte) (int, error) {
 	if err := proto.Unmarshal(v, r); err != nil {
 		return -1, errors.Wrap(err, "failed to decode block Record from database raw value")
 	}
-	log.Debug("find block in KV, type", r.Type.String())
+	log.Debug("find block in KV, type", zap.String("type", r.Type.String()))
 	switch r.Type {
 	case dagserv.BlockType_proto:
-		logger.Debug(cid.Parse(r.CID))
 		n := nb.Get(r.CID)
 		if n == nil {
 			return -1, ds.ErrNotFound

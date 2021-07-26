@@ -16,16 +16,8 @@
 package persist
 
 import (
-	"bytes"
-	"encoding/hex"
-	"fmt"
-
-	"github.com/ipfs/go-cid"
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
-
-	"sci_hub_p2p/pkg/logger"
-	"sci_hub_p2p/pkg/vars"
 )
 
 func CopyBucket(src, dst *bbolt.DB, name []byte) error {
@@ -39,13 +31,6 @@ func CopyBucket(src, dst *bbolt.DB, name []byte) error {
 			srcBucket := srcTx.Bucket(name)
 
 			return srcBucket.ForEach(func(k, v []byte) error {
-				if bytes.Equal(name, vars.NodeBucketName()) {
-					_, err := cid.Parse(k)
-					if err != nil {
-						logger.Error(err)
-						fmt.Println(hex.Dump(k))
-					}
-				}
 
 				return dstBucket.Put(k, v)
 			})

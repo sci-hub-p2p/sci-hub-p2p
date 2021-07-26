@@ -16,12 +16,14 @@
 package ipfs
 
 import (
+	"fmt"
 	"path/filepath"
 	"strconv"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"go.etcd.io/bbolt"
+	"go.uber.org/zap"
 
 	"sci_hub_p2p/internal/utils"
 	"sci_hub_p2p/pkg/constants"
@@ -48,7 +50,7 @@ var addCmd = &cobra.Command{
 		defer func(db *bbolt.DB) {
 			err := db.Close()
 			if err != nil {
-				logger.Error(err)
+				logger.Error("failed to close DataBase", zap.Error(err))
 			}
 		}(db)
 		err = dagserv.InitDB(db)
@@ -59,15 +61,15 @@ var addCmd = &cobra.Command{
 		width := len(strconv.Itoa(len(args)))
 
 		for i, file := range args {
-			logger.Infof("processing file %0*d/%d %s", width, i, len(args), file)
+			logger.Info(fmt.Sprintf("processing file %0*d/%d %s", width, i, len(args), file))
 			if err := dagserv.AddZip(db, file); err != nil {
-				logger.Error(err)
+				logger.Error("failed to add files from zip archive", zap.Error(err))
 			}
 
 			if i%10 == 0 {
 				err := db.Sync()
 				if err != nil {
-					logger.Error(err)
+					logger.Error("failed to sync database to DB", zap.Error(err))
 				}
 			}
 		}

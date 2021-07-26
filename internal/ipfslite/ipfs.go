@@ -17,6 +17,7 @@ package ipfslite
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -37,6 +38,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/routing"
+	"go.uber.org/zap"
 
 	"sci_hub_p2p/pkg/logger"
 )
@@ -206,11 +208,10 @@ func (p *Peer) Bootstrap(peers []peer.AddrInfo) {
 			defer wg.Done()
 			err := p.host.Connect(p.ctx, pinfo)
 			if err != nil {
-				logger.Warn(err)
+				logger.Warn("", zap.Error(err))
 
 				return
 			}
-			logger.Info("Connected to", pinfo.ID)
 			connected <- struct{}{}
 		}(pinfo)
 	}
@@ -225,11 +226,11 @@ func (p *Peer) Bootstrap(peers []peer.AddrInfo) {
 		i++
 	}
 	if nPeers := len(peers); i < nPeers/2 {
-		logger.Warnf("only connected to %d bootstrap peers out of %d", i, nPeers)
+		logger.Warn(fmt.Sprintf("only connected to %d bootstrap peers out of %d", i, nPeers))
 	}
 
 	if err := p.dht.Bootstrap(p.ctx); err != nil {
-		logger.Error(err)
+		logger.Error("", zap.Error(err))
 
 		return
 	}

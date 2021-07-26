@@ -25,6 +25,7 @@ import (
 	"github.com/ipfs/go-merkledag"
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
+	"go.uber.org/zap"
 
 	"sci_hub_p2p/pkg/logger"
 	"sci_hub_p2p/pkg/vars"
@@ -34,8 +35,9 @@ var _ ipld.DAGService = (*ZipArchive)(nil)
 
 func New(db *bbolt.DB) ZipArchive {
 	return ZipArchive{
-		m:  &sync.Mutex{},
-		db: db,
+		m:   &sync.Mutex{},
+		db:  db,
+		log: logger.WithLogger("ZipArchive"),
 	}
 }
 
@@ -55,12 +57,13 @@ func InitDB(db *bbolt.DB) error {
 }
 
 type ZipArchive struct {
-	m  *sync.Mutex
-	db *bbolt.DB
+	m   *sync.Mutex
+	db  *bbolt.DB
+	log *zap.Logger
 }
 
 func (d ZipArchive) Get(ctx context.Context, c cid.Cid) (ipld.Node, error) {
-	logger.Info("Get", c)
+	d.log.Debug("Get Node", zap.String("CID", c.String()))
 	d.m.Lock()
 	defer d.m.Unlock()
 	if c.Version() == 0 {

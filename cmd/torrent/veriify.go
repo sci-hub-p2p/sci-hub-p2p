@@ -25,6 +25,7 @@ import (
 	"github.com/cheggaaa/pb/v3"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 
 	"sci_hub_p2p/internal/torrent"
 	"sci_hub_p2p/pkg/hash"
@@ -53,7 +54,7 @@ var verifyCmd = &cobra.Command{
 				return errors.Wrap(err, "failed to read piece")
 			}
 			if !bytes.Equal(hash.Sha1SumBytes(p), piece) {
-				logger.Errorf("piece %d mismatch", i)
+				logger.Error("piece hash mismatch", zap.Int("index", i))
 			}
 		}
 		bar.Finish()

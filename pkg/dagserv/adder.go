@@ -26,9 +26,6 @@ import (
 	ipld "github.com/ipfs/go-ipld-format"
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
-
-	"sci_hub_p2p/pkg/logger"
-	"sci_hub_p2p/pkg/vars"
 )
 
 var _ ipld.DAGService = (*Adder)(nil)
@@ -58,26 +55,7 @@ func (a *Adder) Add(ctx context.Context, node ipld.Node) error {
 }
 
 func (a *Adder) Get(ctx context.Context, c cid.Cid) (ipld.Node, error) {
-	logger.Info("Get", c)
-	a.RLock()
-	defer a.RUnlock()
-	if c.Version() == 0 {
-		return nil, ErrNotFound
-	}
-	switch c.Type() {
-	case cid.DagProtobuf:
-		b := a.tx.Bucket(vars.NodeBucketName())
-		n, err := ReadProtoNode(b, c)
-
-		return n, errors.Wrap(err, "can't read node from database")
-	case cid.Raw:
-		b := a.tx.Bucket(vars.NodeBucketName())
-		n, err := ReadFileStoreNode(b, c)
-
-		return n, errors.Wrap(err, "can't read node from database")
-	}
-
-	panic("un-supported cid data type")
+	panic("adder not support Get Node")
 }
 
 func (a *Adder) AddMany(ctx context.Context, nodes []ipld.Node) error {

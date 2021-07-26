@@ -23,7 +23,6 @@ import (
 	"sci_hub_p2p/internal/client"
 	"sci_hub_p2p/internal/utils"
 	"sci_hub_p2p/pkg/constants"
-	"sci_hub_p2p/pkg/logger"
 	"sci_hub_p2p/pkg/vars"
 )
 
@@ -59,6 +58,6 @@ func init() {
 	fetchCmd.Flags().StringVarP(&out, "output", "o", "", "output file path")
 
 	if err := utils.MarkFlagsRequired(fetchCmd, "doi", "output"); err != nil {
-		logger.Fatal(err)
+		panic(err)
 	}
 }
