@@ -16,9 +16,16 @@
 package daemon
 
 import (
-	"github.com/spf13/cobra"
+	"path/filepath"
 
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
+	"go.etcd.io/bbolt"
+
+	"sci_hub_p2p/internal/utils"
+	"sci_hub_p2p/pkg/constants"
 	"sci_hub_p2p/pkg/daemon"
+	"sci_hub_p2p/pkg/variable"
 )
 
 var Cmd = &cobra.Command{
@@ -26,13 +33,38 @@ var Cmd = &cobra.Command{
 }
 
 var startCmd = &cobra.Command{
-	Use:   "start",
-	Short: "start daemon",
+	Use:     "start",
+	Short:   "start daemon",
+	PreRunE: utils.EnsureDir(variable.GetAppBaseDir()),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return daemon.Start()
+		db, err := bbolt.Open(filepath.Join(variable.GetAppBaseDir(), constants.IPFSBlockDB),
+			constants.DefaultFilePerm, bbolt.DefaultOptions)
+		if err != nil {
+			return errors.Wrap(err, "failed to open database")
+		}
+		defer db.Close()
+		err = db.View(func(tx *bbolt.Tx) error {
+			if tx.Bucket(variable.BlockBucketName()) == nil {
+				return errors.New("database is empty")
+			}
+			if tx.Bucket(variable.NodeBucketName()) == nil {
+				return errors.New("database is empty")
+			}
+
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+
+		return daemon.Start(db, port)
 	},
 }
+var port int
+
+const defaultDaemonPort = 4005
 
 func init() {
 	Cmd.AddCommand(startCmd, loadCmd)
+	startCmd.Flags().IntVarP(&port, "port", "p", defaultDaemonPort, "IPFS peer default port")
 }

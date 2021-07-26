@@ -125,6 +125,7 @@ linters-settings:
           - return
           - assign
         ignored-functions: cobra\..*Args
+
   gosimple:
     # Select the Go version to target. The default is '1.13'.
     go: "1.16"

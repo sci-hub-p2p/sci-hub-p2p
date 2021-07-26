@@ -23,6 +23,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -36,9 +37,8 @@ import (
 	"go.etcd.io/bbolt"
 	"go.uber.org/zap"
 
+	"sci_hub_p2p/cmd/flag"
 	"sci_hub_p2p/internal/ipfslite"
-	"sci_hub_p2p/pkg/constants"
-	"sci_hub_p2p/pkg/dagserv"
 	"sci_hub_p2p/pkg/logger"
 	"sci_hub_p2p/pkg/store"
 	"sci_hub_p2p/pkg/variable"
@@ -46,28 +46,20 @@ import (
 
 const interval = time.Second * 20
 
-func Start() error {
-	setupLogger()
+func Start(db *bbolt.DB, port int) error {
+	setupIPFSLogger()
 	ctx := context.Background()
-	db, err := bbolt.Open("./test.bolt", constants.DefaultFilePerm, bbolt.DefaultOptions)
-	if err != nil {
-		return errors.Wrap(err, "failed to open database")
-	}
-	defer db.Close()
-
-	if err = dagserv.InitDB(db); err != nil {
-		return errors.Wrap(err, "can't init database")
-	}
 	rawDS := store.NewMapDatastore(db)
 	dataStore := store.NewLogDatastore(rawDS, "debug")
-	startHTTPServer(dataStore)
-
+	if flag.Debug {
+		startHTTPServer(dataStore)
+	}
 	privKey, err := genKey()
 	if err != nil {
 		return err
 	}
 	logger.Info("finish load key")
-	listen, _ := multiaddr.NewMultiaddr("/ip4/0.0.0.0/tcp/4005")
+	listen, _ := multiaddr.NewMultiaddr("/ip4/0.0.0.0/tcp/" + strconv.Itoa(port))
 	pnetKey, err := pnetKey()
 	if err != nil {
 		return err
@@ -109,7 +101,7 @@ func Start() error {
 	}
 }
 
-func setupLogger() {
+func setupIPFSLogger() {
 	err := log2.SetLogLevel("*", "error")
 	if err != nil {
 		panic(err)
@@ -148,6 +140,8 @@ func startHTTPServer(d ds.Datastore) {
 		err := http.ListenAndServe(":2333", m)
 		if err != nil {
 			logger.Error("failed to create debug server", zap.Error(err))
+		} else {
+			logger.Info("start debug http server in http://127.0.0.1:2333")
 		}
 	}()
 }

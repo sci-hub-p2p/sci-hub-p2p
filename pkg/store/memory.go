@@ -35,7 +35,7 @@ import (
 
 // Here are some basic store implementations.
 
-var _ ds.Datastore = &MapDataStore{}
+var _ ds.Datastore = (*MapDataStore)(nil)
 
 // MapDataStore uses a standard Go map for internal storage.
 type MapDataStore struct {

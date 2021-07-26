@@ -26,3 +26,5 @@ const DefaultDirPerm os.FileMode = os.ModeDir | DefaultFilePerm
 
 const SecurityPerm os.FileMode = 0600
 const PrivateKeyLength = 4096
+
+const IPFSBlockDB = "ipfs.block.bolt"
