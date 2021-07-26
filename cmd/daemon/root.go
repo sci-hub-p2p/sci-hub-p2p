@@ -62,6 +62,6 @@ var port int
 const defaultDaemonPort = 4005
 
 func init() {
-	Cmd.AddCommand(startCmd, loadCmd)
+	Cmd.AddCommand(startCmd)
 	startCmd.Flags().IntVarP(&port, "port", "p", defaultDaemonPort, "IPFS peer default port")
 }

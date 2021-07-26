@@ -28,10 +28,7 @@ import (
 
 	"github.com/gorilla/mux"
 	ds "github.com/ipfs/go-datastore"
-	config "github.com/ipfs/go-ipfs-config"
 	log2 "github.com/ipfs/go-log"
-	"github.com/libp2p/go-libp2p-core/routing"
-	discovery "github.com/libp2p/go-libp2p-discovery"
 	"github.com/multiformats/go-multiaddr"
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
@@ -41,7 +38,6 @@ import (
 	"sci_hub_p2p/internal/ipfslite"
 	"sci_hub_p2p/pkg/logger"
 	"sci_hub_p2p/pkg/store"
-	"sci_hub_p2p/pkg/variable"
 )
 
 const interval = time.Second * 20
@@ -78,7 +74,7 @@ func Start(db *bbolt.DB, port int) error {
 		return errors.Wrap(err, "failed to start libp2p")
 	}
 
-	lite, err := ipfslite.New(ctx, datastore, h, dht, nil)
+	lite, err := ipfslite.New(ctx, datastore, h, dht, &ipfslite.Config{ReprovideInterval: time.Hour})
 	if err != nil {
 		return errors.Wrap(err, "failed to create new peer")
 	}
@@ -87,16 +83,8 @@ func Start(db *bbolt.DB, port int) error {
 	fmt.Printf("/ip4/127.0.0.1/tcp/4005/p2p/%s\n", h.ID())
 
 	lite.Bootstrap(ipfslite.DefaultBootstrapPeers())
-	p, err := config.ParseBootstrapPeers([]string{
-		"/ip4/127.0.0.1/tcp/4001/p2p/12D3KooWCsZQqmqi42PXHKmAXAHvevp8HXnfViWg4Txp5ayJoqSq",
-	})
-	if err != nil {
-		panic(err)
-	}
 
-	lite.Bootstrap(p)
 	for {
-		bootIPFSDaemon(context.Background(), dht)
 		time.Sleep(interval)
 	}
 }
@@ -144,12 +132,4 @@ func startHTTPServer(d ds.Datastore) {
 			logger.Info("start debug http server in http://127.0.0.1:2333")
 		}
 	}()
-}
-
-func bootIPFSDaemon(ctx context.Context, dht routing.ContentRouting) {
-	nodeName := fmt.Sprintf("sci-hub-p2p %s", variable.Ref)
-	logger.Debug("Announcing ourselves...")
-	routingDiscovery := discovery.NewRoutingDiscovery(dht)
-	discovery.Advertise(ctx, routingDiscovery, nodeName)
-	logger.Debug("Successfully announced!")
 }
