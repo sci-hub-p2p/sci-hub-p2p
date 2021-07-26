@@ -35,8 +35,8 @@ import (
 
 var verifyCmd = &cobra.Command{
 	Use:           "verify",
-	Short:         "verify data of a torrent.",
-	Example:       "torrent verify /path/123456.torrent /path/to/data/123456/",
+	Short:         "verify downloaded data of a torrent.",
+	Example:       "torrent verify -t /path/123456.torrent -d /path/to/data/123456/",
 	SilenceErrors: false,
 	Args:          cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
@@ -78,8 +78,8 @@ var dataDir string
 var torrentPath string
 
 func init() {
-	verifyCmd.Flags().StringVarP(&dataDir, "data", "d", "", "Path to data directory")
-	verifyCmd.Flags().StringVarP(&torrentPath, "torrent", "t", "", "Torrent path")
+	verifyCmd.Flags().StringVarP(&torrentPath, "torrent", "t", "", "torrent path")
+	verifyCmd.Flags().StringVarP(&dataDir, "data", "d", "", "path to data directory")
 
 	if err := utils.MarkFlagsRequired(verifyCmd, "torrent", "data"); err != nil {
 		panic(err)

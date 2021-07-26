@@ -36,6 +36,7 @@ import (
 
 var Cmd = &cobra.Command{
 	Use:           "torrent",
+	Short:         "load torrent into database",
 	SilenceErrors: false,
 }
 
