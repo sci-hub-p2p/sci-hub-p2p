@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package dagserv
+package memorydag
 
 import (
 	"context"
@@ -21,29 +21,19 @@ import (
 
 	"github.com/ipfs/go-cid"
 	ipld "github.com/ipfs/go-ipld-format"
-	"github.com/pkg/errors"
 )
-
-func NewMemory() DumpDagServ {
-	return DumpDagServ{
-		M: make(map[string]ipld.Node),
-		m: &sync.Mutex{},
-	}
-}
 
 type DumpDagServ struct {
 	M map[string]ipld.Node
 	m *sync.Mutex
 }
 
-var ErrNotFound = errors.New("not found")
-
 func (d DumpDagServ) Get(ctx context.Context, cid cid.Cid) (ipld.Node, error) {
 	d.m.Lock()
 	defer d.m.Unlock()
 	i, ok := d.M[cid.String()]
 	if !ok {
-		return nil, ErrNotFound
+		return nil, ipld.ErrNotFound
 	}
 
 	return i, nil

@@ -38,7 +38,7 @@ func ReadFileStoreNode(b *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {
 	var v = &Block{}
 	data := b.Get(c.Bytes())
 	if data == nil {
-		return nil, ErrNotFound
+		return nil, ipld.ErrNotFound
 	}
 
 	err := proto.Unmarshal(data, v)
@@ -96,7 +96,7 @@ func SaveProtoNode(tx *bbolt.Tx, c cid.Cid, n *merkledag.ProtoNode) error {
 func ReadProtoNode(nb *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {
 	data := nb.Get(c.Bytes())
 	if data == nil {
-		return nil, ErrNotFound
+		return nil, ipld.ErrNotFound
 	}
 	v, err := unmarshal(data, c)
 	if err != nil {

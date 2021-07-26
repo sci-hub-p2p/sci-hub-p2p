@@ -25,7 +25,7 @@ import (
 	"sci_hub_p2p/pkg/logger"
 )
 
-var _ ds.Datastore = &LogDatastore{}
+var _ ds.Datastore = (*LogDatastore)(nil)
 
 // LogDatastore logs all accesses through the store.
 type LogDatastore struct {
@@ -42,7 +42,7 @@ type Shim interface {
 
 // NewLogDatastore constructs a fmt store.
 func NewLogDatastore(ds ds.Datastore, name string) *LogDatastore {
-	if len(name) < 1 {
+	if name == "" {
 		name = "LogDatastore"
 	}
 

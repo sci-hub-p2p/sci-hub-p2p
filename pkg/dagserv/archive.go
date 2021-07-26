@@ -31,13 +31,13 @@ import (
 	"sci_hub_p2p/pkg/variable"
 )
 
-var _ ipld.DAGService = (*ZipArchive)(nil)
+var _ ipld.DAGService = (*Archive)(nil)
 
-func New(db *bbolt.DB) ZipArchive {
-	return ZipArchive{
+func New(db *bbolt.DB) Archive {
+	return Archive{
 		m:   &sync.Mutex{},
 		db:  db,
-		log: logger.WithLogger("ZipArchive"),
+		log: logger.WithLogger("Archive"),
 	}
 }
 
@@ -56,18 +56,18 @@ func InitDB(db *bbolt.DB) error {
 	}), "failed to init bolt database")
 }
 
-type ZipArchive struct {
+type Archive struct {
 	m   *sync.Mutex
 	db  *bbolt.DB
 	log *zap.Logger
 }
 
-func (d ZipArchive) Get(ctx context.Context, c cid.Cid) (ipld.Node, error) {
+func (d Archive) Get(ctx context.Context, c cid.Cid) (ipld.Node, error) {
 	d.log.Debug("Get Node", zap.String("CID", c.String()))
 	d.m.Lock()
 	defer d.m.Unlock()
 	if c.Version() == 0 {
-		return nil, ErrNotFound
+		return nil, ipld.ErrNotFound
 	}
 	var n ipld.Node
 	switch c.Type() {
@@ -97,7 +97,7 @@ func (d ZipArchive) Get(ctx context.Context, c cid.Cid) (ipld.Node, error) {
 }
 
 // GetMany TODO: need to parallel this, but I'm lazy.
-func (d ZipArchive) GetMany(ctx context.Context, cids []cid.Cid) <-chan *ipld.NodeOption {
+func (d Archive) GetMany(ctx context.Context, cids []cid.Cid) <-chan *ipld.NodeOption {
 	var c = make(chan *ipld.NodeOption)
 	go func() {
 		for _, cid := range cids {
@@ -109,15 +109,15 @@ func (d ZipArchive) GetMany(ctx context.Context, cids []cid.Cid) <-chan *ipld.No
 	return c
 }
 
-func (d ZipArchive) Add(ctx context.Context, node ipld.Node) error {
-	panic("should not add node to ZipArchive dagserv")
+func (d Archive) Add(ctx context.Context, node ipld.Node) error {
+	panic("should not add node to Archive dagserv")
 }
 
-func (d ZipArchive) AddMany(ctx context.Context, nodes []ipld.Node) error {
-	panic("should not add node to ZipArchive dagserv")
+func (d Archive) AddMany(ctx context.Context, nodes []ipld.Node) error {
+	panic("should not add node to Archive dagserv")
 }
 
-func (d ZipArchive) Remove(ctx context.Context, c cid.Cid) error {
+func (d Archive) Remove(ctx context.Context, c cid.Cid) error {
 	err := d.db.Update(func(tx *bbolt.Tx) error {
 		b := tx.Bucket(variable.NodeBucketName())
 		if b == nil {
@@ -130,7 +130,7 @@ func (d ZipArchive) Remove(ctx context.Context, c cid.Cid) error {
 	return errors.Wrap(err, "can't delete node from database")
 }
 
-func (d ZipArchive) RemoveMany(ctx context.Context, cids []cid.Cid) error {
+func (d Archive) RemoveMany(ctx context.Context, cids []cid.Cid) error {
 	err := d.db.Batch(func(tx *bbolt.Tx) error {
 		b := tx.Bucket(variable.NodeBucketName())
 		if b == nil {
