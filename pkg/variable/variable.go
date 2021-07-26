@@ -18,6 +18,8 @@ package variable
 import (
 	"os"
 	"path/filepath"
+
+	"sci_hub_p2p/pkg/constants"
 )
 
 var appBaseDir string
@@ -41,6 +43,10 @@ func GetPaperBoltPath() string {
 
 func GetTorrentStoragePath() string {
 	return filepath.Join(GetAppBaseDir(), "torrents")
+}
+
+func IpfsBoltPath() string {
+	return filepath.Join(GetAppBaseDir(), constants.IPFSBlockDB)
 }
 
 func NodeBucketName() []byte {

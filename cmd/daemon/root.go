@@ -16,8 +16,6 @@
 package daemon
 
 import (
-	"path/filepath"
-
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"go.etcd.io/bbolt"
@@ -37,8 +35,7 @@ var startCmd = &cobra.Command{
 	Short:   "start daemon",
 	PreRunE: utils.EnsureDir(variable.GetAppBaseDir()),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		db, err := bbolt.Open(filepath.Join(variable.GetAppBaseDir(), constants.IPFSBlockDB),
-			constants.DefaultFilePerm, bbolt.DefaultOptions)
+		db, err := bbolt.Open(variable.IpfsBoltPath(), constants.DefaultFilePerm, bbolt.DefaultOptions)
 		if err != nil {
 			return errors.Wrap(err, "failed to open database")
 		}

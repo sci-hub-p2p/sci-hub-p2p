@@ -17,7 +17,6 @@ package ipfs
 
 import (
 	"fmt"
-	"path/filepath"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -42,8 +41,7 @@ var addCmd = &cobra.Command{
 		if err != nil {
 			return errors.Wrap(err, "no zip files to add")
 		}
-		db, err := bbolt.Open(filepath.Join(variable.GetAppBaseDir(), constants.IPFSBlockDB),
-			constants.DefaultFilePerm, &bbolt.Options{NoSync: true})
+		db, err := bbolt.Open(variable.IpfsBoltPath(), constants.DefaultFilePerm, &bbolt.Options{NoSync: true})
 		if err != nil {
 			return errors.Wrap(err, "failed to open database")
 		}
