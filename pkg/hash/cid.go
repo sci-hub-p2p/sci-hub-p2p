@@ -46,6 +46,6 @@ func Cid(r io.Reader) (cid.Cid, error) {
 
 func addFile(r io.Reader) (ipld.Node, error) {
 	n, err := storage.Add(memorydag.New(), r)
-	
+
 	return n, errors.Wrap(err, "failed to generate DAG from reader")
 }
