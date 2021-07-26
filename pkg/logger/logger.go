@@ -95,6 +95,7 @@ func WithLogger(name string) *zap.Logger {
 	if log == nil {
 		return zap.NewNop()
 	}
+
 	return log.Named(name)
 }
 

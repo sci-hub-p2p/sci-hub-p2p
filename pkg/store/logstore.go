@@ -29,9 +29,9 @@ var _ ds.Datastore = &LogDatastore{}
 
 // LogDatastore logs all accesses through the store.
 type LogDatastore struct {
+	logger *zap.Logger
 	child  ds.Datastore
 	Name   string
-	logger *zap.Logger
 }
 
 // Shim is a store which has a child.
@@ -131,9 +131,9 @@ func (d *LogDatastore) Query(q dsq.Query) (dsq.Results, error) {
 
 // LogBatch logs all accesses through the batch.
 type LogBatch struct {
+	logger *zap.Logger
 	child  ds.Batch
 	Name   string
-	logger *zap.Logger
 }
 
 func (d *LogDatastore) Batch() (ds.Batch, error) {

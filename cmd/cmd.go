@@ -65,7 +65,10 @@ var rootCmd = &cobra.Command{
 		return nil
 	},
 	PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
-		pprof.StopCPUProfile()
+		if flag.CPUProfile {
+			pprof.StopCPUProfile()
+		}
+
 		return logger.Sync()
 	},
 }

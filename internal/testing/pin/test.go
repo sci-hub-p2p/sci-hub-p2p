@@ -27,6 +27,7 @@ import (
 
 	"github.com/ipfs/go-cid"
 	"github.com/itchio/lzma"
+	"go.uber.org/zap"
 
 	"sci_hub_p2p/pkg/indexes"
 	"sci_hub_p2p/pkg/logger"
@@ -35,7 +36,7 @@ import (
 func main() {
 	f, err := os.Open("./out/d57b1013eee9138a8906bcd274d727b5d7e8a307.jsonlines.lzma")
 	if err != nil {
-		logger.Fatal(err)
+		logger.Fatal("", zap.Error(err))
 	}
 	defer f.Close()
 	r := lzma.NewReader(f)
@@ -46,27 +47,27 @@ func main() {
 		var s []string
 		err = json.Unmarshal(scanner.Bytes(), &s)
 		if err != nil || len(s) != 2 {
-			logger.Fatal(err)
+			logger.Fatal("", zap.Error(err))
 		}
 		value, err := base64.StdEncoding.DecodeString(s[1])
 		if err != nil {
-			logger.Fatal(err)
+			logger.Fatal("", zap.Error(err))
 		}
 
 		key, err := url.QueryUnescape(strings.TrimSuffix(s[0], ".pdf"))
 		if err != nil {
-			logger.Fatal(err)
+			logger.Fatal("", zap.Error(err))
 		}
 		c, err := cid.Parse(indexes.LoadRecordV0(value).CID[:])
 		if err != nil {
-			logger.Fatal(err)
+			logger.Fatal("", zap.Error(err))
 		}
 		fmt.Println(key, c)
 	}
 
 	err = scanner.Err()
 	if err != nil {
-		logger.Fatal(err)
+		logger.Fatal("", zap.Error(err))
 	}
 
 }

@@ -26,6 +26,7 @@ import (
 	"github.com/cheggaaa/pb/v3"
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
+	"go.uber.org/zap"
 
 	"sci_hub_p2p/pkg/dagserv"
 	"sci_hub_p2p/pkg/logger"
@@ -42,13 +43,13 @@ func LoadTestData() {
 	bar := pb.StartNew(100000 - 4)
 	zipFiles, err := filepath.Glob("d:/data/11200*/*.zip")
 	if err != nil {
-		logger.Fatal(err)
+		logger.Fatal("", zap.Error(err))
 	}
 
 	err = os.Remove("./test.bolt")
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
-			logger.Fatal(err)
+			logger.Fatal("", zap.Error(err))
 		}
 	}
 
@@ -62,35 +63,35 @@ func LoadTestData() {
 			NoSync:       true,
 		})
 		if err != nil {
-			logger.Fatal(err)
+			logger.Fatal("", zap.Error(err))
 		}
 		dbSlice = append(dbSlice, db)
 		db.Update(func(tx *bbolt.Tx) error {
 			err := tx.DeleteBucket(vars.BlockBucketName())
 			if err != nil {
-				logger.Fatal(err)
+				logger.Fatal("", zap.Error(err))
 			}
 			err = tx.DeleteBucket(vars.NodeBucketName())
 			if err != nil {
-				logger.Fatal(err)
+				logger.Fatal("", zap.Error(err))
 			}
 			return nil
 		})
 		err = dagserv.InitDB(db)
 		if err != nil {
-			logger.Fatal(err)
+			logger.Fatal("", zap.Error(err))
 		}
 		go func(db *bbolt.DB) {
 			for file := range c {
 				err := dagserv.AddZip(db, file)
 				if err != nil {
-					logger.Error(err)
+					logger.Error("", zap.Error(err))
 				}
 			}
 
 			err := db.Sync()
 			if err != nil {
-				logger.Error(err)
+				logger.Error("", zap.Error(err))
 			}
 			wg.Done()
 		}(db)
@@ -114,11 +115,11 @@ func LoadTestData() {
 		NoSync:       true,
 	})
 	if err != nil {
-		logger.Fatal(err)
+		logger.Fatal("", zap.Error(err))
 	}
 	err = dagserv.InitDB(db)
 	if err != nil {
-		logger.Fatal(err)
+		logger.Fatal("", zap.Error(err))
 	}
 
 	for i, srcDB := range dbSlice {
@@ -126,29 +127,29 @@ func LoadTestData() {
 		err = persist.CopyBucket(srcDB, db, vars.NodeBucketName())
 
 		if err != nil {
-			logger.Error(err)
+			logger.Error("", zap.Error(err))
 		}
 
 		err = persist.CopyBucket(srcDB, db, vars.BlockBucketName())
 
 		if err != nil {
-			logger.Error(err)
+			logger.Error("", zap.Error(err))
 		}
 
 		err = srcDB.Close()
 		if err != nil {
-			logger.Fatal(err)
+			logger.Fatal("", zap.Error(err))
 		}
 
 		err := db.Sync()
 		if err != nil {
-			logger.Fatal(err)
+			logger.Fatal("", zap.Error(err))
 		}
 
 	}
 
 	err = db.Close()
 	if err != nil {
-		logger.Fatal(err)
+		logger.Fatal("", zap.Error(err))
 	}
 }
