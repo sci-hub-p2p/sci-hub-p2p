@@ -79,17 +79,18 @@ func resultGenerator(
 			c := buck.Cursor()
 			// If we need to sort, we'll need to collect all the results up-front.
 			if len(orders) > 0 {
-				return sendWithOrder(orders, qrb, c, worker)
+				return sendWithOrder(worker, orders, qrb, c)
 			}
 			// Otherwise, send results as we get them.
-			return send(qrb, c, worker)
+			return send(worker, qrb, c)
 		})
 		if err != nil {
 			log.Error("failed to Query keys from DB", zap.Error(err))
 		}
 	}
 }
-func sendWithOrder(orders []dsq.Order, qrb *dsq.ResultBuilder, c *bbolt.Cursor, worker goprocess.Process) error {
+
+func sendWithOrder(worker goprocess.Process, orders []dsq.Order, qrb *dsq.ResultBuilder, c *bbolt.Cursor) error {
 	// Query and filter.
 	var entries []dsq.Entry
 	for k, v := c.First(); k != nil; k, v = c.Next() {
@@ -130,7 +131,7 @@ func sendWithOrder(orders []dsq.Order, qrb *dsq.ResultBuilder, c *bbolt.Cursor, 
 	return nil
 }
 
-func send(qrb *dsq.ResultBuilder, c *bbolt.Cursor, worker goprocess.Process) error {
+func send(worker goprocess.Process, qrb *dsq.ResultBuilder, c *bbolt.Cursor) error {
 	offset := 0
 	for k, v := c.First(); k != nil; k, v = c.Next() {
 		e := dsq.Entry{Key: MultiHashToKey(k).String(), Value: v}
