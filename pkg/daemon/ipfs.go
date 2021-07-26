@@ -49,10 +49,10 @@ const interval = time.Second * 20
 func Start(db *bbolt.DB, port int) error {
 	setupIPFSLogger()
 	ctx := context.Background()
-	rawDS := store.NewMapDatastore(db)
-	dataStore := store.NewLogDatastore(rawDS, "debug")
+	var datastore ds.Batching = store.NewArchiveFallbackDatastore(db)
 	if flag.Debug {
-		startHTTPServer(dataStore)
+		startHTTPServer(datastore)
+		datastore = store.NewLogDatastore(datastore, "LogDatastore")
 	}
 	privKey, err := genKey()
 	if err != nil {
@@ -70,7 +70,7 @@ func Start(db *bbolt.DB, port int) error {
 		privKey,
 		pnetKey,
 		[]multiaddr.Multiaddr{listen},
-		dataStore,
+		datastore,
 		ipfslite.Libp2pOptionsExtra...,
 	)
 
@@ -78,7 +78,7 @@ func Start(db *bbolt.DB, port int) error {
 		return errors.Wrap(err, "failed to start libp2p")
 	}
 
-	lite, err := ipfslite.New(ctx, dataStore, h, dht, nil)
+	lite, err := ipfslite.New(ctx, datastore, h, dht, nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to create new peer")
 	}

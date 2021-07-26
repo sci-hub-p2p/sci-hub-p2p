@@ -34,12 +34,6 @@ type LogDatastore struct {
 	Name   string
 }
 
-// Shim is a store which has a child.
-type Shim interface {
-	ds.Datastore
-	Children() []ds.Datastore
-}
-
 // NewLogDatastore constructs a fmt store.
 func NewLogDatastore(ds ds.Datastore, name string) *LogDatastore {
 	if name == "" {

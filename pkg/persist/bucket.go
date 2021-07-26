@@ -14,25 +14,3 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 package persist
-
-import (
-	"github.com/pkg/errors"
-	"go.etcd.io/bbolt"
-)
-
-func CopyBucket(src, dst *bbolt.DB, name []byte) error {
-	return dst.Batch(func(dstTx *bbolt.Tx) error {
-		dstBucket, err := dstTx.CreateBucketIfNotExists(name)
-		if err != nil {
-			return errors.Wrap(err, "failed to create bucket in dst DB")
-		}
-
-		return src.View(func(srcTx *bbolt.Tx) error {
-			srcBucket := srcTx.Bucket(name)
-
-			return srcBucket.ForEach(func(k, v []byte) error {
-				return dstBucket.Put(k, v)
-			})
-		})
-	})
-}

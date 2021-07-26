@@ -25,11 +25,10 @@ import (
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/proto"
 
-	"sci_hub_p2p/internal/utils"
-	"sci_hub_p2p/pkg/dagserv"
+	"sci_hub_p2p/pkg/dag"
 	"sci_hub_p2p/pkg/logger"
+	"sci_hub_p2p/pkg/storage"
 	"sci_hub_p2p/pkg/variable"
 )
 
@@ -47,14 +46,14 @@ type MapDataStore struct {
 	sync.RWMutex
 }
 
-// NewMapDatastore constructs a MapDataStore. It is _not_ thread-safe by
+// NewArchiveFallbackDatastore constructs a MapDataStore. It is _not_ thread-safe by
 // default, wrap using sync.MutexWrap if you need thread safety (the answer here
 // is usually yes).
-func NewMapDatastore(db *bbolt.DB) (d *MapDataStore) {
+func NewArchiveFallbackDatastore(db *bbolt.DB) (d *MapDataStore) {
 	return &MapDataStore{
 		values: make(map[ds.Key][]byte),
 		db:     db,
-		dag:    dagserv.New(db),
+		dag:    dag.New(db),
 		logger: logger.WithLogger("MapDataStore"),
 	}
 }
@@ -72,7 +71,7 @@ func (d *MapDataStore) Put(key ds.Key, value []byte) (err error) {
 }
 
 // Sync implements Datastore.Sync.
-func (d *MapDataStore) Sync(prefix ds.Key) error {
+func (d *MapDataStore) Sync(_ ds.Key) error {
 	return errors.Wrap(d.db.Sync(), "failed to sync bbolt DB")
 }
 
@@ -104,20 +103,22 @@ func (d *MapDataStore) Get(key ds.Key) ([]byte, error) {
 	var p []byte
 
 	err = d.db.View(func(tx *bbolt.Tx) error {
-		p, err = readBlock(tx, mh)
+		var e error
+		p, e = storage.ReadBlock(tx, mh)
 		if p != nil {
 			log.Debug("find in KV")
 		}
 
-		return err
+		return errors.Wrap(e, "failed to read block")
 	})
+
 	if err != nil {
 		if errors.Is(err, ds.ErrNotFound) {
-			return nil, err
+			return nil, ds.ErrNotFound
 		}
 		log.Debug("read block got", zap.Error(err))
 
-		return nil, errors.Wrap(err, "can't read from disk")
+		return nil, err
 	}
 
 	return p, nil
@@ -153,7 +154,8 @@ func (d *MapDataStore) Has(key ds.Key) (exists bool, err error) {
 }
 
 // GetSize implements Datastore.GetSize.
-func (d *MapDataStore) GetSize(key ds.Key) (size int, err error) {
+func (d *MapDataStore) GetSize(key ds.Key) (int, error) {
+	var log = d.logger.With(logger.Key(key))
 	d.RLock()
 
 	v, found := d.values[key]
@@ -166,21 +168,29 @@ func (d *MapDataStore) GetSize(key ds.Key) (size int, err error) {
 
 	d.logger.Debug("get size of from kV", logger.Key(key))
 	var l = -1
-	var mh []byte
-	if !found {
-		mh, err = dshelp.DsKeyToMultihash(ds.NewKey(key.BaseNamespace()))
-		if err != nil {
-			return 0, errors.Wrap(err, "failed to decode key to multi HASH")
-		}
 
-		err = d.db.View(func(tx *bbolt.Tx) error {
-			l, err = readLen(tx, d.logger, mh)
-
-			return err
-		})
+	mh, err := dshelp.DsKeyToMultihash(ds.NewKey(key.BaseNamespace()))
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to decode key to multi HASH")
 	}
 
-	return l, err
+	err = d.db.View(func(tx *bbolt.Tx) error {
+		var e error
+		l, e = storage.ReadLen(tx, d.logger, mh)
+
+		return errors.Wrap(e, "failed to get size from database")
+	})
+
+	if err != nil {
+		if errors.Is(err, ds.ErrNotFound) {
+			return 0, ds.ErrNotFound
+		}
+		log.Debug("read block got", zap.Error(err))
+
+		return 0, err
+	}
+
+	return l, nil
 }
 
 // Delete implements Datastore.Delete.
@@ -225,65 +235,3 @@ func (d *MapDataStore) Batch() (ds.Batch, error) {
 func (d *MapDataStore) Close() error {
 	return nil
 }
-
-func readLen(tx *bbolt.Tx, log *zap.Logger, mh []byte) (int, error) {
-	bb := tx.Bucket(variable.BlockBucketName())
-	nb := tx.Bucket(variable.NodeBucketName())
-
-	v := bb.Get(mh)
-	if v == nil {
-		return -1, ds.ErrNotFound
-	}
-
-	var r = &dagserv.Block{}
-
-	if err := proto.Unmarshal(v, r); err != nil {
-		return -1, errors.Wrap(err, "failed to decode block Record from database raw value")
-	}
-	log.Debug("find block in KV, type", zap.String("type", r.Type.String()))
-	switch r.Type {
-	case dagserv.BlockType_proto:
-		n := nb.Get(r.CID)
-		if n == nil {
-			return -1, ds.ErrNotFound
-		}
-
-		return len(n), nil
-	case dagserv.BlockType_file:
-		return int(r.Size), nil
-	}
-
-	return -1, errNotValidBlock
-}
-
-func readBlock(tx *bbolt.Tx, mh []byte) ([]byte, error) {
-	bb := tx.Bucket(variable.BlockBucketName())
-	nb := tx.Bucket(variable.NodeBucketName())
-
-	v := bb.Get(mh)
-	if v == nil {
-		return nil, ds.ErrNotFound
-	}
-
-	var r = &dagserv.Block{}
-	if err := proto.Unmarshal(v, r); err != nil {
-		return nil, errors.Wrap(err, "failed to decode block Record from database raw value")
-	}
-	switch r.Type {
-	case dagserv.BlockType_proto:
-		p := nb.Get(r.CID)
-		if p == nil {
-			return nil, errors.Wrap(ds.ErrNotFound, "can't read proto node from node bucket")
-		}
-
-		return p, nil
-	case dagserv.BlockType_file:
-		var p, err = utils.ReadFileAt(r.Filename, r.Offset, r.Size)
-
-		return p, errors.Wrap(err, "can't read file block from disk")
-	}
-
-	return nil, errNotValidBlock
-}
-
-var errNotValidBlock = errors.New("not valid record in block bucket")

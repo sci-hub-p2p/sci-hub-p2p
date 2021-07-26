@@ -27,7 +27,7 @@ import (
 
 	"sci_hub_p2p/internal/utils"
 	"sci_hub_p2p/pkg/constants"
-	"sci_hub_p2p/pkg/dagserv"
+	"sci_hub_p2p/pkg/dag"
 	"sci_hub_p2p/pkg/logger"
 	"sci_hub_p2p/pkg/variable"
 )
@@ -53,7 +53,7 @@ var addCmd = &cobra.Command{
 				logger.Error("failed to close DataBase", zap.Error(err))
 			}
 		}(db)
-		err = dagserv.InitDB(db)
+		err = dag.InitDB(db)
 		if err != nil {
 			return errors.Wrap(err, "failed to initialize database")
 		}
@@ -62,7 +62,7 @@ var addCmd = &cobra.Command{
 
 		for i, file := range args {
 			logger.Info(fmt.Sprintf("processing file %0*d/%d %s", width, i, len(args), file))
-			if err := dagserv.AddZip(db, file); err != nil {
+			if err := dag.AddZip(db, file); err != nil {
 				logger.Error("failed to add files from zip archive", zap.Error(err))
 			}
 

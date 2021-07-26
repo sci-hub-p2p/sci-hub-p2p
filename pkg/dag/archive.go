@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package dagserv
+package dag
 
 import (
 	"context"
@@ -28,6 +28,7 @@ import (
 	"go.uber.org/zap"
 
 	"sci_hub_p2p/pkg/logger"
+	"sci_hub_p2p/pkg/storage"
 	"sci_hub_p2p/pkg/variable"
 )
 
@@ -37,7 +38,7 @@ func New(db *bbolt.DB) Archive {
 	return Archive{
 		m:   &sync.Mutex{},
 		db:  db,
-		log: logger.WithLogger("Archive"),
+		log: logger.WithLogger("DAGService").Named("Archive"),
 	}
 }
 
@@ -75,22 +76,22 @@ func (d Archive) Get(ctx context.Context, c cid.Cid) (ipld.Node, error) {
 		err := d.db.View(func(tx *bbolt.Tx) error {
 			var err error
 			b := tx.Bucket(variable.NodeBucketName())
-			n, err = ReadProtoNode(b, c)
+			n, err = storage.ReadProtoNode(b, c)
 
-			return err
+			return errors.Wrap(err, "failed to read Protobuf Node from storage")
 		})
 
-		return n, errors.Wrap(err, "can't read node from database")
+		return n, err
 	case cid.Raw:
 		err := d.db.View(func(tx *bbolt.Tx) error {
 			var err error
 			b := tx.Bucket(variable.NodeBucketName())
-			n, err = ReadFileStoreNode(b, c)
+			n, err = storage.ReadFileStoreNode(b, c)
 
-			return err
+			return errors.Wrap(err, "failed to read FileStore Node from storage")
 		})
 
-		return n, errors.Wrap(err, "can't read node from database")
+		return n, err
 	}
 
 	panic("un-supported cid data type")
@@ -109,15 +110,15 @@ func (d Archive) GetMany(ctx context.Context, cids []cid.Cid) <-chan *ipld.NodeO
 	return c
 }
 
-func (d Archive) Add(ctx context.Context, node ipld.Node) error {
-	panic("should not add node to Archive dagserv")
+func (d Archive) Add(_ context.Context, node ipld.Node) error {
+	panic("should not add node to Archive dag")
 }
 
-func (d Archive) AddMany(ctx context.Context, nodes []ipld.Node) error {
-	panic("should not add node to Archive dagserv")
+func (d Archive) AddMany(_ context.Context, nodes []ipld.Node) error {
+	panic("should not add node to Archive dag")
 }
 
-func (d Archive) Remove(ctx context.Context, c cid.Cid) error {
+func (d Archive) Remove(_ context.Context, c cid.Cid) error {
 	err := d.db.Update(func(tx *bbolt.Tx) error {
 		b := tx.Bucket(variable.NodeBucketName())
 		if b == nil {
@@ -130,7 +131,7 @@ func (d Archive) Remove(ctx context.Context, c cid.Cid) error {
 	return errors.Wrap(err, "can't delete node from database")
 }
 
-func (d Archive) RemoveMany(ctx context.Context, cids []cid.Cid) error {
+func (d Archive) RemoveMany(_ context.Context, cids []cid.Cid) error {
 	err := d.db.Batch(func(tx *bbolt.Tx) error {
 		b := tx.Bucket(variable.NodeBucketName())
 		if b == nil {
@@ -148,19 +149,17 @@ func (d Archive) RemoveMany(ctx context.Context, cids []cid.Cid) error {
 	return errors.Wrap(err, "can't delete node from database")
 }
 
-var errNotSupportNode = errors.New("not supported error")
-
 func add(tx *bbolt.Tx, node ipld.Node, baseOffset int64) error {
 	switch n := node.(type) {
 	case *merkledag.ProtoNode:
-		return errors.Wrap(SaveProtoNode(tx, node.Cid(), n), "can't save node to database")
+		return errors.Wrap(storage.SaveProtoNode(tx, node.Cid(), n), "can't save node to database")
 	case *posinfo.FilestoreNode:
 		length, _ := n.Size()
 		blockOffsetOfZip := baseOffset + int64(n.PosInfo.Offset)
 
-		return errors.Wrap(SaveFileStoreMeta(tx, node.Cid(), n.PosInfo.FullPath, blockOffsetOfZip, int64(length)),
+		return errors.Wrap(storage.SaveFileStoreMeta(tx, node.Cid(), n.PosInfo.FullPath, blockOffsetOfZip, int64(length)),
 			"can't save node to database")
 	}
 
-	return errNotSupportNode
+	return storage.ErrNotSupportNode
 }

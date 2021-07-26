@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "./pkg/dagserv";
+option go_package = "./pkg/pb";
 
 enum BlockType {
   file = 0;

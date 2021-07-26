@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package dagserv
+package dag
 
 import (
 	"io"
@@ -32,10 +32,10 @@ var _ interface {
 	io.Reader
 } = (*CompressedFile)(nil)
 
-func wrapZipFile(r io.Reader, abs string, size uint64) *CompressedFile {
+func wrapZipFile(r io.Reader, zipPath string, size uint64) *CompressedFile {
 	return &CompressedFile{
 		r:    r,
-		abs:  abs,
+		abs:  zipPath,
 		size: size,
 	}
 }

@@ -28,9 +28,9 @@ import (
 	"go.etcd.io/bbolt"
 	"go.uber.org/zap"
 
-	"sci_hub_p2p/pkg/dagserv"
+	"sci_hub_p2p/internal/utils"
+	"sci_hub_p2p/pkg/dag"
 	"sci_hub_p2p/pkg/logger"
-	"sci_hub_p2p/pkg/persist"
 	"sci_hub_p2p/pkg/variable"
 )
 
@@ -77,13 +77,13 @@ func LoadTestData() {
 			}
 			return nil
 		})
-		err = dagserv.InitDB(db)
+		err = dag.InitDB(db)
 		if err != nil {
 			logger.Fatal("", zap.Error(err))
 		}
 		go func(db *bbolt.DB) {
 			for file := range c {
-				err := dagserv.AddZip(db, file)
+				err := dag.AddZip(db, file)
 				if err != nil {
 					logger.Error("", zap.Error(err))
 				}
@@ -117,20 +117,20 @@ func LoadTestData() {
 	if err != nil {
 		logger.Fatal("", zap.Error(err))
 	}
-	err = dagserv.InitDB(db)
+	err = dag.InitDB(db)
 	if err != nil {
 		logger.Fatal("", zap.Error(err))
 	}
 
 	for i, srcDB := range dbSlice {
 		fmt.Println("copy db", i)
-		err = persist.CopyBucket(srcDB, db, variable.NodeBucketName())
+		err = utils.CopyBucket(srcDB, db, variable.NodeBucketName())
 
 		if err != nil {
 			logger.Error("", zap.Error(err))
 		}
 
-		err = persist.CopyBucket(srcDB, db, variable.BlockBucketName())
+		err = utils.CopyBucket(srcDB, db, variable.BlockBucketName())
 
 		if err != nil {
 			logger.Error("", zap.Error(err))

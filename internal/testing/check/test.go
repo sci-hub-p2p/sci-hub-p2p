@@ -29,8 +29,8 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 
-	"sci_hub_p2p/pkg/dagserv"
 	"sci_hub_p2p/pkg/logger"
+	"sci_hub_p2p/pkg/pb"
 	"sci_hub_p2p/pkg/variable"
 )
 
@@ -58,7 +58,7 @@ func LoadTestData() {
 
 			fmt.Println("multi hash:", mh.Name, mh.Length, mh.Code, len(mh.Digest))
 
-			var r = &dagserv.Block{}
+			var r = &pb.Block{}
 			err = proto.Unmarshal(v, r)
 			if err != nil {
 				return errors.Wrap(err, "failed to decode block Record from database raw value")

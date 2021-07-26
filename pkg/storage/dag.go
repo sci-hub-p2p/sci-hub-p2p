@@ -13,7 +13,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package dagserv
+// Package storage is the common storage layout for dag and data store
+package storage
 
 import (
 	"fmt"
@@ -22,20 +23,18 @@ import (
 	"github.com/ipfs/go-cid"
 	ipld "github.com/ipfs/go-ipld-format"
 	"github.com/ipfs/go-merkledag"
-	pb "github.com/ipfs/go-merkledag/pb"
+	merkledag_pb "github.com/ipfs/go-merkledag/pb"
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 
 	"sci_hub_p2p/internal/utils"
-	"sci_hub_p2p/pkg/logger"
+	"sci_hub_p2p/pkg/pb"
 	"sci_hub_p2p/pkg/variable"
 )
 
 func ReadFileStoreNode(b *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {
-	logger.WithLogger("dagserv.persist").Debug("ReadFileStoreNode", zap.String("CID", c.String()))
-	var v = &Block{}
+	var v = &pb.Block{}
 	data := b.Get(c.Bytes())
 	if data == nil {
 		return nil, ipld.ErrNotFound
@@ -60,7 +59,13 @@ func SaveFileStoreMeta(tx *bbolt.Tx, c cid.Cid, name string, offset, size int64)
 	nb := tx.Bucket(variable.NodeBucketName())
 	bb := tx.Bucket(variable.BlockBucketName())
 
-	var block = Block{Type: BlockType_file, CID: c.Bytes(), Offset: offset, Size: size, Filename: name}
+	var block = pb.Block{
+		Type:     pb.BlockType_file,
+		CID:      c.Bytes(),
+		Offset:   offset,
+		Size:     size,
+		Filename: name,
+	}
 
 	value, err := proto.Marshal(&block)
 	if err != nil {
@@ -79,7 +84,7 @@ func SaveProtoNode(tx *bbolt.Tx, c cid.Cid, n *merkledag.ProtoNode) error {
 	nb := tx.Bucket(variable.NodeBucketName())
 	bb := tx.Bucket(variable.BlockBucketName())
 
-	var v = Block{Type: BlockType_proto, CID: c.Bytes(), Size: int64(len(n.RawData()))}
+	var v = pb.Block{Type: pb.BlockType_proto, CID: c.Bytes(), Size: int64(len(n.RawData()))}
 	value, err := proto.Marshal(&v)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal block record to bytes")
@@ -116,7 +121,7 @@ func unmarshal(encoded []byte, c cid.Cid) (*merkledag.ProtoNode, error) {
 		MhLength: -1,
 	})
 
-	var pbn pb.PBNode
+	var pbn merkledag_pb.PBNode
 
 	if err := pbn.Unmarshal(encoded); err != nil {
 		return nil, errors.Wrap(err, "unmarshal failed")
@@ -142,3 +147,5 @@ func unmarshal(encoded []byte, c cid.Cid) (*merkledag.ProtoNode, error) {
 
 	return n, nil
 }
+
+var ErrNotSupportNode = errors.New("not supported error")
