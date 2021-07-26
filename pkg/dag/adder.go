@@ -47,18 +47,14 @@ func (a *Adder) Commit() error {
 	return errors.Wrap(a.tx.Commit(), "failed to commit change in database")
 }
 
-func (a *Adder) Add(ctx context.Context, node ipld.Node) error {
+func (a *Adder) Add(_ context.Context, node ipld.Node) error {
 	a.Lock()
 	defer a.Unlock()
 
 	return errors.Wrap(add(a.tx, node, a.baseOffset), "can't save node to database")
 }
 
-func (a *Adder) Get(ctx context.Context, c cid.Cid) (ipld.Node, error) {
-	panic("adder not support Get Node")
-}
-
-func (a *Adder) AddMany(ctx context.Context, nodes []ipld.Node) error {
+func (a *Adder) AddMany(_ context.Context, nodes []ipld.Node) error {
 	for _, node := range nodes {
 		err := add(a.tx, node, a.baseOffset)
 		if err != nil {
@@ -69,15 +65,19 @@ func (a *Adder) AddMany(ctx context.Context, nodes []ipld.Node) error {
 	return nil
 }
 
-// GetMany TODO: need to parallel this, but I'm lazy.
-func (a *Adder) GetMany(ctx context.Context, cids []cid.Cid) <-chan *ipld.NodeOption {
-	panic("get many")
+func (a *Adder) Get(_ context.Context, _ cid.Cid) (ipld.Node, error) {
+	panic("can't Get node from 'Adder'")
 }
 
-func (a *Adder) Remove(ctx context.Context, c cid.Cid) error {
+// GetMany TODO: need to parallel this, but I'm lazy.
+func (a *Adder) GetMany(_ context.Context, _ []cid.Cid) <-chan *ipld.NodeOption {
+	panic("can't GetMany node from 'Adder'")
+}
+
+func (a *Adder) Remove(_ context.Context, _ cid.Cid) error {
 	panic("can't Remove node from 'Adder'")
 }
 
-func (a *Adder) RemoveMany(ctx context.Context, cids []cid.Cid) error {
-	panic("can't RemoveMany node from 'adder'")
+func (a *Adder) RemoveMany(_ context.Context, _ []cid.Cid) error {
+	panic("can't RemoveMany node from 'Adder'")
 }
