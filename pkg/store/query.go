@@ -74,95 +74,94 @@ func resultGenerator(
 	return func(worker goprocess.Process) {
 		log.Debug("start process")
 		defer log.Debug("stop process")
-
 		err := db.View(func(tx *bbolt.Tx) error {
 			buck := tx.Bucket(variable.BlockBucketName())
 			c := buck.Cursor()
-
-			// If we need to sort, we'll need to collect all the
-			// results up-front.
+			// If we need to sort, we'll need to collect all the results up-front.
 			if len(orders) > 0 {
-				// Query and filter.
-				var entries []dsq.Entry
-				for k, v := c.First(); k != nil; k, v = c.Next() {
-					dk := MultiHashToKey(k).String()
-					e := dsq.Entry{Key: dk}
-					if !qrb.Query.KeysOnly {
-						// We copy _after_ filtering/sorting.
-						e.Value = v
-					}
-					if filter(q.Filters, e) {
-						continue
-					}
-					entries = append(entries, e)
-				}
-
-				// sort
-				dsq.Sort(orders, entries)
-
-				// offset/limit
-				entries = entries[qrb.Query.Offset:]
-				if qrb.Query.Limit > 0 {
-					if qrb.Query.Limit < len(entries) {
-						entries = entries[:qrb.Query.Limit]
-					}
-				}
-
-				// Send
-				for _, e := range entries {
-					// Copy late so we don't have to copy
-					// values we don't use.
-					e.Value = append(e.Value[0:0:0], e.Value...)
-					select {
-					case qrb.Output <- dsq.Result{Entry: e}:
-					case <-worker.Closing(): // client told us to end early.
-						return nil
-					}
-				}
-			} else {
-				// Otherwise, send results as we get them.
-				offset := 0
-				for k, v := c.First(); k != nil; k, v = c.Next() {
-					dk := MultiHashToKey(k).String()
-					e := dsq.Entry{Key: dk, Value: v}
-					if !qrb.Query.KeysOnly {
-						// We copy _after_ filtering.
-						e.Value = v
-					}
-
-					// pre-filter
-					if filter(q.Filters, e) {
-						continue
-					}
-
-					// now count this item towards the results
-					offset++
-
-					// check the offset
-					if offset < qrb.Query.Offset {
-						continue
-					}
-
-					e.Value = append(e.Value[0:0:0], e.Value...)
-					select {
-					case qrb.Output <- dsq.Result{Entry: e}:
-						offset++
-					case <-worker.Closing():
-						return nil
-					}
-
-					if qrb.Query.Limit > 0 &&
-						offset >= (qrb.Query.Offset+qrb.Query.Limit) {
-						// all done.
-						return nil
-					}
-				}
+				return sendWithOrder(orders, qrb, c, worker)
 			}
-
-			return nil
+			// Otherwise, send results as we get them.
+			return send(qrb, c, worker)
 		})
 		if err != nil {
 			log.Error("failed to Query keys from DB", zap.Error(err))
 		}
 	}
+}
+func sendWithOrder(orders []dsq.Order, qrb *dsq.ResultBuilder, c *bbolt.Cursor, worker goprocess.Process) error {
+	// Query and filter.
+	var entries []dsq.Entry
+	for k, v := c.First(); k != nil; k, v = c.Next() {
+		e := dsq.Entry{Key: MultiHashToKey(k).String()}
+		if !qrb.Query.KeysOnly {
+			// We copy _after_ filtering/sorting.
+			e.Value = v
+		}
+		if filter(qrb.Query.Filters, e) {
+			continue
+		}
+		entries = append(entries, e)
+	}
+
+	// sort
+	dsq.Sort(orders, entries)
+
+	// offset/limit
+	entries = entries[qrb.Query.Offset:]
+	if qrb.Query.Limit > 0 {
+		if qrb.Query.Limit < len(entries) {
+			entries = entries[:qrb.Query.Limit]
+		}
+	}
+
+	// Send
+	for _, e := range entries {
+		// Copy late so we don't have to copy
+		// values we don't use.
+		e.Value = append(e.Value[0:0:0], e.Value...)
+		select {
+		case qrb.Output <- dsq.Result{Entry: e}:
+		case <-worker.Closing(): // client told us to end early.
+			return nil
+		}
+	}
+
+	return nil
+}
+
+func send(qrb *dsq.ResultBuilder, c *bbolt.Cursor, worker goprocess.Process) error {
+	offset := 0
+	for k, v := c.First(); k != nil; k, v = c.Next() {
+		e := dsq.Entry{Key: MultiHashToKey(k).String(), Value: v}
+		if !qrb.Query.KeysOnly {
+			// We copy _after_ filtering.
+			e.Value = v
+		}
+		// pre-filter
+		if filter(qrb.Query.Filters, e) {
+			continue
+		}
+		// now count this item towards the results
+		offset++
+		// check the offset
+		if offset < qrb.Query.Offset {
+			continue
+		}
+
+		e.Value = append(e.Value[0:0:0], e.Value...)
+		select {
+		case qrb.Output <- dsq.Result{Entry: e}:
+			offset++
+		case <-worker.Closing():
+			return nil
+		}
+		if qrb.Query.Limit > 0 &&
+			offset >= (qrb.Query.Offset+qrb.Query.Limit) {
+			// all done.
+			return nil
+		}
+	}
+
+	return nil
 }
