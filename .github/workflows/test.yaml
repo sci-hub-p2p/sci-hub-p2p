@@ -40,9 +40,10 @@ jobs:
           path: |
             ${{ env.GOCACHE }}
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-1-test-${{ hashFiles('**/go.sum') }}
+          key: ${{ runner.os }}-go-1-${{ hashFiles('**/go.sum') }}-test
           restore-keys: |
-            ${{ runner.os }}-go-1-test-
+            ${{ runner.os }}-go-1-${{ hashFiles('**/go.sum') }}-
+            ${{ runner.os }}-go-1-
 
       - run: make install
 
