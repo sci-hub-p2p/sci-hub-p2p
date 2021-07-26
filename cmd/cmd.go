@@ -35,7 +35,7 @@ import (
 var rootCmd = &cobra.Command{
 	Use:   "sci-hub",
 	Short: "sci-hub-p2p is cli tool to fetch paper from p2p network.",
-	Long: "Complete documentation is available at" +
+	Long: "Complete documentation is available at " +
 		"https://github.com/Trim21/sci-hub-p2p/wiki",
 	Version:       variable.Ref,
 	SilenceUsage:  true,
@@ -57,6 +57,7 @@ var debugCmd = &cobra.Command{
 	Use:          "debug",
 	Short:        "show debug message",
 	SilenceUsage: true,
+	Hidden:       true,
 	Run: func(cmd *cobra.Command, args []string) {
 		var buf bytes.Buffer
 		buf.WriteString("=====build into=====\n")
