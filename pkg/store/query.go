@@ -29,7 +29,7 @@ import (
 
 func queryBolt(d *MapDataStore, q dsq.Query, log *zap.Logger) (dsq.Results, error) {
 	qrb := dsq.NewResultBuilder(q)
-	qrb.Process.Go(resultGenerator(log, d.db, q, qrb))
+	qrb.Process.Go(resultGenerator(log, d.db, qrb))
 
 	// go wait on the worker (without signaling close)
 
@@ -58,13 +58,11 @@ func filter(filters []dsq.Filter, entry dsq.Entry) bool {
 	return false
 }
 
-func resultGenerator(
-	log *zap.Logger, db *bbolt.DB, q dsq.Query, qrb *dsq.ResultBuilder,
-) func(worker goprocess.Process) {
+func resultGenerator(log *zap.Logger, db *bbolt.DB, qrb *dsq.ResultBuilder) func(worker goprocess.Process) {
 	// Special case order by key.
-	orders := q.Orders
+	orders := qrb.Query.Orders
 	if len(orders) > 0 {
-		switch q.Orders[0].(type) {
+		switch qrb.Query.Orders[0].(type) {
 		case dsq.OrderByKey, *dsq.OrderByKey:
 			// Already ordered by key.
 			orders = nil

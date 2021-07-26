@@ -40,7 +40,6 @@ func DefaultPrefix() cid.Prefix {
 // Add a reader to given dag service.
 func Add(service ipld.DAGService, r io.Reader) (ipld.Node, error) {
 	_, ok := r.(files.FileInfo)
-
 	dbp := helpers.DagBuilderParams{
 		Dagserv:    service,
 		NoCopy:     ok,
