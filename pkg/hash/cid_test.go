@@ -28,17 +28,6 @@ import (
 	"sci_hub_p2p/pkg/indexes"
 )
 
-func TestCID1(t *testing.T) {
-	t.Parallel()
-
-	b, err := os.ReadFile("D:\\files\\libgen.scimag11206000-11206999\\1.459080.pdf")
-	assert.Nil(t, err)
-
-	a, err := hash.Cid(bytes.NewBuffer(b))
-	assert.Nil(t, err)
-	fmt.Println(a.String())
-}
-
 func TestCID(t *testing.T) {
 	t.Parallel()
 	e, err := cid.Parse("bafykbzaceavd6aaauynuqgkkrg6lapmno5crbsyinmp3um5sn3daztzsghvl2")

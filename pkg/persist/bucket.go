@@ -31,7 +31,6 @@ func CopyBucket(src, dst *bbolt.DB, name []byte) error {
 			srcBucket := srcTx.Bucket(name)
 
 			return srcBucket.ForEach(func(k, v []byte) error {
-
 				return dstBucket.Put(k, v)
 			})
 		})
