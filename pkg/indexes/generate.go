@@ -128,7 +128,7 @@ func zipFileToRecord(file *zip.File, currentZipOffset, pieceLength int64, zipFil
 
 	// this will disable the CRC32 checksum of zip file reader
 	// there are some file (especially 59100000-59199999, info hash`1a96f296cfec8a326a94b8d984f7378949ef7dfb` )
-	// has bad crc32, we will do it manually and logger.WithLogger("indexes") a error.
+	// has bad crc32, we will do it manually and log a error.
 	oldCrc32 := file.CRC32
 	file.CRC32 = 0
 
