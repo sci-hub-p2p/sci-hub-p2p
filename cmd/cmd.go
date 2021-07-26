@@ -48,6 +48,9 @@ var rootCmd = &cobra.Command{
 
 		return nil
 	},
+	PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
+		return logger.Sync()
+	},
 }
 
 var debugCmd = &cobra.Command{

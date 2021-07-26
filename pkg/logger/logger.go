@@ -16,71 +16,104 @@
 package logger
 
 import (
-	"time"
+	"os"
 
+	"github.com/natefinch/lumberjack"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
-	"github.com/snowzach/rotatefilehook"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	"sci_hub_p2p/cmd/flag"
 )
 
+const defaultLogFileMaxSize = 100 // MB
+
+var log *zap.Logger
+
 func Setup() error {
-	if flag.Debug {
-		log.SetLevel(log.DebugLevel)
+	consoleEncoding := zapcore.EncoderConfig{
+		TimeKey:        "time",
+		LevelKey:       "level",
+		NameKey:        "logger",
+		CallerKey:      "caller",
+		MessageKey:     "msg",
+		StacktraceKey:  "",
+		LineEnding:     zapcore.DefaultLineEnding,
+		EncodeLevel:    zapcore.LowercaseColorLevelEncoder,
+		EncodeTime:     zapcore.TimeEncoderOfLayout("01-02 15:04:05"),
+		EncodeDuration: zapcore.SecondsDurationEncoder,
+		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
-	log.SetFormatter(&log.TextFormatter{
-		ForceQuote:       true,
-		TimestampFormat:  "2006-01-02 15:04:05.000",
-		DisableSorting:   false,
-		PadLevelText:     true,
-		QuoteEmptyFields: true,
+	jsonEncoding := zapcore.EncoderConfig{
+		TimeKey:        "time",
+		LevelKey:       "level",
+		NameKey:        "logger",
+		CallerKey:      "caller",
+		MessageKey:     "msg",
+		LineEnding:     zapcore.DefaultLineEnding,
+		EncodeLevel:    zapcore.LowercaseLevelEncoder,
+		EncodeTime:     zapcore.ISO8601TimeEncoder,
+		EncodeDuration: zapcore.SecondsDurationEncoder,
+		EncodeCaller:   zapcore.ShortCallerEncoder,
+	}
+
+	var infoLevel = zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+		return lvl >= zapcore.InfoLevel
 	})
-	if flag.LogFile != "" {
-		rotateFileHook, err := rotatefilehook.NewRotateFileHook(rotatefilehook.RotateFileConfig{
-			Filename: flag.LogFile,
-			Level:    log.InfoLevel,
-			Formatter: &log.JSONFormatter{
-				TimestampFormat: time.RFC822,
-			},
-		})
-		if err != nil {
-			return errors.Wrap(err, "can't save log to file")
+	var onlyInfo = zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+		return lvl <= zapcore.InfoLevel
+	})
+	var errorLevel = zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+		return lvl >= zapcore.ErrorLevel
+	})
+	if !flag.Debug {
+		onlyInfo = func(lvl zapcore.Level) bool {
+			return lvl == zapcore.InfoLevel
 		}
-		log.AddHook(rotateFileHook)
 	}
+	cores := []zapcore.Core{
+		zapcore.NewCore(zapcore.NewConsoleEncoder(consoleEncoding), zapcore.NewMultiWriteSyncer(os.Stdout), onlyInfo),
+		zapcore.NewCore(zapcore.NewConsoleEncoder(consoleEncoding), zapcore.NewMultiWriteSyncer(os.Stderr), errorLevel),
+	}
+
+	if flag.LogFile != "" {
+		lumberJackLogger := &lumberjack.Logger{
+			Filename: flag.LogFile,
+			MaxSize:  defaultLogFileMaxSize,
+			Compress: false,
+		}
+		cores = append(cores,
+			zapcore.NewCore(zapcore.NewJSONEncoder(jsonEncoding), zapcore.AddSync(lumberJackLogger), infoLevel))
+	}
+	log = zap.New(zapcore.NewTee(cores...))
 
 	return nil
 }
 
-func WithField(key string, value interface{}) *log.Entry {
-	return log.WithField(key, value)
+func WithLogger(name string) *zap.Logger {
+	return log.Named(name)
 }
 
-func Infof(format string, args ...interface{}) {
-	log.Infof(format, args...)
+func Debug(msg string, fields ...zapcore.Field) {
+	log.Debug(msg, fields...)
 }
 
-func Info(msg ...interface{}) {
-	log.Infoln(msg...)
+func Info(msg string, fields ...zapcore.Field) {
+	log.Info(msg, fields...)
 }
 
-func Debugf(format string, args ...interface{}) {
-	log.Debugf(format, args...)
+func Warn(msg string, fields ...zapcore.Field) {
+	log.Warn(msg, fields...)
 }
 
-func Debug(args ...interface{}) {
-	log.Debugln(args...)
+func Error(msg string, fields ...zapcore.Field) {
+	log.Error(msg, fields...)
 }
 
-func Fatal(args ...interface{}) {
-	log.Fatalln(args...)
+func Fatal(msg string, fields ...zapcore.Field) {
+	log.Fatal(msg, fields...)
 }
 
-func Error(args ...interface{}) {
-	log.Error(args...)
-}
-
-func Errorf(format string, args ...interface{}) {
-	log.Errorf(format, args...)
+func Sync() error {
+	return errors.Wrap(log.Sync(), "failed to flush log to disk")
 }
