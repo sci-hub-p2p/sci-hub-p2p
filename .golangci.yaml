@@ -240,5 +240,5 @@ issues:
     - path: '.*_test\.go'
       linters: [gocritic, nlreturn]
 
-    - source: 'var log'
+    - source: "var log"
       linters: [gochecknoglobals]
