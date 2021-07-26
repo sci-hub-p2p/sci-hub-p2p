@@ -22,6 +22,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 
 	"sci_hub_p2p/cmd/flag"
 	"sci_hub_p2p/internal/torrent"
@@ -71,16 +72,16 @@ var genCmd = &cobra.Command{
 			}
 		}
 
-		fmt.Println("start generate indexes for torrent", t.Name)
+		logger.Info("start generate indexes for torrent", zap.String("torrent", t.Name))
 		err = indexes.Generate(dataDir, out, t, flag.DisableProgressBar)
 
 		if err != nil {
 			return errors.Wrapf(err, "can't generate indexes from torrent %s", t.Name)
 		}
 
-		logger.Debugf("data: %s\n", dataDir)
-		logger.Debugf("torrent: %s\n", torrentPath)
-		logger.Debugf("out dir: %s\n", out)
+		logger.Debug("data: " + dataDir)
+		logger.Debug("torrent: " + torrentPath)
+		logger.Debug("out dir: " + out)
 
 		return err
 	},

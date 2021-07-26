@@ -35,6 +35,7 @@ import (
 	"github.com/itchio/lzma"
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
+	"go.uber.org/zap"
 
 	"sci_hub_p2p/cmd/flag"
 	"sci_hub_p2p/internal/torrent"
@@ -127,7 +128,7 @@ func zipFileToRecord(file *zip.File, currentZipOffset, pieceLength int64, zipFil
 
 	// this will disable the CRC32 checksum of zip file reader
 	// there are some file (especially 59100000-59199999, info hash`1a96f296cfec8a326a94b8d984f7378949ef7dfb` )
-	// has bad crc32, we will do it manually and log a error.
+	// has bad crc32, we will do it manually and logger.WithLogger("indexes") a error.
 	oldCrc32 := file.CRC32
 	file.CRC32 = 0
 
@@ -149,10 +150,11 @@ func zipFileToRecord(file *zip.File, currentZipOffset, pieceLength int64, zipFil
 			m := md5.New()
 			m.Write(raw)
 			md5Sum := m.Sum(nil)
-			logger.WithField("file", path.Clean(file.Name)).
-				WithField("zip", zipFileName).
-				WithField("m", hex.EncodeToString(md5Sum)).
-				Error("crc32 checksum mismatch")
+			logger.Error("crc32 checksum mismatch",
+				zap.String("file", path.Clean(file.Name)),
+				zap.String("zip", zipFileName),
+				zap.String("md5", hex.EncodeToString(md5Sum)),
+			)
 		}
 	}()
 
@@ -196,18 +198,17 @@ func Generate(dataDir, outDir string, t *torrent.Torrent, disableProgress bool) 
 			for i := range in {
 				err := IndexZipFile(c, dataDir, i, t)
 				if err != nil {
-					logger.Error(err)
+					logger.Error("failed to generate index from zip", zap.Error(err))
 
 					break
 				}
 			}
-			logger.Debugf("exit worker %d", index+1)
+			logger.Debug("exit worker", zap.Int("worker", index+1))
 			wg.Done()
 		}(i, t)
 	}
 
-	logger.Debug("skip hash check here because files are too big,",
-		"hopefully we didn't generate indexes from wrong data")
+	logger.Debug("skip hash check here because files are too big, hopefully we didn't generate indexes from wrong data")
 
 	for i := range t.Files {
 		in <- i
@@ -260,7 +261,7 @@ func collectResult(
 	bar.Finish()
 
 	if err != nil {
-		logger.Error("can't save indexes:", err)
+		logger.Error("can't save indexes:", zap.Error(err))
 
 		return
 	}
@@ -270,12 +271,12 @@ func collectResult(
 	})
 
 	if err != nil {
-		logger.Error("can't dump database", err)
+		logger.Error("can't dump database", zap.Error(err))
 	}
 
 	logger.Debug("sync database")
 	if err := db.Sync(); err != nil {
-		logger.Error(err)
+		logger.Error("failed to flush data to disk", zap.Error(err))
 	}
 	done <- 1
 }
@@ -291,7 +292,7 @@ func dumpToFile(tx *bbolt.Tx, name string) (err error) {
 			if err == nil {
 				err = e
 			} else {
-				logger.Error(e)
+				logger.Error("failed to dump indexes to file", zap.Error(e))
 			}
 		}
 	}()
@@ -309,7 +310,7 @@ func dumpToFile(tx *bbolt.Tx, name string) (err error) {
 			if err == nil {
 				err = e
 			} else {
-				logger.Error(e)
+				logger.Error("failed to dump indexes to file", zap.Error(e))
 			}
 		}
 	}()
