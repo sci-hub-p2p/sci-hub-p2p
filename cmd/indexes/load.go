@@ -33,7 +33,7 @@ import (
 	"sci_hub_p2p/internal/utils"
 	"sci_hub_p2p/pkg/constants"
 	"sci_hub_p2p/pkg/logger"
-	"sci_hub_p2p/pkg/vars"
+	"sci_hub_p2p/pkg/variable"
 )
 
 var loadCmd = &cobra.Command{
@@ -41,13 +41,13 @@ var loadCmd = &cobra.Command{
 	Short:         "Load indexes into database.",
 	Example:       "indexes load /path/to/*.jsonlines.lzma [--glob '/path/to/data/*.jsonlines.lzma']",
 	SilenceErrors: false,
-	PreRunE:       utils.EnsureDir(vars.GetAppBaseDir()),
+	PreRunE:       utils.EnsureDir(variable.GetAppBaseDir()),
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		args, err = utils.MergeGlob(args, glob)
 		if err != nil {
 			return errors.Wrap(err, "can't load any index files")
 		}
-		db, err := bbolt.Open(vars.GetPaperBoltPath(), constants.DefaultFilePerm, bbolt.DefaultOptions)
+		db, err := bbolt.Open(variable.GetPaperBoltPath(), constants.DefaultFilePerm, bbolt.DefaultOptions)
 		if err != nil {
 			return errors.Wrap(err, "cant' open database file, maybe another process is running")
 		}

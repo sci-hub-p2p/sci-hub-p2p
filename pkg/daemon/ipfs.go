@@ -41,7 +41,7 @@ import (
 	"sci_hub_p2p/pkg/dagserv"
 	"sci_hub_p2p/pkg/logger"
 	"sci_hub_p2p/pkg/store"
-	"sci_hub_p2p/pkg/vars"
+	"sci_hub_p2p/pkg/variable"
 )
 
 const interval = time.Second * 20
@@ -153,7 +153,7 @@ func startHTTPServer(d ds.Datastore) {
 }
 
 func bootIPFSDaemon(ctx context.Context, dht routing.ContentRouting) {
-	nodeName := fmt.Sprintf("sci-hub-p2p %s", vars.Ref)
+	nodeName := fmt.Sprintf("sci-hub-p2p %s", variable.Ref)
 	logger.Debug("Announcing ourselves...")
 	routingDiscovery := discovery.NewRoutingDiscovery(dht)
 	discovery.Advertise(ctx, routingDiscovery, nodeName)

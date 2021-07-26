@@ -23,7 +23,7 @@ import (
 	"sci_hub_p2p/internal/client"
 	"sci_hub_p2p/internal/utils"
 	"sci_hub_p2p/pkg/constants"
-	"sci_hub_p2p/pkg/vars"
+	"sci_hub_p2p/pkg/variable"
 )
 
 var Cmd = &cobra.Command{
@@ -36,7 +36,7 @@ var fetchCmd = &cobra.Command{
 	Short:         "fetch a paper from p2p network",
 	Example:       "paper fetch --doi '10.1145/1327452.1327492' -o map-reduce.pdf",
 	SilenceErrors: false,
-	PreRunE:       utils.EnsureDir(vars.GetAppTmpDir()),
+	PreRunE:       utils.EnsureDir(variable.GetAppTmpDir()),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var b, err = client.Fetch(doi)
 		if err != nil {

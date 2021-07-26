@@ -29,20 +29,20 @@ import (
 	"sci_hub_p2p/pkg/constants"
 	"sci_hub_p2p/pkg/dagserv"
 	"sci_hub_p2p/pkg/logger"
-	"sci_hub_p2p/pkg/vars"
+	"sci_hub_p2p/pkg/variable"
 )
 
 var addCmd = &cobra.Command{
 	Use:     "add",
 	Short:   "add all files in a zip files",
-	PreRunE: utils.EnsureDir(vars.GetAppBaseDir()),
+	PreRunE: utils.EnsureDir(variable.GetAppBaseDir()),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var err error
 		args, err = utils.MergeGlob(args, glob)
 		if err != nil {
 			return errors.Wrap(err, "no zip files to add")
 		}
-		db, err := bbolt.Open(filepath.Join(vars.GetAppBaseDir(), "ipfs.block.bolt"),
+		db, err := bbolt.Open(filepath.Join(variable.GetAppBaseDir(), "ipfs.block.bolt"),
 			constants.DefaultFilePerm, &bbolt.Options{NoSync: true})
 		if err != nil {
 			return errors.Wrap(err, "failed to open database")

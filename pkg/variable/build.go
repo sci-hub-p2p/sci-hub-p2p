@@ -13,40 +13,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package vars
+package variable
 
-import (
-	"os"
-	"path/filepath"
-)
-
-var appBaseDir string
-
-func GetAppBaseDir() string {
-	if appBaseDir != "" {
-		return appBaseDir
-	}
-	appBaseDir = filepath.Clean(os.ExpandEnv("$HOME/.sci-hub-p2p"))
-
-	return appBaseDir
-}
-
-func GetAppTmpDir() string {
-	return filepath.Join(GetAppBaseDir(), "tmp")
-}
-
-func GetPaperBoltPath() string {
-	return filepath.Join(GetAppBaseDir(), "papers.bolt")
-}
-
-func GetTorrentStoragePath() string {
-	return filepath.Join(GetAppBaseDir(), "torrents")
-}
-
-func NodeBucketName() []byte {
-	return []byte("node-v0")
-}
-
-func BlockBucketName() []byte {
-	return []byte("block-v0")
-}
+var Ref = "development"
+var Commit = "00000000"
+var Builder string
+var BuildTime string

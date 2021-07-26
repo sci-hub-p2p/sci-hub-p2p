@@ -31,7 +31,7 @@ import (
 
 	"sci_hub_p2p/pkg/dagserv"
 	"sci_hub_p2p/pkg/logger"
-	"sci_hub_p2p/pkg/vars"
+	"sci_hub_p2p/pkg/variable"
 )
 
 func main() {
@@ -46,8 +46,8 @@ func LoadTestData() {
 	defer db.Close()
 
 	err = db.View(func(tx *bbolt.Tx) error {
-		nb := tx.Bucket(vars.NodeBucketName())
-		bb := tx.Bucket(vars.BlockBucketName())
+		nb := tx.Bucket(variable.NodeBucketName())
+		bb := tx.Bucket(variable.BlockBucketName())
 		return bb.ForEach(func(k, v []byte) error {
 			fmt.Println()
 			fmt.Println("checking", hex.EncodeToString(k))

@@ -31,7 +31,7 @@ import (
 	"sci_hub_p2p/pkg/constants/size"
 	"sci_hub_p2p/pkg/logger"
 	"sci_hub_p2p/pkg/persist"
-	"sci_hub_p2p/pkg/vars"
+	"sci_hub_p2p/pkg/variable"
 )
 
 var Cmd = &cobra.Command{
@@ -44,14 +44,14 @@ var loadCmd = &cobra.Command{
 	Short:         "Load torrents into database.",
 	Example:       "torrent load /path/to/*.torrents [--glob '/path/to/data/*.torrents']",
 	SilenceErrors: false,
-	PreRunE:       utils.EnsureDir(vars.GetTorrentStoragePath()),
+	PreRunE:       utils.EnsureDir(variable.GetTorrentStoragePath()),
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		args, err = utils.MergeGlob(args, glob)
 		if err != nil {
 			return errors.Wrap(err, "can't load any torrent files")
 		}
 
-		db, err := bbolt.Open(filepath.Join(vars.GetAppBaseDir(), "torrent.bolt"),
+		db, err := bbolt.Open(filepath.Join(variable.GetAppBaseDir(), "torrent.bolt"),
 			constants.DefaultFilePerm, bbolt.DefaultOptions)
 
 		if err != nil {
@@ -82,7 +82,7 @@ var loadCmd = &cobra.Command{
 				if err != nil {
 					return err
 				}
-				dst := filepath.Join(vars.GetTorrentStoragePath(), f.InfoHash+".torrent")
+				dst := filepath.Join(variable.GetTorrentStoragePath(), f.InfoHash+".torrent")
 				err = utils.Copy(file, dst)
 				if err != nil {
 					return errors.Wrapf(err, "can't copy torrent file to %s", dst)
@@ -112,7 +112,7 @@ var getCmd = &cobra.Command{
 		}
 
 		var db *bbolt.DB
-		db, err = bbolt.Open(filepath.Join(vars.GetAppBaseDir(), "torrent.bolt"),
+		db, err = bbolt.Open(filepath.Join(variable.GetAppBaseDir(), "torrent.bolt"),
 			constants.DefaultFilePerm, bbolt.DefaultOptions)
 		if err != nil {
 			return errors.Wrap(err, "cant' open database file, maybe another process is running?")

@@ -31,7 +31,7 @@ import (
 	"sci_hub_p2p/pkg/dagserv"
 	"sci_hub_p2p/pkg/logger"
 	"sci_hub_p2p/pkg/persist"
-	"sci_hub_p2p/pkg/vars"
+	"sci_hub_p2p/pkg/variable"
 )
 
 func main() {
@@ -67,11 +67,11 @@ func LoadTestData() {
 		}
 		dbSlice = append(dbSlice, db)
 		db.Update(func(tx *bbolt.Tx) error {
-			err := tx.DeleteBucket(vars.BlockBucketName())
+			err := tx.DeleteBucket(variable.BlockBucketName())
 			if err != nil {
 				logger.Fatal("", zap.Error(err))
 			}
-			err = tx.DeleteBucket(vars.NodeBucketName())
+			err = tx.DeleteBucket(variable.NodeBucketName())
 			if err != nil {
 				logger.Fatal("", zap.Error(err))
 			}
@@ -124,13 +124,13 @@ func LoadTestData() {
 
 	for i, srcDB := range dbSlice {
 		fmt.Println("copy db", i)
-		err = persist.CopyBucket(srcDB, db, vars.NodeBucketName())
+		err = persist.CopyBucket(srcDB, db, variable.NodeBucketName())
 
 		if err != nil {
 			logger.Error("", zap.Error(err))
 		}
 
-		err = persist.CopyBucket(srcDB, db, vars.BlockBucketName())
+		err = persist.CopyBucket(srcDB, db, variable.BlockBucketName())
 
 		if err != nil {
 			logger.Error("", zap.Error(err))

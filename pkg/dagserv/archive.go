@@ -28,7 +28,7 @@ import (
 	"go.uber.org/zap"
 
 	"sci_hub_p2p/pkg/logger"
-	"sci_hub_p2p/pkg/vars"
+	"sci_hub_p2p/pkg/variable"
 )
 
 var _ ipld.DAGService = (*ZipArchive)(nil)
@@ -43,11 +43,11 @@ func New(db *bbolt.DB) ZipArchive {
 
 func InitDB(db *bbolt.DB) error {
 	return errors.Wrap(db.Update(func(tx *bbolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists(vars.NodeBucketName())
+		_, err := tx.CreateBucketIfNotExists(variable.NodeBucketName())
 		if err != nil {
 			return errors.Wrap(err, "can't create node bucket")
 		}
-		_, err = tx.CreateBucketIfNotExists(vars.BlockBucketName())
+		_, err = tx.CreateBucketIfNotExists(variable.BlockBucketName())
 		if err != nil {
 			return errors.Wrap(err, "can't create block bucket")
 		}
@@ -74,7 +74,7 @@ func (d ZipArchive) Get(ctx context.Context, c cid.Cid) (ipld.Node, error) {
 	case cid.DagProtobuf:
 		err := d.db.View(func(tx *bbolt.Tx) error {
 			var err error
-			b := tx.Bucket(vars.NodeBucketName())
+			b := tx.Bucket(variable.NodeBucketName())
 			n, err = ReadProtoNode(b, c)
 
 			return err
@@ -84,7 +84,7 @@ func (d ZipArchive) Get(ctx context.Context, c cid.Cid) (ipld.Node, error) {
 	case cid.Raw:
 		err := d.db.View(func(tx *bbolt.Tx) error {
 			var err error
-			b := tx.Bucket(vars.NodeBucketName())
+			b := tx.Bucket(variable.NodeBucketName())
 			n, err = ReadFileStoreNode(b, c)
 
 			return err
@@ -119,7 +119,7 @@ func (d ZipArchive) AddMany(ctx context.Context, nodes []ipld.Node) error {
 
 func (d ZipArchive) Remove(ctx context.Context, c cid.Cid) error {
 	err := d.db.Update(func(tx *bbolt.Tx) error {
-		b := tx.Bucket(vars.NodeBucketName())
+		b := tx.Bucket(variable.NodeBucketName())
 		if b == nil {
 			return nil
 		}
@@ -132,7 +132,7 @@ func (d ZipArchive) Remove(ctx context.Context, c cid.Cid) error {
 
 func (d ZipArchive) RemoveMany(ctx context.Context, cids []cid.Cid) error {
 	err := d.db.Batch(func(tx *bbolt.Tx) error {
-		b := tx.Bucket(vars.NodeBucketName())
+		b := tx.Bucket(variable.NodeBucketName())
 		if b == nil {
 			return nil
 		}

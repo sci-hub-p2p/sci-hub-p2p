@@ -30,7 +30,7 @@ import (
 	"sci_hub_p2p/internal/utils"
 	"sci_hub_p2p/pkg/dagserv"
 	"sci_hub_p2p/pkg/logger"
-	"sci_hub_p2p/pkg/vars"
+	"sci_hub_p2p/pkg/variable"
 )
 
 // Here are some basic store implementations.
@@ -140,7 +140,7 @@ func (d *MapDataStore) Has(key ds.Key) (exists bool, err error) {
 			return false, errors.Wrap(err, "failed to decode key to multi HASH")
 		}
 		_ = d.db.View(func(tx *bbolt.Tx) error {
-			b := tx.Bucket(vars.BlockBucketName())
+			b := tx.Bucket(variable.BlockBucketName())
 			if b.Get(mh) != nil {
 				found = true
 			}
@@ -227,8 +227,8 @@ func (d *MapDataStore) Close() error {
 }
 
 func readLen(tx *bbolt.Tx, log *zap.Logger, mh []byte) (int, error) {
-	bb := tx.Bucket(vars.BlockBucketName())
-	nb := tx.Bucket(vars.NodeBucketName())
+	bb := tx.Bucket(variable.BlockBucketName())
+	nb := tx.Bucket(variable.NodeBucketName())
 
 	v := bb.Get(mh)
 	if v == nil {
@@ -257,8 +257,8 @@ func readLen(tx *bbolt.Tx, log *zap.Logger, mh []byte) (int, error) {
 }
 
 func readBlock(tx *bbolt.Tx, mh []byte) ([]byte, error) {
-	bb := tx.Bucket(vars.BlockBucketName())
-	nb := tx.Bucket(vars.NodeBucketName())
+	bb := tx.Bucket(variable.BlockBucketName())
+	nb := tx.Bucket(variable.NodeBucketName())
 
 	v := bb.Get(mh)
 	if v == nil {

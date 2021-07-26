@@ -34,11 +34,11 @@ import (
 	"sci_hub_p2p/pkg/indexes"
 	"sci_hub_p2p/pkg/logger"
 	"sci_hub_p2p/pkg/persist"
-	"sci_hub_p2p/pkg/vars"
+	"sci_hub_p2p/pkg/variable"
 )
 
 func Fetch(doi string) ([]byte, error) {
-	db, err := bbolt.Open(vars.GetPaperBoltPath(), constants.DefaultFilePerm, bbolt.DefaultOptions)
+	db, err := bbolt.Open(variable.GetPaperBoltPath(), constants.DefaultFilePerm, bbolt.DefaultOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't open indexes database file")
 	}
@@ -92,7 +92,7 @@ func (l nilLogger) Log(_ log.Msg) {
 
 func getClient() (*torrent.Client, error) {
 	cfg := torrent.NewDefaultClientConfig()
-	cfg.DefaultStorage = storage.NewBoltDB(vars.GetAppTmpDir())
+	cfg.DefaultStorage = storage.NewBoltDB(variable.GetAppTmpDir())
 	cfg.Bep20 = "-GT0003-"
 	cfg.Logger = log.Logger{LoggerImpl: nilLogger{}}
 	cfg.DisableUTP = true
