@@ -144,7 +144,7 @@ linters-settings:
     # '\t' is counted as 1 character by default, and can be changed with the tab-width option
     line-length: 120
     # tab width in spaces. Default to 1.
-    tab-width: 2
+    tab-width: 4
 
   maligned:
     # print struct with more effective memory layout or not, false by default
