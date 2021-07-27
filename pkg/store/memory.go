@@ -85,7 +85,7 @@ func (d *MapDataStore) Get(key ds.Key) ([]byte, error) {
 	log.Debug("didn't find in memory, now check it in KV database")
 	mh, err := dshelp.DsKeyToMultihash(ds.NewKey(key.BaseNamespace()))
 	if err != nil {
-		d.logger.Error("block key is not a valid multi hash", logger.PlainError(err))
+		d.logger.Error("block key is not a valid multi hash", zap.Error(err))
 
 		return nil, errors.Wrapf(err, "failed to decode key to multihash for key %s", key)
 	}
@@ -106,7 +106,7 @@ func (d *MapDataStore) Get(key ds.Key) ([]byte, error) {
 		if errors.Is(err, ds.ErrNotFound) {
 			return nil, ds.ErrNotFound
 		}
-		log.Debug("read block got", logger.PlainError(err))
+		log.Debug("read block got", zap.Error(err))
 
 		return nil, err
 	}
@@ -193,7 +193,7 @@ func (d *MapDataStore) GetSize(key ds.Key) (int, error) {
 		if errors.Is(err, ds.ErrNotFound) {
 			return 0, ds.ErrNotFound
 		}
-		log.Debug("read block got", logger.PlainError(err))
+		log.Debug("read block got", zap.Error(err))
 
 		return 0, err
 	}

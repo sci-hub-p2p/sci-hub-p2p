@@ -23,6 +23,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"go.etcd.io/bbolt"
+	"go.uber.org/zap"
 
 	"sci_hub_p2p/internal/torrent"
 	"sci_hub_p2p/internal/utils"
@@ -63,7 +64,7 @@ var loadCmd = &cobra.Command{
 				if err == nil {
 					err = e
 				} else {
-					logger.Error("", logger.PlainError(e))
+					logger.Error("", zap.Error(e))
 				}
 			}
 		}(db)
@@ -123,7 +124,7 @@ var getCmd = &cobra.Command{
 				if err == nil {
 					err = e
 				} else {
-					logger.Error("", logger.PlainError(e))
+					logger.Error("", zap.Error(e))
 				}
 			}
 		}(db)

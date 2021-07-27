@@ -38,6 +38,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/routing"
+	"go.uber.org/zap"
 
 	"sci_hub_p2p/pkg/logger"
 )
@@ -207,7 +208,7 @@ func (p *Peer) Bootstrap(peers []peer.AddrInfo) {
 			defer wg.Done()
 			err := p.host.Connect(p.ctx, pinfo)
 			if err != nil {
-				logger.Warn("", logger.PlainError(err))
+				logger.Warn("", zap.Error(err))
 
 				return
 			}
@@ -229,7 +230,7 @@ func (p *Peer) Bootstrap(peers []peer.AddrInfo) {
 	}
 
 	if err := p.dht.Bootstrap(p.ctx); err != nil {
-		logger.Error("", logger.PlainError(err))
+		logger.Error("", zap.Error(err))
 
 		return
 	}

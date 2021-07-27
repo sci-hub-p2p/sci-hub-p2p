@@ -124,15 +124,3 @@ func Sync() error {
 func Key(key ds.Key) zapcore.Field {
 	return zap.String("key", key.String())
 }
-
-type plainError struct {
-	e error
-}
-
-func (pe plainError) Error() string {
-	return pe.e.Error()
-}
-
-func PlainError(err error) zap.Field {
-	return zap.Error(plainError{err})
-}
