@@ -1,0 +1,53 @@
+site_name: Sci-Hub on P2P
+
+copyright: Copyright &copy; 2021 <a href='mailto:trim21.me@gmail.com'>Trim21</a>
+repo_url: https://github.com/Trim21/sci-hub-p2p/
+site_url: https://sci-hub-p2p.readthedocs.io/
+
+theme:
+  name: material
+  custom_dir: ./docs/overrides
+
+extra:
+  domain: "sci-hub-p2p.readthedocs.io"
+  # alternate:
+  #   - name: 中文
+  #     link: "zh/简介.md"
+  #     lang: zh
+
+  #   - name: English
+  #     link: "en/introduction.md"
+  #     lang: en
+
+nav:
+  - "index.md"
+  - 中文:
+      - "zh/简介.md"
+      - "zh/安装.md"
+      - 使用:
+          - "zh/usage/索引.md"
+      # - "zh/常见问题.md"
+  - English:
+      - "en/introduction.md"
+      - "en/installation.md"
+      - "en/usage.md"
+      # - "en/fqd.md"
+  - About:
+      - Contributing: "contributing.md"
+
+extra_javascript:
+  - https://code.jquery.com/jquery-3.6.0.min.js
+  - scripts/search.js
+
+plugins:
+  - mkdocs-versioning:
+      version: READTHEDOCS_VERSION
+  - macros
+  - search
+
+markdown_extensions:
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - admonition
+  - pymdownx.details

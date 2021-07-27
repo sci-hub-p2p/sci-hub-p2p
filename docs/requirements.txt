@@ -1,0 +1,4 @@
+mkdocs>=1.2.2,<2.0.0
+mkdocs-material>=7.2.1,<8.0.0
+mkdocs-macros-plugin>=0.5.0,<1.0.0
+https://github.com/Trim21/mkdocs-versioning/archive/1f16992.tar.gz
