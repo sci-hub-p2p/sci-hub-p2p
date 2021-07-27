@@ -19,10 +19,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"go.etcd.io/bbolt"
+	"go.uber.org/zap"
 
 	"sci_hub_p2p/internal/utils"
 	"sci_hub_p2p/pkg/constants"
 	"sci_hub_p2p/pkg/daemon"
+	"sci_hub_p2p/pkg/logger"
 	"sci_hub_p2p/pkg/variable"
 )
 
@@ -35,6 +37,7 @@ var startCmd = &cobra.Command{
 	Short:   "start daemon",
 	PreRunE: utils.EnsureDir(variable.GetAppBaseDir()),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		logger.Info("using database", zap.String("db", variable.IpfsBoltPath()))
 		db, err := bbolt.Open(variable.IpfsBoltPath(), constants.DefaultFilePerm, bbolt.DefaultOptions)
 		if err != nil {
 			return errors.Wrap(err, "failed to open database")

@@ -25,6 +25,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"go.etcd.io/bbolt"
+	"go.uber.org/zap"
 
 	"sci_hub_p2p/internal/utils"
 	"sci_hub_p2p/pkg/constants"
@@ -67,6 +68,7 @@ var addCmd = &cobra.Command{
 			}
 		}
 
+		logger.Info("using database", zap.String("db", variable.IpfsBoltPath()))
 		db, err := bbolt.Open(variable.IpfsBoltPath(), constants.DefaultFilePerm, &bbolt.Options{NoSync: true})
 		if err != nil {
 			return errors.Wrap(err, "failed to open database")
@@ -85,7 +87,7 @@ var addCmd = &cobra.Command{
 		width := len(strconv.Itoa(len(args)))
 
 		for i, file := range args {
-			logger.Info(fmt.Sprintf("processing file %0*d/%d %s", width, i, len(args), file))
+			logger.Info(fmt.Sprintf("processing file %0*d/%d %s", width, i+1, len(args), file))
 			if err := dag.AddZip(db, file); err != nil {
 				logger.Error("failed to add files from zip archive", logger.Err(err))
 			}

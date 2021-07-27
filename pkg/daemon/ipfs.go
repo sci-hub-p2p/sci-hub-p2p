@@ -79,7 +79,7 @@ func Start(db *bbolt.DB, port int) error {
 	}
 
 	logger.Info("ipfs peer started")
-	fmt.Printf("/ip4/127.0.0.1/tcp/4005/p2p/%s\n", h.ID())
+	fmt.Printf("your peer address is /ip4/127.0.0.1/tcp/%d/p2p/%s\n", port, h.ID())
 
 	lite.Bootstrap(ipfslite.DefaultBootstrapPeers())
 

@@ -28,7 +28,12 @@ func GetAppBaseDir() string {
 	if appBaseDir != "" {
 		return appBaseDir
 	}
-	appBaseDir = filepath.Clean(os.ExpandEnv("$HOME/.sci-hub-p2p"))
+	home, err := os.UserHomeDir()
+	if err != nil {
+		panic(err)
+	}
+
+	appBaseDir = filepath.Join(home, ".sci-hub-p2p")
 
 	return appBaseDir
 }
