@@ -39,6 +39,7 @@ import (
 )
 
 const (
+	dhtConcurrency           = 10
 	defaultLowConnectionNum  = 100
 	defaultHighConnectionNum = 600
 )
@@ -125,5 +126,3 @@ func newDHT(ctx context.Context, h host.Host, ds datastore.Batching) (*dualdht.D
 
 	return dualdht.New(ctx, h, dhtOpts...)
 }
-
-const dhtConcurrency = 30
