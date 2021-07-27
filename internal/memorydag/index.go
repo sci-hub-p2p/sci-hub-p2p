@@ -25,12 +25,12 @@ import (
 
 type DumpDagServ struct {
 	M map[string]ipld.Node
-	m *sync.Mutex
+	sync.Mutex
 }
 
-func (d DumpDagServ) Get(ctx context.Context, cid cid.Cid) (ipld.Node, error) {
-	d.m.Lock()
-	defer d.m.Unlock()
+func (d *DumpDagServ) Get(ctx context.Context, cid cid.Cid) (ipld.Node, error) {
+	d.Lock()
+	defer d.Unlock()
 	i, ok := d.M[cid.String()]
 	if !ok {
 		return nil, ipld.ErrNotFound
@@ -39,7 +39,7 @@ func (d DumpDagServ) Get(ctx context.Context, cid cid.Cid) (ipld.Node, error) {
 	return i, nil
 }
 
-func (d DumpDagServ) GetMany(ctx context.Context, cids []cid.Cid) <-chan *ipld.NodeOption {
+func (d *DumpDagServ) GetMany(ctx context.Context, cids []cid.Cid) <-chan *ipld.NodeOption {
 	var c = make(chan *ipld.NodeOption)
 	go func() {
 		for _, cid := range cids {
@@ -51,33 +51,37 @@ func (d DumpDagServ) GetMany(ctx context.Context, cids []cid.Cid) <-chan *ipld.N
 	return c
 }
 
-func (d DumpDagServ) Add(ctx context.Context, node ipld.Node) error {
-	d.m.Lock()
-	defer d.m.Unlock()
+func (d *DumpDagServ) Add(ctx context.Context, node ipld.Node) error {
+	d.Lock()
+	defer d.Unlock()
 	d.M[node.Cid().String()] = node
 
 	return nil
 }
 
-func (d DumpDagServ) AddMany(ctx context.Context, nodes []ipld.Node) error {
+func (d *DumpDagServ) AddMany(ctx context.Context, nodes []ipld.Node) error {
+	d.Lock()
+	defer d.Unlock()
 	for _, node := range nodes {
-		_ = d.Add(ctx, node)
+		d.M[node.Cid().String()] = node
 	}
 
 	return nil
 }
 
-func (d DumpDagServ) Remove(ctx context.Context, cid cid.Cid) error {
-	d.m.Lock()
-	defer d.m.Unlock()
+func (d *DumpDagServ) Remove(ctx context.Context, cid cid.Cid) error {
+	d.Lock()
+	defer d.Unlock()
 	delete(d.M, cid.String())
 
 	return nil
 }
 
-func (d DumpDagServ) RemoveMany(ctx context.Context, cids []cid.Cid) error {
+func (d *DumpDagServ) RemoveMany(ctx context.Context, cids []cid.Cid) error {
+	d.Lock()
+	defer d.Unlock()
 	for _, c := range cids {
-		_ = d.Remove(ctx, c)
+		delete(d.M, c.String())
 	}
 
 	return nil

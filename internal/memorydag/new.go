@@ -16,14 +16,11 @@
 package memorydag
 
 import (
-	"sync"
-
 	ipld "github.com/ipfs/go-ipld-format"
 )
 
-func New() DumpDagServ {
-	return DumpDagServ{
+func New() *DumpDagServ {
+	return &DumpDagServ{
 		M: make(map[string]ipld.Node),
-		m: &sync.Mutex{},
 	}
 }
