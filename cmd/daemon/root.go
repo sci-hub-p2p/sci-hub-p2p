@@ -37,7 +37,7 @@ var startCmd = &cobra.Command{
 	Short:   "start daemon",
 	PreRunE: utils.EnsureDir(variable.GetAppBaseDir()),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		logger.Info("using database", zap.String("db", variable.IpfsBoltPath()))
+		logger.Info("open database", zap.String("db", variable.IpfsBoltPath()))
 		db, err := bbolt.Open(variable.IpfsBoltPath(), constants.DefaultFilePerm, bbolt.DefaultOptions)
 		if err != nil {
 			return errors.Wrap(err, "failed to open database")

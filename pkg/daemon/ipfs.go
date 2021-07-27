@@ -78,7 +78,7 @@ func Start(db *bbolt.DB, port int) error {
 		return errors.Wrap(err, "failed to create new peer")
 	}
 
-	logger.Info("ipfs peer started")
+	logger.WithLogger("ipfs").Info("peer started")
 	fmt.Printf("your peer address is /ip4/127.0.0.1/tcp/%d/p2p/%s\n", port, h.ID())
 
 	lite.Bootstrap(ipfslite.DefaultBootstrapPeers())
