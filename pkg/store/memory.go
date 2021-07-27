@@ -30,22 +30,16 @@ import (
 	"sci_hub_p2p/pkg/variable"
 )
 
-// Here are some basic store implementations.
-
 var _ ds.Datastore = (*MapDataStore)(nil)
 
-// MapDataStore uses a standard Go map for internal storage.
 type MapDataStore struct {
 	db            *bbolt.DB
 	values        map[ds.Key][]byte
 	logger        *zap.Logger
-	keysSizeCache sync.Map
+	keysSizeCache sync.Map // cache block key content size
 	sync.RWMutex
 }
 
-// NewArchiveFallbackDatastore constructs a MapDataStore. It is _not_ thread-safe by
-// default, wrap using sync.MutexWrap if you need thread safety (the answer here
-// is usually yes).
 func NewArchiveFallbackDatastore(db *bbolt.DB) (d *MapDataStore) {
 	return &MapDataStore{
 		values: make(map[ds.Key][]byte),
@@ -121,31 +115,40 @@ func (d *MapDataStore) Get(key ds.Key) ([]byte, error) {
 	return p, nil
 }
 
-// Has implements Datastore.Has.
+// Has returns whether the `key` is mapped to a `value`.
+// In some contexts, it may be much cheaper only to check for existence of
+// a value, rather than retrieving the value itself. (e.g. HTTP HEAD).
+// The default implementation is found in `GetBackedHas`.
 func (d *MapDataStore) Has(key ds.Key) (exists bool, err error) {
-	d.RLock()
-	_, found := d.values[key]
-	d.RUnlock()
-	if found {
-		return found, nil
-	}
-
-	_, found = d.keysSizeCache.Load(key)
-
-	if !found {
-		mh, err := dshelp.DsKeyToMultihash(ds.NewKey(key.BaseNamespace()))
-		if err != nil {
-			return false, errors.Wrap(err, "failed to decode key to multi HASH")
+	if !isBlockKey(key) {
+		// lookup in map for non blocks key
+		d.RLock()
+		_, found := d.values[key]
+		d.RUnlock()
+		if !found {
+			return false, nil
 		}
-		_ = d.db.View(func(tx *bbolt.Tx) error {
-			b := tx.Bucket(variable.BlockBucketName())
-			if b.Get(mh) != nil {
-				found = true
-			}
 
-			return nil
-		})
+		return true, nil
 	}
+
+	if _, found := d.keysSizeCache.Load(key); found {
+		return true, nil
+	}
+
+	var found bool
+	mh, err := dshelp.DsKeyToMultihash(ds.NewKey(key.BaseNamespace()))
+	if err != nil {
+		return false, errors.Wrap(err, "failed to decode key to multi HASH")
+	}
+	_ = d.db.View(func(tx *bbolt.Tx) error {
+		b := tx.Bucket(variable.BlockBucketName())
+		if b.Get(mh) != nil {
+			found = true
+		}
+
+		return nil
+	})
 
 	return found, nil
 }
