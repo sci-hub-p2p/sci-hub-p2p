@@ -6,9 +6,10 @@ transformers = [
 ]
 exclude_patterns = ["license.md"]
 
+# Add this because we're not using much python, but still enable formatter
 [[analyzers]]
-name = "go"
+name = "python"
 enabled = true
 
 [analyzers.meta]
-import_root = "sci_hub_p2p"
+runtime_version = "3.x.x"
