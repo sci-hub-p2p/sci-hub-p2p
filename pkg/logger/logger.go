@@ -16,7 +16,6 @@
 package logger
 
 import (
-	"fmt"
 	"os"
 
 	ds "github.com/ipfs/go-datastore"
@@ -37,9 +36,7 @@ func Setup() error {
 		TimeKey:        "time",
 		LevelKey:       "level",
 		NameKey:        "logger",
-		CallerKey:      "caller",
 		MessageKey:     "msg",
-		StacktraceKey:  "",
 		LineEnding:     zapcore.DefaultLineEnding,
 		EncodeLevel:    zapcore.LowercaseColorLevelEncoder,
 		EncodeTime:     zapcore.TimeEncoderOfLayout("01-02 15:04:05"),
@@ -102,10 +99,6 @@ func WithLogger(name string) *zap.Logger {
 
 func Debug(msg string, fields ...zapcore.Field) {
 	log.Debug(msg, fields...)
-}
-
-func Infof(format string, args ...interface{}) {
-	log.Info(fmt.Sprintf(format, args...))
 }
 
 func Info(msg string, fields ...zapcore.Field) {

@@ -58,7 +58,7 @@ var addCmd = &cobra.Command{
 				}
 			}
 			if len(zipFiles) != 0 {
-				logger.Infof("find %d zip files to add", len(zipFiles))
+				fmt.Printf("find %d zip files to add\n", len(zipFiles))
 			}
 			args = zipFiles
 		} else {
@@ -87,7 +87,7 @@ var addCmd = &cobra.Command{
 		width := len(strconv.Itoa(len(args)))
 
 		for i, file := range args {
-			logger.Info(fmt.Sprintf("processing file %0*d/%d %s", width, i+1, len(args), file))
+			fmt.Printf("%0*d/%d processing %s\n", width, i+1, len(args), file)
 			if err := dag.AddZip(db, file); err != nil {
 				logger.Error("failed to add files from zip archive", logger.Err(err))
 			}
