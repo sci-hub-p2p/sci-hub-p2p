@@ -16,6 +16,7 @@
 package logger
 
 import (
+	"fmt"
 	"os"
 
 	ds "github.com/ipfs/go-datastore"
@@ -103,6 +104,10 @@ func Debug(msg string, fields ...zapcore.Field) {
 	log.Debug(msg, fields...)
 }
 
+func Infof(format string, args ...interface{}) {
+	log.Info(fmt.Sprintf(format, args...))
+}
+
 func Info(msg string, fields ...zapcore.Field) {
 	log.Info(msg, fields...)
 }
@@ -125,4 +130,16 @@ func Sync() error {
 
 func Key(key ds.Key) zapcore.Field {
 	return zap.String("key", key.String())
+}
+
+type plainError struct {
+	e error
+}
+
+func (pe plainError) Error() string {
+	return pe.e.Error()
+}
+
+func PlainError(err error) zap.Field {
+	return zap.Error(plainError{err})
 }

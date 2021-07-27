@@ -32,7 +32,6 @@ import (
 	"github.com/multiformats/go-multiaddr"
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
-	"go.uber.org/zap"
 
 	"sci_hub_p2p/cmd/flag"
 	"sci_hub_p2p/internal/ipfslite"
@@ -127,7 +126,7 @@ func startHTTPServer(d ds.Datastore) {
 	go func() {
 		err := http.ListenAndServe(":2333", m)
 		if err != nil {
-			logger.Error("failed to create debug server", zap.Error(err))
+			logger.Error("failed to create debug server", logger.PlainError(err))
 		} else {
 			logger.Info("start debug http server in http://127.0.0.1:2333")
 		}

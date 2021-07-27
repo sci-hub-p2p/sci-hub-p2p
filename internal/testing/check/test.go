@@ -26,7 +26,6 @@ import (
 	"github.com/multiformats/go-multihash"
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 
 	"sci_hub_p2p/pkg/logger"
@@ -41,7 +40,7 @@ func main() {
 func LoadTestData() {
 	db, err := bbolt.Open("./test.bolt", 0644, bbolt.DefaultOptions)
 	if err != nil {
-		logger.Fatal("", zap.Error(err))
+		logger.Fatal("", logger.PlainError(err))
 	}
 	defer db.Close()
 
@@ -86,7 +85,7 @@ func LoadTestData() {
 	})
 
 	if err != nil {
-		logger.Fatal("", zap.Error(err))
+		logger.Fatal("", logger.PlainError(err))
 	}
 
 }

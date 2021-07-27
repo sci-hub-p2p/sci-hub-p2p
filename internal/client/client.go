@@ -27,7 +27,6 @@ import (
 	"github.com/anacrolix/torrent/storage"
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
-	"go.uber.org/zap"
 
 	"sci_hub_p2p/pkg/constants"
 	"sci_hub_p2p/pkg/hash"
@@ -65,7 +64,7 @@ func Fetch(doi string) ([]byte, error) {
 
 	c, err := getClient()
 	if err != nil {
-		logger.Fatal("can't initialize BitTorrent client", zap.Error(err))
+		logger.Fatal("can't initialize BitTorrent client", logger.PlainError(err))
 	}
 	defer c.Close()
 	mi, err := metainfo.Load(bytes.NewReader(raw))
