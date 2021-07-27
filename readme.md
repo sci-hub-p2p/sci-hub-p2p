@@ -4,7 +4,11 @@ A project aims to fetch paper from the BitTorrent network.
 
 This is not a cli client of sci-hub website.
 
-you can find more details in wiki: https://github.com/Trim21/sci-hub-p2p/wiki
+you can find more details in [document](./docs)
+
+## Contributing
+
+[Contributing](./docs/contributing.md)
 
 ## License
 
