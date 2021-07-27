@@ -63,7 +63,7 @@ var loadCmd = &cobra.Command{
 				if err == nil {
 					err = e
 				} else {
-					logger.Error("", logger.Err(e))
+					logger.Error("", logger.PlainError(e))
 				}
 			}
 		}(db)
@@ -123,7 +123,7 @@ var getCmd = &cobra.Command{
 				if err == nil {
 					err = e
 				} else {
-					logger.Error("", logger.Err(e))
+					logger.Error("", logger.PlainError(e))
 				}
 			}
 		}(db)

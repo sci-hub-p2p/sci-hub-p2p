@@ -40,7 +40,7 @@ func main() {
 func LoadTestData() {
 	db, err := bbolt.Open("./test.bolt", 0644, bbolt.DefaultOptions)
 	if err != nil {
-		logger.Fatal("", logger.Err(err))
+		logger.Fatal("", logger.PlainError(err))
 	}
 	defer db.Close()
 
@@ -85,7 +85,7 @@ func LoadTestData() {
 	})
 
 	if err != nil {
-		logger.Fatal("", logger.Err(err))
+		logger.Fatal("", logger.PlainError(err))
 	}
 
 }

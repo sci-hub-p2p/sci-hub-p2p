@@ -64,7 +64,7 @@ func Fetch(doi string) ([]byte, error) {
 
 	c, err := getClient()
 	if err != nil {
-		logger.Fatal("can't initialize BitTorrent client", logger.Err(err))
+		logger.Fatal("can't initialize BitTorrent client", logger.PlainError(err))
 	}
 	defer c.Close()
 	mi, err := metainfo.Load(bytes.NewReader(raw))

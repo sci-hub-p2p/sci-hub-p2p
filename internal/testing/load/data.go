@@ -42,13 +42,13 @@ func LoadTestData() {
 	bar := pb.StartNew(100000 - 4)
 	zipFiles, err := filepath.Glob("d:/data/11200*/*.zip")
 	if err != nil {
-		logger.Fatal("", logger.Err(err))
+		logger.Fatal("", logger.PlainError(err))
 	}
 
 	err = os.Remove("./test.bolt")
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
-			logger.Fatal("", logger.Err(err))
+			logger.Fatal("", logger.PlainError(err))
 		}
 	}
 
@@ -62,35 +62,35 @@ func LoadTestData() {
 			NoSync:       true,
 		})
 		if err != nil {
-			logger.Fatal("", logger.Err(err))
+			logger.Fatal("", logger.PlainError(err))
 		}
 		dbSlice = append(dbSlice, db)
 		db.Update(func(tx *bbolt.Tx) error {
 			err := tx.DeleteBucket(variable.BlockBucketName())
 			if err != nil {
-				logger.Fatal("", logger.Err(err))
+				logger.Fatal("", logger.PlainError(err))
 			}
 			err = tx.DeleteBucket(variable.NodeBucketName())
 			if err != nil {
-				logger.Fatal("", logger.Err(err))
+				logger.Fatal("", logger.PlainError(err))
 			}
 			return nil
 		})
 		err = dag.InitDB(db)
 		if err != nil {
-			logger.Fatal("", logger.Err(err))
+			logger.Fatal("", logger.PlainError(err))
 		}
 		go func(db *bbolt.DB) {
 			for file := range c {
 				err := dag.AddZip(db, file)
 				if err != nil {
-					logger.Error("", logger.Err(err))
+					logger.Error("", logger.PlainError(err))
 				}
 			}
 
 			err := db.Sync()
 			if err != nil {
-				logger.Error("", logger.Err(err))
+				logger.Error("", logger.PlainError(err))
 			}
 			wg.Done()
 		}(db)
@@ -114,11 +114,11 @@ func LoadTestData() {
 		NoSync:       true,
 	})
 	if err != nil {
-		logger.Fatal("", logger.Err(err))
+		logger.Fatal("", logger.PlainError(err))
 	}
 	err = dag.InitDB(db)
 	if err != nil {
-		logger.Fatal("", logger.Err(err))
+		logger.Fatal("", logger.PlainError(err))
 	}
 
 	for i, srcDB := range dbSlice {
@@ -126,29 +126,29 @@ func LoadTestData() {
 		err = utils.CopyBucket(srcDB, db, variable.NodeBucketName())
 
 		if err != nil {
-			logger.Error("", logger.Err(err))
+			logger.Error("", logger.PlainError(err))
 		}
 
 		err = utils.CopyBucket(srcDB, db, variable.BlockBucketName())
 
 		if err != nil {
-			logger.Error("", logger.Err(err))
+			logger.Error("", logger.PlainError(err))
 		}
 
 		err = srcDB.Close()
 		if err != nil {
-			logger.Fatal("", logger.Err(err))
+			logger.Fatal("", logger.PlainError(err))
 		}
 
 		err := db.Sync()
 		if err != nil {
-			logger.Fatal("", logger.Err(err))
+			logger.Fatal("", logger.PlainError(err))
 		}
 
 	}
 
 	err = db.Close()
 	if err != nil {
-		logger.Fatal("", logger.Err(err))
+		logger.Fatal("", logger.PlainError(err))
 	}
 }
