@@ -64,7 +64,7 @@ var addCmd = &cobra.Command{
 		} else {
 			args, err = utils.MergeGlob(args, glob)
 			if err != nil {
-				return errors.Wrap(err, "failed to add files from zip dir")
+				return errors.Wrap(err, "failed to find zip files")
 			}
 		}
 

@@ -56,23 +56,18 @@ func Setup() error {
 		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
 
-	var infoLevel = zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
-		return lvl >= zapcore.InfoLevel
-	})
-	var onlyInfo = zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+	var stdoutLevel = zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
 		return lvl <= zapcore.InfoLevel
 	})
-	var errorLevel = zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
-		return lvl >= zapcore.ErrorLevel
-	})
 	if !flag.Debug {
-		onlyInfo = func(lvl zapcore.Level) bool {
+		stdoutLevel = func(lvl zapcore.Level) bool {
 			return lvl == zapcore.InfoLevel
 		}
 	}
 	cores := []zapcore.Core{
-		zapcore.NewCore(zapcore.NewConsoleEncoder(consoleEncoding), zapcore.NewMultiWriteSyncer(os.Stdout), onlyInfo),
-		zapcore.NewCore(zapcore.NewConsoleEncoder(consoleEncoding), zapcore.NewMultiWriteSyncer(os.Stderr), errorLevel),
+		zapcore.NewCore(zapcore.NewConsoleEncoder(consoleEncoding), zapcore.NewMultiWriteSyncer(os.Stdout), stdoutLevel),
+		zapcore.NewCore(zapcore.NewConsoleEncoder(consoleEncoding),
+			zapcore.NewMultiWriteSyncer(os.Stderr), zap.NewAtomicLevelAt(zap.ErrorLevel)),
 	}
 
 	if flag.LogFile != "" {
@@ -81,8 +76,8 @@ func Setup() error {
 			MaxSize:  defaultLogFileMaxSize,
 			Compress: false,
 		}
-		cores = append(cores,
-			zapcore.NewCore(zapcore.NewJSONEncoder(jsonEncoding), zapcore.AddSync(lumberJackLogger), infoLevel))
+		cores = append(cores, zapcore.NewCore(zapcore.NewJSONEncoder(jsonEncoding),
+			zapcore.AddSync(lumberJackLogger), zap.NewAtomicLevel()))
 	}
 	log = zap.New(zapcore.NewTee(cores...))
 

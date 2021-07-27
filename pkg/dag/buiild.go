@@ -27,7 +27,7 @@ import (
 )
 
 func AddZip(db *bbolt.DB, abs string) error {
-	return errors.Wrap(db.Batch(func(tx *bbolt.Tx) error {
+	return db.Batch(func(tx *bbolt.Tx) error {
 		r, err := zip.OpenReader(abs)
 		if err != nil {
 			return errors.Wrap(err, "failed to open zip file")
@@ -41,7 +41,7 @@ func AddZip(db *bbolt.DB, abs string) error {
 		}
 
 		return nil
-	}), "failed to add contents from files.")
+	})
 }
 
 func addZipContentFile(tx *bbolt.Tx, zipPath string, f *zip.File) error {
