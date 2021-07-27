@@ -79,7 +79,7 @@ func (d *LogDatastore) Get(key ds.Key) (value []byte, err error) {
 func (d *LogDatastore) Has(key ds.Key) (exists bool, err error) {
 	exists, err = d.child.Has(key)
 	if err != nil {
-		d.logger.Error("Has", zap.String("key", key.String()), zap.Bool("return", exists), logger.PlainError(err))
+		d.logger.Error("Has", zap.String("key", key.String()), zap.Bool("return", exists), logger.Err(err))
 	} else {
 		d.logger.Debug("Has", zap.String("key", key.String()), zap.Bool("return", exists))
 	}
@@ -95,7 +95,7 @@ func (d *LogDatastore) GetSize(key ds.Key) (size int, err error) {
 
 	if err != nil {
 		if !errors.Is(err, ds.ErrNotFound) {
-			d.logger.Error("GetSize", zap.String("key", key.String()), logger.PlainError(err))
+			d.logger.Error("GetSize", zap.String("key", key.String()), logger.Err(err))
 		}
 	}
 

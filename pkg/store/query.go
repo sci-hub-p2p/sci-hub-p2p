@@ -36,7 +36,7 @@ func queryBolt(d *MapDataStore, q dsq.Query, log *zap.Logger) (dsq.Results, erro
 	go func() {
 		err := qrb.Process.CloseAfterChildren()
 		if err != nil {
-			logger.Error("child work not exit success", logger.PlainError(err))
+			logger.Error("child work not exit success", logger.Err(err))
 		}
 	}()
 
@@ -83,7 +83,7 @@ func resultGenerator(log *zap.Logger, db *bbolt.DB, qrb *dsq.ResultBuilder) func
 			return send(worker, qrb, c)
 		})
 		if err != nil {
-			log.Error("failed to Query keys from DB", logger.PlainError(err))
+			log.Error("failed to Query keys from DB", logger.Err(err))
 		}
 	}
 }

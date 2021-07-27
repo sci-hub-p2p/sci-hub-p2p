@@ -52,11 +52,11 @@ var rootCmd = &cobra.Command{
 			logger.Info("start profile, save data to ./cpu_profile")
 			f, err := os.Create("cpu_profile")
 			if err != nil {
-				logger.Error("failed to open ./cpu_profile to write profile data", logger.PlainError(err))
+				logger.Error("failed to open ./cpu_profile to write profile data", logger.Err(err))
 			} else {
 				err = pprof.StartCPUProfile(f)
 				if err != nil {
-					logger.Error("failed to start profile", logger.PlainError(err))
+					logger.Error("failed to start profile", logger.Err(err))
 				}
 			}
 		}

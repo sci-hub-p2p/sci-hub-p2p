@@ -74,7 +74,7 @@ var addCmd = &cobra.Command{
 		defer func(db *bbolt.DB) {
 			err := db.Close()
 			if err != nil {
-				logger.Error("failed to close DataBase", logger.PlainError(err))
+				logger.Error("failed to close DataBase", logger.Err(err))
 			}
 		}(db)
 		err = dag.InitDB(db)
@@ -87,13 +87,13 @@ var addCmd = &cobra.Command{
 		for i, file := range args {
 			logger.Info(fmt.Sprintf("processing file %0*d/%d %s", width, i, len(args), file))
 			if err := dag.AddZip(db, file); err != nil {
-				logger.Error("failed to add files from zip archive", logger.PlainError(err))
+				logger.Error("failed to add files from zip archive", logger.Err(err))
 			}
 
 			if i%10 == 0 {
 				err := db.Sync()
 				if err != nil {
-					logger.Error("failed to sync database to DB", logger.PlainError(err))
+					logger.Error("failed to sync database to DB", logger.Err(err))
 				}
 			}
 		}

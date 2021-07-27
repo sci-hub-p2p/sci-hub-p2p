@@ -207,7 +207,7 @@ func (p *Peer) Bootstrap(peers []peer.AddrInfo) {
 			defer wg.Done()
 			err := p.host.Connect(p.ctx, pinfo)
 			if err != nil {
-				logger.Warn("", logger.PlainError(err))
+				logger.Warn("", logger.Err(err))
 
 				return
 			}
@@ -229,7 +229,7 @@ func (p *Peer) Bootstrap(peers []peer.AddrInfo) {
 	}
 
 	if err := p.dht.Bootstrap(p.ctx); err != nil {
-		logger.Error("", logger.PlainError(err))
+		logger.Error("", logger.Err(err))
 
 		return
 	}

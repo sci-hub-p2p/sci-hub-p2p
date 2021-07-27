@@ -56,7 +56,7 @@ var loadCmd = &cobra.Command{
 				if err == nil {
 					err = e
 				} else {
-					logger.Error("", logger.PlainError(e))
+					logger.Error("", logger.Err(e))
 				}
 			}
 		}(db)

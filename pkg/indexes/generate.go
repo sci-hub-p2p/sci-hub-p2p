@@ -198,7 +198,7 @@ func Generate(dataDir, outDir string, t *torrent.Torrent, disableProgress bool) 
 			for i := range in {
 				err := IndexZipFile(c, dataDir, i, t)
 				if err != nil {
-					logger.Error("failed to generate index from zip", logger.PlainError(err))
+					logger.Error("failed to generate index from zip", logger.Err(err))
 
 					break
 				}
@@ -261,7 +261,7 @@ func collectResult(
 	bar.Finish()
 
 	if err != nil {
-		logger.Error("can't save indexes:", logger.PlainError(err))
+		logger.Error("can't save indexes:", logger.Err(err))
 
 		return
 	}
@@ -271,12 +271,12 @@ func collectResult(
 	})
 
 	if err != nil {
-		logger.Error("can't dump database", logger.PlainError(err))
+		logger.Error("can't dump database", logger.Err(err))
 	}
 
 	logger.Debug("sync database")
 	if err := db.Sync(); err != nil {
-		logger.Error("failed to flush data to disk", logger.PlainError(err))
+		logger.Error("failed to flush data to disk", logger.Err(err))
 	}
 	done <- 1
 }
@@ -292,7 +292,7 @@ func dumpToFile(tx *bbolt.Tx, name string) (err error) {
 			if err == nil {
 				err = e
 			} else {
-				logger.Error("failed to dump indexes to file", logger.PlainError(e))
+				logger.Error("failed to dump indexes to file", logger.Err(e))
 			}
 		}
 	}()
@@ -310,7 +310,7 @@ func dumpToFile(tx *bbolt.Tx, name string) (err error) {
 			if err == nil {
 				err = e
 			} else {
-				logger.Error("failed to dump indexes to file", logger.PlainError(e))
+				logger.Error("failed to dump indexes to file", logger.Err(e))
 			}
 		}
 	}()
