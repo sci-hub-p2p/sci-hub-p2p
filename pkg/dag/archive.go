@@ -156,7 +156,8 @@ func add(tx *bbolt.Tx, node ipld.Node, baseOffset int64) error {
 		length, _ := n.Size()
 		blockOffsetOfZip := baseOffset + int64(n.PosInfo.Offset)
 
-		return errors.Wrap(storage.SaveFileStoreMeta(tx, node.Cid(), n.PosInfo.FullPath, blockOffsetOfZip, int64(length)),
+		return errors.Wrap(storage.SaveFileStoreMeta(tx, node.Cid(),
+			n.PosInfo.FullPath, blockOffsetOfZip, int64(length)),
 			"can't save node to database")
 	}
 

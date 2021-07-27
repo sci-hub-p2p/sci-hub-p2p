@@ -65,7 +65,8 @@ func Setup() error {
 		}
 	}
 	cores := []zapcore.Core{
-		zapcore.NewCore(zapcore.NewConsoleEncoder(consoleEncoding), zapcore.NewMultiWriteSyncer(os.Stdout), stdoutLevel),
+		zapcore.NewCore(zapcore.NewConsoleEncoder(consoleEncoding),
+			zapcore.NewMultiWriteSyncer(os.Stdout), stdoutLevel),
 		zapcore.NewCore(zapcore.NewConsoleEncoder(consoleEncoding),
 			zapcore.NewMultiWriteSyncer(os.Stderr), zap.NewAtomicLevelAt(zap.ErrorLevel)),
 	}
