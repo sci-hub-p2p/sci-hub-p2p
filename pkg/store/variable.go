@@ -20,3 +20,7 @@ import (
 )
 
 var topLevelBlockKey = ds.NewKey("/blocks/")
+
+func isBlockKey(key ds.Key) bool {
+	return topLevelBlockKey.IsAncestorOf(key)
+}

@@ -21,12 +21,10 @@ import (
 	ds "github.com/ipfs/go-datastore"
 	dsq "github.com/ipfs/go-datastore/query"
 	dshelp "github.com/ipfs/go-ipfs-ds-help"
-	ipld "github.com/ipfs/go-ipld-format"
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
 	"go.uber.org/zap"
 
-	"sci_hub_p2p/pkg/dag"
 	"sci_hub_p2p/pkg/logger"
 	"sci_hub_p2p/pkg/storage"
 	"sci_hub_p2p/pkg/variable"
@@ -38,11 +36,10 @@ var _ ds.Datastore = (*MapDataStore)(nil)
 
 // MapDataStore uses a standard Go map for internal storage.
 type MapDataStore struct {
-	dag       ipld.DAGService
-	db        *bbolt.DB
-	values    map[ds.Key][]byte
-	logger    *zap.Logger
-	keysCache sync.Map
+	db            *bbolt.DB
+	values        map[ds.Key][]byte
+	logger        *zap.Logger
+	keysSizeCache sync.Map
 	sync.RWMutex
 }
 
@@ -53,7 +50,6 @@ func NewArchiveFallbackDatastore(db *bbolt.DB) (d *MapDataStore) {
 	return &MapDataStore{
 		values: make(map[ds.Key][]byte),
 		db:     db,
-		dag:    dag.New(db),
 		logger: logger.WithLogger("MapDataStore"),
 	}
 }
@@ -79,7 +75,7 @@ func (d *MapDataStore) Get(key ds.Key) ([]byte, error) {
 	var log = d.logger.With(logger.Key(key))
 	log.Debug("try to get block, check it in memory first")
 
-	if !key.IsDescendantOf(topLevelBlockKey) {
+	if !isBlockKey(key) {
 		d.RLock()
 		val, found := d.values[key]
 		d.RUnlock()
@@ -120,6 +116,7 @@ func (d *MapDataStore) Get(key ds.Key) ([]byte, error) {
 
 		return nil, err
 	}
+	d.keysSizeCache.Store(key, len(p))
 
 	return p, nil
 }
@@ -133,7 +130,7 @@ func (d *MapDataStore) Has(key ds.Key) (exists bool, err error) {
 		return found, nil
 	}
 
-	_, found = d.keysCache.Load(key)
+	_, found = d.keysSizeCache.Load(key)
 
 	if !found {
 		mh, err := dshelp.DsKeyToMultihash(ds.NewKey(key.BaseNamespace()))
@@ -156,17 +153,25 @@ func (d *MapDataStore) Has(key ds.Key) (exists bool, err error) {
 // GetSize implements Datastore.GetSize.
 func (d *MapDataStore) GetSize(key ds.Key) (int, error) {
 	var log = d.logger.With(logger.Key(key))
-	d.RLock()
-
-	v, found := d.values[key]
-	if found {
+	if !isBlockKey(key) {
+		log.Debug("non /blocks key, lookup in map")
+		d.RLock()
+		v, found := d.values[key]
 		d.RUnlock()
+		if found {
+			return len(v), nil
+		}
 
-		return len(v), nil
+		return 0, ds.ErrNotFound
 	}
-	d.RUnlock()
 
-	d.logger.Debug("get size of from kV", logger.Key(key))
+	log.Debug("didn't find key in kv, try get size from cache")
+	v, ok := d.keysSizeCache.Load(key.String())
+	if ok {
+		return v.(int), nil
+	}
+
+	log.Debug("lookup size of from kV")
 	var l = -1
 
 	mh, err := dshelp.DsKeyToMultihash(ds.NewKey(key.BaseNamespace()))
@@ -189,6 +194,7 @@ func (d *MapDataStore) GetSize(key ds.Key) (int, error) {
 
 		return 0, err
 	}
+	d.keysSizeCache.Store(key, l)
 
 	return l, nil
 }

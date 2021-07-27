@@ -34,9 +34,8 @@ import (
 
 var _ ipld.DAGService = (*Archive)(nil)
 
-func New(db *bbolt.DB) Archive {
-	return Archive{
-		m:   &sync.Mutex{},
+func New(db *bbolt.DB) *Archive {
+	return &Archive{
 		db:  db,
 		log: logger.WithLogger("DAGService").Named("Archive"),
 	}
@@ -58,15 +57,15 @@ func InitDB(db *bbolt.DB) error {
 }
 
 type Archive struct {
-	m   *sync.Mutex
 	db  *bbolt.DB
 	log *zap.Logger
+	sync.RWMutex
 }
 
-func (d Archive) Get(ctx context.Context, c cid.Cid) (ipld.Node, error) {
+func (d *Archive) Get(ctx context.Context, c cid.Cid) (ipld.Node, error) {
 	d.log.Debug("Get Node", zap.String("CID", c.String()))
-	d.m.Lock()
-	defer d.m.Unlock()
+	d.RLock()
+	defer d.RUnlock()
 	if c.Version() == 0 {
 		return nil, ipld.ErrNotFound
 	}
@@ -98,7 +97,7 @@ func (d Archive) Get(ctx context.Context, c cid.Cid) (ipld.Node, error) {
 }
 
 // GetMany TODO: need to parallel this, but I'm lazy.
-func (d Archive) GetMany(ctx context.Context, cids []cid.Cid) <-chan *ipld.NodeOption {
+func (d *Archive) GetMany(ctx context.Context, cids []cid.Cid) <-chan *ipld.NodeOption {
 	var c = make(chan *ipld.NodeOption)
 	go func() {
 		for _, cid := range cids {
@@ -110,15 +109,15 @@ func (d Archive) GetMany(ctx context.Context, cids []cid.Cid) <-chan *ipld.NodeO
 	return c
 }
 
-func (d Archive) Add(_ context.Context, node ipld.Node) error {
+func (d *Archive) Add(_ context.Context, node ipld.Node) error {
 	panic("should not add node to Archive dag")
 }
 
-func (d Archive) AddMany(_ context.Context, nodes []ipld.Node) error {
+func (d *Archive) AddMany(_ context.Context, nodes []ipld.Node) error {
 	panic("should not add node to Archive dag")
 }
 
-func (d Archive) Remove(_ context.Context, c cid.Cid) error {
+func (d *Archive) Remove(_ context.Context, c cid.Cid) error {
 	err := d.db.Update(func(tx *bbolt.Tx) error {
 		b := tx.Bucket(variable.NodeBucketName())
 		if b == nil {
@@ -131,7 +130,7 @@ func (d Archive) Remove(_ context.Context, c cid.Cid) error {
 	return errors.Wrap(err, "can't delete node from database")
 }
 
-func (d Archive) RemoveMany(_ context.Context, cids []cid.Cid) error {
+func (d *Archive) RemoveMany(_ context.Context, cids []cid.Cid) error {
 	err := d.db.Batch(func(tx *bbolt.Tx) error {
 		b := tx.Bucket(variable.NodeBucketName())
 		if b == nil {
