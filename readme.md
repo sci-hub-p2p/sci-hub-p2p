@@ -4,11 +4,9 @@ A project aims to fetch paper from the BitTorrent network.
 
 This is not a cli client of sci-hub website.
 
-you can find more details in [document](./docs)
+you can find more details in [document](https://sci-hub-p2p.readthedocs.io/en/latest/)
 
-## Contributing
-
-[Contributing](./docs/contributing.md)
+## [Contributing](https://sci-hub-p2p.readthedocs.io/en/latest/contributing/)
 
 ## License
 
