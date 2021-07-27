@@ -7,8 +7,18 @@ root = true
 [*]
 end_of_line = lf
 insert_final_newline = true
+charset = utf-8
 
 [*.py]
 # for isort
 profile = black
 length_sort = true
+
+[*.{yaml,yml,json}]
+indent_size = 2
+
+[{Makefile,*.mk,*.go}]
+indent_style = tab
+
+[*.go]
+tab_width = 4
