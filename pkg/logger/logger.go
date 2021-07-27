@@ -29,7 +29,7 @@ import (
 
 const defaultLogFileMaxSize = 100 // MB
 
-var log *zap.Logger
+var log *zap.Logger = zap.NewNop()
 
 func Setup() error {
 	consoleEncoding := zapcore.EncoderConfig{
@@ -90,10 +90,6 @@ func Setup() error {
 }
 
 func WithLogger(name string) *zap.Logger {
-	if log == nil {
-		return zap.NewNop()
-	}
-
 	return log.Named(name)
 }
 
