@@ -4,7 +4,7 @@ transformers = [
     { name = 'isort', enabled = true },
     { name = 'prettier', enabled = true },
 ]
-exclude_patterns = ["license.md"]
+exclude_patterns = ["license.md", "*.md"]
 
 # Add this because we're not using much python, but still enable formatter
 [[analyzers]]
