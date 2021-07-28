@@ -1,4 +1,4 @@
-you are viewing document version: **{{ extra.version }}**
+you are viewing document version: **{{ config.extra.version }}**
 
 - [English](./en/introduction.md)
 - [中文](./zh/简介.md)
