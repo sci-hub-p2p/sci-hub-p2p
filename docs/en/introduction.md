@@ -3,6 +3,11 @@ we have our papers in the p2p network now.
 
 This project is aiming to fetch paper from the p2p network with a DOI like you are doing on sci-hub.
 
+<!-- prettier-ignore -->
+!!! warning
+    the whole function is based on P2P network.
+    If your ISP does not allow you to use P2P, **DO NOT USE IT**
+
 ---
 
 ## project stage:
