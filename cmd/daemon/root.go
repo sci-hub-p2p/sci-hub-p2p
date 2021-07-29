@@ -44,10 +44,10 @@ var startCmd = &cobra.Command{
 		}
 		defer db.Close()
 		err = db.View(func(tx *bbolt.Tx) error {
-			if tx.Bucket(variable.BlockBucketName()) == nil {
+			if tx.Bucket(constants.BlockBucketName()) == nil {
 				return errors.New("database is empty")
 			}
-			if tx.Bucket(variable.NodeBucketName()) == nil {
+			if tx.Bucket(constants.NodeBucketName()) == nil {
 				return errors.New("database is empty")
 			}
 

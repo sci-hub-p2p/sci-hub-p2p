@@ -53,11 +53,3 @@ func GetTorrentStoragePath() string {
 func IpfsBoltPath() string {
 	return filepath.Join(GetAppBaseDir(), constants.IPFSBlockDB)
 }
-
-func NodeBucketName() []byte {
-	return []byte("node-v0")
-}
-
-func BlockBucketName() []byte {
-	return []byte("block-v0")
-}

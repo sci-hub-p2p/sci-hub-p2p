@@ -23,13 +23,13 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"sci_hub_p2p/internal/utils"
+	"sci_hub_p2p/pkg/constants"
 	"sci_hub_p2p/pkg/pb"
-	"sci_hub_p2p/pkg/variable"
 )
 
 func ReadLen(tx *bbolt.Tx, log *zap.Logger, mh []byte) (int, error) {
-	bb := tx.Bucket(variable.BlockBucketName())
-	nb := tx.Bucket(variable.NodeBucketName())
+	bb := tx.Bucket(constants.BlockBucketName())
+	nb := tx.Bucket(constants.NodeBucketName())
 
 	v := bb.Get(mh)
 	if v == nil {
@@ -58,8 +58,8 @@ func ReadLen(tx *bbolt.Tx, log *zap.Logger, mh []byte) (int, error) {
 }
 
 func ReadBlock(tx *bbolt.Tx, mh []byte) ([]byte, error) {
-	bb := tx.Bucket(variable.BlockBucketName())
-	nb := tx.Bucket(variable.NodeBucketName())
+	bb := tx.Bucket(constants.BlockBucketName())
+	nb := tx.Bucket(constants.NodeBucketName())
 
 	v := bb.Get(mh)
 	if v == nil {

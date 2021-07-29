@@ -23,8 +23,8 @@ import (
 	"go.etcd.io/bbolt"
 	"go.uber.org/zap"
 
+	"sci_hub_p2p/pkg/constants"
 	"sci_hub_p2p/pkg/logger"
-	"sci_hub_p2p/pkg/variable"
 )
 
 func queryBolt(d *MapDataStore, q dsq.Query, log *zap.Logger) (dsq.Results, error) {
@@ -73,7 +73,7 @@ func resultGenerator(log *zap.Logger, db *bbolt.DB, qrb *dsq.ResultBuilder) func
 		log.Debug("start process")
 		defer log.Debug("stop process")
 		err := db.View(func(tx *bbolt.Tx) error {
-			buck := tx.Bucket(variable.BlockBucketName())
+			buck := tx.Bucket(constants.BlockBucketName())
 			c := buck.Cursor()
 			// If we need to sort, we'll need to collect all the results up-front.
 			if len(orders) > 0 {

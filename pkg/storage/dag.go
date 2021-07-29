@@ -29,8 +29,8 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"sci_hub_p2p/internal/utils"
+	"sci_hub_p2p/pkg/constants"
 	"sci_hub_p2p/pkg/pb"
-	"sci_hub_p2p/pkg/variable"
 )
 
 func ReadFileStoreNode(b *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {
@@ -56,8 +56,8 @@ func ReadFileStoreNode(b *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {
 }
 
 func SaveFileStoreMeta(tx *bbolt.Tx, c cid.Cid, name string, offset, size int64) error {
-	nb := tx.Bucket(variable.NodeBucketName())
-	bb := tx.Bucket(variable.BlockBucketName())
+	nb := tx.Bucket(constants.NodeBucketName())
+	bb := tx.Bucket(constants.BlockBucketName())
 
 	var block = pb.Block{
 		Type:     pb.BlockType_file,
@@ -81,8 +81,8 @@ func SaveFileStoreMeta(tx *bbolt.Tx, c cid.Cid, name string, offset, size int64)
 }
 
 func SaveProtoNode(tx *bbolt.Tx, c cid.Cid, n *merkledag.ProtoNode) error {
-	nb := tx.Bucket(variable.NodeBucketName())
-	bb := tx.Bucket(variable.BlockBucketName())
+	nb := tx.Bucket(constants.NodeBucketName())
+	bb := tx.Bucket(constants.BlockBucketName())
 
 	var v = pb.Block{Type: pb.BlockType_proto, CID: c.Bytes(), Size: int64(len(n.RawData()))}
 	value, err := proto.Marshal(&v)

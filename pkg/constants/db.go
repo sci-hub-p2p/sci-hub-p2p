@@ -17,14 +17,15 @@ package constants
 
 import "os"
 
-func PaperBucket() []byte { return []byte("paper-v0") }
+func PaperBucket() []byte     { return []byte("paper-v0") }
+func TorrentBucket() []byte   { return []byte("torrent-v0") }
+func NodeBucketName() []byte  { return []byte("node-v0") }
+func BlockBucketName() []byte { return []byte("block-v0") }
 
-func TorrentBucket() []byte { return []byte("torrent-v0") }
-
-const DefaultFilePerm os.FileMode = 0640
-const DefaultDirPerm os.FileMode = os.ModeDir | DefaultFilePerm
-
-const SecurityPerm os.FileMode = 0600
-const PrivateKeyLength = 4096
-
-const IPFSBlockDB = "ipfs.block.bolt"
+const (
+	DefaultFilePerm  os.FileMode = 0640
+	DefaultDirPerm               = os.ModeDir | DefaultFilePerm
+	SecurityPerm     os.FileMode = 0600
+	PrivateKeyLength             = 4096
+	IPFSBlockDB                  = "ipfs.block.bolt"
+)
