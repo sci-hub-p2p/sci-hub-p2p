@@ -13,19 +13,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package constants
+package vars
 
-import "os"
-
-func PaperBucket() []byte     { return []byte("paper-v0") }
-func TorrentBucket() []byte   { return []byte("torrent-v0") }
-func NodeBucketName() []byte  { return []byte("node-v0") }
-func BlockBucketName() []byte { return []byte("block-v0") }
-
-const (
-	DefaultFilePerm  os.FileMode = 0640
-	DefaultDirPerm               = os.ModeDir | DefaultFilePerm
-	SecurityPerm     os.FileMode = 0600
-	PrivateKeyLength             = 4096
-	IPFSBlockDB                  = "ipfs.block.bolt"
-)
+var Ref = "development"
+var Commit = "00000000"
+var Builder string
+var BuildTime string

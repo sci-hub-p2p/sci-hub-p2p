@@ -33,7 +33,7 @@ import (
 	"sci_hub_p2p/cmd/paper"
 	"sci_hub_p2p/cmd/torrent"
 	"sci_hub_p2p/pkg/logger"
-	"sci_hub_p2p/pkg/variable"
+	"sci_hub_p2p/pkg/vars"
 )
 
 var rootCmd = &cobra.Command{
@@ -41,7 +41,7 @@ var rootCmd = &cobra.Command{
 	Short: "sci-hub-p2p is cli tool to fetch paper from p2p network.",
 	Long: "Complete documentation is available at " +
 		"https://github.com/Trim21/sci-hub-p2p/wiki",
-	Version:       variable.Ref,
+	Version:       vars.Ref,
 	SilenceUsage:  true,
 	SilenceErrors: false,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
@@ -81,14 +81,14 @@ var debugCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		var buf bytes.Buffer
 		buf.WriteString("=====build into=====\n")
-		buf.WriteString(fmt.Sprintln("version:      ", variable.Ref))
-		buf.WriteString(fmt.Sprintln("commit:       ", variable.Commit))
-		buf.WriteString(fmt.Sprintln("compiler:     ", variable.Builder))
-		buf.WriteString(fmt.Sprintln("compile time: ", variable.BuildTime))
+		buf.WriteString(fmt.Sprintln("version:      ", vars.Ref))
+		buf.WriteString(fmt.Sprintln("commit:       ", vars.Commit))
+		buf.WriteString(fmt.Sprintln("compiler:     ", vars.Builder))
+		buf.WriteString(fmt.Sprintln("compile time: ", vars.BuildTime))
 		buf.WriteString("=====runtime into=====\n")
 		buf.WriteString(fmt.Sprintln("OS:      ", runtime.GOOS))
 		buf.WriteString(fmt.Sprintln("Arch:    ", runtime.GOARCH))
-		buf.WriteString(fmt.Sprintln("BaseDir: ", variable.GetAppBaseDir()))
+		buf.WriteString(fmt.Sprintln("BaseDir: ", vars.GetAppBaseDir()))
 		fmt.Println(buf.String())
 	},
 }

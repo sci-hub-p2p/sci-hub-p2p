@@ -29,23 +29,23 @@ import (
 	"go.etcd.io/bbolt"
 	"go.uber.org/zap"
 
-	"sci_hub_p2p/pkg/constants"
+	"sci_hub_p2p/pkg/consts"
 	"sci_hub_p2p/pkg/hash"
 	"sci_hub_p2p/pkg/indexes"
 	"sci_hub_p2p/pkg/logger"
 	"sci_hub_p2p/pkg/persist"
-	"sci_hub_p2p/pkg/variable"
+	"sci_hub_p2p/pkg/vars"
 )
 
 func Fetch(doi string) ([]byte, error) {
-	db, err := bbolt.Open(variable.GetPaperBoltPath(), constants.DefaultFilePerm, bbolt.DefaultOptions)
+	db, err := bbolt.Open(vars.GetPaperBoltPath(), consts.DefaultFilePerm, bbolt.DefaultOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't open indexes database file")
 	}
 	var p *indexes.PerFile
 	var raw []byte
 	err = db.View(func(tx *bbolt.Tx) error {
-		b := tx.Bucket(constants.PaperBucket())
+		b := tx.Bucket(consts.PaperBucket())
 		var err error
 		p, raw, err = persist.GetPerFileAndRawTorrent(b, doi)
 		if err != nil {
@@ -92,7 +92,7 @@ func (l nilLogger) Log(_ log.Msg) {
 
 func getClient() (*torrent.Client, error) {
 	cfg := torrent.NewDefaultClientConfig()
-	cfg.DefaultStorage = storage.NewBoltDB(variable.GetAppTmpDir())
+	cfg.DefaultStorage = storage.NewBoltDB(vars.GetAppTmpDir())
 	cfg.Bep20 = "-GT0003-"
 	cfg.Logger = log.Logger{LoggerImpl: nilLogger{}}
 	cfg.DisableUTP = true

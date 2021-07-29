@@ -216,10 +216,10 @@ linters-settings:
       - "func (*go.etcd.io/bbolt.Bucket).ForEach"
 
   ifshort:
-    # Maximum length of variable declaration measured in number of lines, after which linter won't suggest using short syntax.
+    # Maximum length of vars declaration measured in number of lines, after which linter won't suggest using short syntax.
     # Has higher priority than max-decl-chars.
     max-decl-lines: 1
-    # Maximum length of variable declaration measured in number of characters, after which linter won't suggest using short syntax.
+    # Maximum length of vars declaration measured in number of characters, after which linter won't suggest using short syntax.
     max-decl-chars: 30
 
 linters:
@@ -246,7 +246,7 @@ issues:
     - path: 'cmd[/\\].*'
       linters: [gochecknoglobals, gochecknoinits, goerr113, wrapcheck]
 
-    - path: 'pkg[/\\]variable[/\\].*\.go'
+    - path: 'pkg[/\\]vars[/\\].*\.go'
       linters: [gochecknoglobals]
 
     - path: 'internal[/\\]utils[/\\]file\.go'
@@ -255,7 +255,7 @@ issues:
     - path: '.*_test\.go'
       linters: [gocritic, nlreturn]
 
-    - path: '.*variable\.go'
+    - path: '.*vars\.go'
       linters:
         - gochecknoglobals
 

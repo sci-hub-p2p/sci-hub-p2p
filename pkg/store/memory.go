@@ -25,7 +25,7 @@ import (
 	"go.etcd.io/bbolt"
 	"go.uber.org/zap"
 
-	"sci_hub_p2p/pkg/constants"
+	"sci_hub_p2p/pkg/consts"
 	"sci_hub_p2p/pkg/logger"
 	"sci_hub_p2p/pkg/storage"
 )
@@ -142,7 +142,7 @@ func (d *MapDataStore) Has(key ds.Key) (exists bool, err error) {
 		return false, errors.Wrap(err, "failed to decode key to multi HASH")
 	}
 	_ = d.db.View(func(tx *bbolt.Tx) error {
-		b := tx.Bucket(constants.BlockBucketName())
+		b := tx.Bucket(consts.BlockBucketName())
 		if b.Get(mh) != nil {
 			found = true
 		}

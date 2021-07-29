@@ -28,16 +28,16 @@ import (
 	"go.uber.org/zap"
 
 	"sci_hub_p2p/internal/utils"
-	"sci_hub_p2p/pkg/constants"
+	"sci_hub_p2p/pkg/consts"
 	"sci_hub_p2p/pkg/dag"
 	"sci_hub_p2p/pkg/logger"
-	"sci_hub_p2p/pkg/variable"
+	"sci_hub_p2p/pkg/vars"
 )
 
 var addCmd = &cobra.Command{
 	Use:     "add",
 	Short:   "add all files in a zip files",
-	PreRunE: utils.EnsureDir(variable.GetAppBaseDir()),
+	PreRunE: utils.EnsureDir(vars.GetAppBaseDir()),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var err error
 		if recursive && glob != "" {
@@ -68,8 +68,8 @@ var addCmd = &cobra.Command{
 			}
 		}
 
-		logger.Info("open database", zap.String("db", variable.IpfsBoltPath()))
-		db, err := bbolt.Open(variable.IpfsBoltPath(), constants.DefaultFilePerm, &bbolt.Options{NoSync: true})
+		logger.Info("open database", zap.String("db", vars.IpfsBoltPath()))
+		db, err := bbolt.Open(vars.IpfsBoltPath(), consts.DefaultFilePerm, &bbolt.Options{NoSync: true})
 		if err != nil {
 			return errors.Wrap(err, "failed to open database")
 		}

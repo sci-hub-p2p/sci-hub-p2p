@@ -23,7 +23,7 @@ import (
 	"go.etcd.io/bbolt"
 
 	"sci_hub_p2p/internal/torrent"
-	"sci_hub_p2p/pkg/constants"
+	"sci_hub_p2p/pkg/consts"
 	"sci_hub_p2p/pkg/persist"
 )
 
@@ -34,7 +34,7 @@ func TestSaveTorrent(t *testing.T) {
 	assert.Nil(t, err)
 	defer func() { assert.Nil(t, db.Close()) }()
 	assert.Nil(t, db.Update(func(tx *bbolt.Tx) error {
-		b, err := tx.CreateBucket(constants.TorrentBucket())
+		b, err := tx.CreateBucket(consts.TorrentBucket())
 		assert.Nil(t, err)
 		tor, err := torrent.ParseFile("../../testdata/sm_00900000-00999999.torrent")
 		assert.Nil(t, err)
@@ -51,7 +51,7 @@ func TestGetTorrent(t *testing.T) {
 	assert.Nil(t, err)
 	defer func() { assert.Nil(t, db.Close()) }()
 	assert.Nil(t, db.Update(func(tx *bbolt.Tx) error {
-		b, err := tx.CreateBucket(constants.TorrentBucket())
+		b, err := tx.CreateBucket(consts.TorrentBucket())
 		assert.Nil(t, err)
 		tor, err := torrent.ParseFile("../../testdata/sm_00900000-00999999.torrent")
 		assert.Nil(t, err)

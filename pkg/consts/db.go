@@ -13,43 +13,19 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package variable
+package consts
 
-import (
-	"os"
-	"path/filepath"
+import "os"
 
-	"sci_hub_p2p/pkg/constants"
+func PaperBucket() []byte     { return []byte("paper-v0") }
+func TorrentBucket() []byte   { return []byte("torrent-v0") }
+func NodeBucketName() []byte  { return []byte("node-v0") }
+func BlockBucketName() []byte { return []byte("block-v0") }
+
+const (
+	DefaultFilePerm  os.FileMode = 0640
+	DefaultDirPerm               = os.ModeDir | DefaultFilePerm
+	SecurityPerm     os.FileMode = 0600
+	PrivateKeyLength             = 4096
+	IPFSBlockDB                  = "ipfs.block.bolt"
 )
-
-var appBaseDir string
-
-func GetAppBaseDir() string {
-	if appBaseDir != "" {
-		return appBaseDir
-	}
-	home, err := os.UserHomeDir()
-	if err != nil {
-		panic(err)
-	}
-
-	appBaseDir = filepath.Join(home, ".sci-hub-p2p")
-
-	return appBaseDir
-}
-
-func GetAppTmpDir() string {
-	return filepath.Join(GetAppBaseDir(), "tmp")
-}
-
-func GetPaperBoltPath() string {
-	return filepath.Join(GetAppBaseDir(), "papers.bolt")
-}
-
-func GetTorrentStoragePath() string {
-	return filepath.Join(GetAppBaseDir(), "torrents")
-}
-
-func IpfsBoltPath() string {
-	return filepath.Join(GetAppBaseDir(), constants.IPFSBlockDB)
-}

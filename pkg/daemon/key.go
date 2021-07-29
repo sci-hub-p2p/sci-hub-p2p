@@ -25,7 +25,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/pnet"
 	"github.com/pkg/errors"
 
-	"sci_hub_p2p/pkg/constants"
+	"sci_hub_p2p/pkg/consts"
 	"sci_hub_p2p/pkg/key"
 	"sci_hub_p2p/pkg/logger"
 )
@@ -58,7 +58,7 @@ func genKey() (crypto.PrivKey, error) {
 	var raw, err = os.ReadFile(keyPath)
 	if errors.Is(err, os.ErrNotExist) {
 		logger.Info("Generating New Rsa Key")
-		priv, _, err := crypto.GenerateKeyPair(crypto.RSA, constants.PrivateKeyLength)
+		priv, _, err := crypto.GenerateKeyPair(crypto.RSA, consts.PrivateKeyLength)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to generate RSA key")
 		}
@@ -71,7 +71,7 @@ func genKey() (crypto.PrivKey, error) {
 			panic("can't cast private key to *rsa.PrivateKey")
 		}
 		raw = key.ExportRsaPrivateKeyAsPem(v)
-		err = os.WriteFile(keyPath, raw, constants.SecurityPerm)
+		err = os.WriteFile(keyPath, raw, consts.SecurityPerm)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to save key to file %s", keyPath)
 		}

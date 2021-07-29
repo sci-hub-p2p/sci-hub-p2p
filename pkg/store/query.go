@@ -23,7 +23,7 @@ import (
 	"go.etcd.io/bbolt"
 	"go.uber.org/zap"
 
-	"sci_hub_p2p/pkg/constants"
+	"sci_hub_p2p/pkg/consts"
 	"sci_hub_p2p/pkg/logger"
 )
 
@@ -73,7 +73,7 @@ func resultGenerator(log *zap.Logger, db *bbolt.DB, qrb *dsq.ResultBuilder) func
 		log.Debug("start process")
 		defer log.Debug("stop process")
 		err := db.View(func(tx *bbolt.Tx) error {
-			buck := tx.Bucket(constants.BlockBucketName())
+			buck := tx.Bucket(consts.BlockBucketName())
 			c := buck.Cursor()
 			// If we need to sort, we'll need to collect all the results up-front.
 			if len(orders) > 0 {

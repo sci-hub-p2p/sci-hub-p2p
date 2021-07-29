@@ -13,9 +13,43 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package variable
+package vars
 
-var Ref = "development"
-var Commit = "00000000"
-var Builder string
-var BuildTime string
+import (
+	"os"
+	"path/filepath"
+
+	"sci_hub_p2p/pkg/consts"
+)
+
+var appBaseDir string
+
+func GetAppBaseDir() string {
+	if appBaseDir != "" {
+		return appBaseDir
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		panic(err)
+	}
+
+	appBaseDir = filepath.Join(home, ".sci-hub-p2p")
+
+	return appBaseDir
+}
+
+func GetAppTmpDir() string {
+	return filepath.Join(GetAppBaseDir(), "tmp")
+}
+
+func GetPaperBoltPath() string {
+	return filepath.Join(GetAppBaseDir(), "papers.bolt")
+}
+
+func GetTorrentStoragePath() string {
+	return filepath.Join(GetAppBaseDir(), "torrents")
+}
+
+func IpfsBoltPath() string {
+	return filepath.Join(GetAppBaseDir(), consts.IPFSBlockDB)
+}

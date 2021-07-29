@@ -31,9 +31,9 @@ import (
 	"go.uber.org/zap"
 
 	"sci_hub_p2p/internal/utils"
-	"sci_hub_p2p/pkg/constants"
+	"sci_hub_p2p/pkg/consts"
 	"sci_hub_p2p/pkg/logger"
-	"sci_hub_p2p/pkg/variable"
+	"sci_hub_p2p/pkg/vars"
 )
 
 var loadCmd = &cobra.Command{
@@ -41,13 +41,13 @@ var loadCmd = &cobra.Command{
 	Short:         "Load indexes into database.",
 	Example:       "indexes load /path/to/*.jsonlines.lzma [--glob '/path/to/data/*.jsonlines.lzma']",
 	SilenceErrors: false,
-	PreRunE:       utils.EnsureDir(variable.GetAppBaseDir()),
+	PreRunE:       utils.EnsureDir(vars.GetAppBaseDir()),
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		args, err = utils.MergeGlob(args, glob)
 		if err != nil {
 			return errors.Wrap(err, "can't load any index files")
 		}
-		db, err := bbolt.Open(variable.GetPaperBoltPath(), constants.DefaultFilePerm, bbolt.DefaultOptions)
+		db, err := bbolt.Open(vars.GetPaperBoltPath(), consts.DefaultFilePerm, bbolt.DefaultOptions)
 		if err != nil {
 			return errors.Wrap(err, "cant' open database file, maybe another process is running")
 		}
@@ -64,7 +64,7 @@ var loadCmd = &cobra.Command{
 
 		var count int
 		err = db.Batch(func(tx *bbolt.Tx) error {
-			b, err := tx.CreateBucketIfNotExists(constants.PaperBucket())
+			b, err := tx.CreateBucketIfNotExists(consts.PaperBucket())
 			if err != nil {
 				return errors.Wrap(err, "can't create bucket in database")
 			}
