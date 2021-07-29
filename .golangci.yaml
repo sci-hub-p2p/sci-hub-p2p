@@ -246,7 +246,7 @@ issues:
     - path: 'cmd[/\\].*'
       linters: [gochecknoglobals, gochecknoinits, goerr113, wrapcheck]
 
-    - path: 'pkg[/\\]variable[/\\].*\.go'
+    - path: 'pkg[/\\]vars[/\\].*\.go'
       linters: [gochecknoglobals]
 
     - path: 'internal[/\\]utils[/\\]file\.go'
@@ -255,7 +255,7 @@ issues:
     - path: '.*_test\.go'
       linters: [gocritic, nlreturn]
 
-    - path: '.*variable\.go'
+    - path: '.*vars\.go'
       linters:
         - gochecknoglobals
 

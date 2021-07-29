@@ -24,7 +24,7 @@ import (
 	files "github.com/ipfs/go-ipfs-files"
 	"github.com/pkg/errors"
 
-	"sci_hub_p2p/pkg/constants"
+	"sci_hub_p2p/pkg/consts"
 )
 
 var _ interface {
@@ -85,7 +85,7 @@ func (c CompressedFileInfo) Size() int64 {
 }
 
 func (c CompressedFileInfo) Mode() fs.FileMode {
-	return constants.DefaultFilePerm
+	return consts.DefaultFilePerm
 }
 
 func (c CompressedFileInfo) ModTime() time.Time {

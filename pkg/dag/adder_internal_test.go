@@ -28,7 +28,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.etcd.io/bbolt"
 
-	"sci_hub_p2p/pkg/constants"
+	"sci_hub_p2p/pkg/consts"
 )
 
 func Test_AddSingleFile(t *testing.T) {
@@ -40,7 +40,7 @@ func Test_AddSingleFile(t *testing.T) {
 	)
 	assert.Nil(t, err)
 
-	db, err := bbolt.Open(filepath.Join(t.TempDir(), "test.bolt"), constants.DefaultFilePerm, bbolt.DefaultOptions)
+	db, err := bbolt.Open(filepath.Join(t.TempDir(), "test.bolt"), consts.DefaultFilePerm, bbolt.DefaultOptions)
 	assert.Nil(t, err)
 	defer db.Close()
 	assert.Nil(t, InitDB(db))

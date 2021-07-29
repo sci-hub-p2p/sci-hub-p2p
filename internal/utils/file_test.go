@@ -23,7 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"sci_hub_p2p/internal/utils"
-	"sci_hub_p2p/pkg/constants"
+	"sci_hub_p2p/pkg/consts"
 )
 
 func TestFileExist(t *testing.T) {
@@ -31,7 +31,7 @@ func TestFileExist(t *testing.T) {
 
 	tmp := t.TempDir()
 	tmpFile := filepath.Join(tmp, "filename")
-	assert.Nil(t, os.WriteFile(tmpFile, []byte("s"), constants.DefaultFilePerm))
+	assert.Nil(t, os.WriteFile(tmpFile, []byte("s"), consts.DefaultFilePerm))
 	re, err := utils.FileExist(tmpFile)
 	assert.Nil(t, err)
 	assert.True(t, re, tmpFile)
@@ -42,7 +42,7 @@ func TestFileExistDirErr(t *testing.T) {
 
 	tmp := t.TempDir()
 	tmpDir := filepath.Join(tmp, "dirname")
-	assert.Nil(t, os.MkdirAll(tmpDir, constants.DefaultDirPerm))
+	assert.Nil(t, os.MkdirAll(tmpDir, consts.DefaultDirPerm))
 	_, err := utils.FileExist(tmpDir)
 	assert.NotNil(t, err)
 	assert.ErrorIs(t, err, utils.ErrNotAFile)
@@ -53,7 +53,7 @@ func TestDirExist(t *testing.T) {
 
 	tmp := t.TempDir()
 	tmpDir := filepath.Join(tmp, "dirname")
-	assert.Nil(t, os.MkdirAll(tmpDir, constants.DefaultDirPerm))
+	assert.Nil(t, os.MkdirAll(tmpDir, consts.DefaultDirPerm))
 	re, err := utils.DirExist(tmpDir)
 	assert.Nil(t, err)
 	assert.True(t, re)
@@ -64,7 +64,7 @@ func TestDirIsFileErr(t *testing.T) {
 
 	tmp := t.TempDir()
 	tmpFile := filepath.Join(tmp, "filename")
-	assert.Nil(t, os.WriteFile(tmpFile, []byte("s"), constants.DefaultFilePerm))
+	assert.Nil(t, os.WriteFile(tmpFile, []byte("s"), consts.DefaultFilePerm))
 	_, err := utils.DirExist(tmpFile)
 	assert.NotNil(t, err)
 	assert.ErrorIs(t, err, utils.ErrNotADir)

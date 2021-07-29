@@ -27,7 +27,7 @@ import (
 	"go.etcd.io/bbolt"
 	"go.uber.org/zap"
 
-	"sci_hub_p2p/pkg/constants"
+	"sci_hub_p2p/pkg/consts"
 	"sci_hub_p2p/pkg/logger"
 	"sci_hub_p2p/pkg/storage"
 )
@@ -43,11 +43,11 @@ func New(db *bbolt.DB) *Archive {
 
 func InitDB(db *bbolt.DB) error {
 	return errors.Wrap(db.Update(func(tx *bbolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists(constants.NodeBucketName())
+		_, err := tx.CreateBucketIfNotExists(consts.NodeBucketName())
 		if err != nil {
 			return errors.Wrap(err, "can't create node bucket")
 		}
-		_, err = tx.CreateBucketIfNotExists(constants.BlockBucketName())
+		_, err = tx.CreateBucketIfNotExists(consts.BlockBucketName())
 		if err != nil {
 			return errors.Wrap(err, "can't create block bucket")
 		}
@@ -74,7 +74,7 @@ func (d *Archive) Get(ctx context.Context, c cid.Cid) (ipld.Node, error) {
 	case cid.DagProtobuf:
 		err := d.db.View(func(tx *bbolt.Tx) error {
 			var err error
-			b := tx.Bucket(constants.NodeBucketName())
+			b := tx.Bucket(consts.NodeBucketName())
 			n, err = storage.ReadProtoNode(b, c)
 
 			return errors.Wrap(err, "failed to read Protobuf Node from storage")
@@ -84,7 +84,7 @@ func (d *Archive) Get(ctx context.Context, c cid.Cid) (ipld.Node, error) {
 	case cid.Raw:
 		err := d.db.View(func(tx *bbolt.Tx) error {
 			var err error
-			b := tx.Bucket(constants.NodeBucketName())
+			b := tx.Bucket(consts.NodeBucketName())
 			n, err = storage.ReadFileStoreNode(b, c)
 
 			return errors.Wrap(err, "failed to read FileStore Node from storage")
@@ -119,7 +119,7 @@ func (d *Archive) AddMany(_ context.Context, nodes []ipld.Node) error {
 
 func (d *Archive) Remove(_ context.Context, c cid.Cid) error {
 	err := d.db.Update(func(tx *bbolt.Tx) error {
-		b := tx.Bucket(constants.NodeBucketName())
+		b := tx.Bucket(consts.NodeBucketName())
 		if b == nil {
 			return nil
 		}
@@ -132,7 +132,7 @@ func (d *Archive) Remove(_ context.Context, c cid.Cid) error {
 
 func (d *Archive) RemoveMany(_ context.Context, cids []cid.Cid) error {
 	err := d.db.Batch(func(tx *bbolt.Tx) error {
-		b := tx.Bucket(constants.NodeBucketName())
+		b := tx.Bucket(consts.NodeBucketName())
 		if b == nil {
 			return nil
 		}

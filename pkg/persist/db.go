@@ -24,7 +24,7 @@ import (
 
 	"sci_hub_p2p/internal/torrent"
 	"sci_hub_p2p/pkg/indexes"
-	"sci_hub_p2p/pkg/variable"
+	"sci_hub_p2p/pkg/vars"
 )
 
 var ErrNotFound = errors.New("not found in database")
@@ -70,7 +70,7 @@ func GetPerFileAndRawTorrent(b *bbolt.Bucket, doi string) (*indexes.PerFile, []b
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "can't find record")
 	}
-	r, err := os.ReadFile(filepath.Join(variable.GetTorrentStoragePath(), record.HexInfoHash()+".torrent"))
+	r, err := os.ReadFile(filepath.Join(vars.GetTorrentStoragePath(), record.HexInfoHash()+".torrent"))
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "can't read torrent data")
 	}

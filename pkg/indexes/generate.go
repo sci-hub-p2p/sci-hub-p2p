@@ -40,7 +40,7 @@ import (
 	"sci_hub_p2p/cmd/flag"
 	"sci_hub_p2p/internal/torrent"
 	"sci_hub_p2p/internal/utils"
-	"sci_hub_p2p/pkg/constants"
+	"sci_hub_p2p/pkg/consts"
 	"sci_hub_p2p/pkg/hash"
 	"sci_hub_p2p/pkg/logger"
 )
@@ -186,7 +186,7 @@ func Generate(dataDir, outDir string, t *torrent.Torrent, disableProgress bool) 
 	defer close(done)
 	wg.Add(flag.Parallel)
 
-	db, err := bbolt.Open(out, constants.DefaultFilePerm, &bbolt.Options{Timeout: 1 * time.Second})
+	db, err := bbolt.Open(out, consts.DefaultFilePerm, &bbolt.Options{Timeout: 1 * time.Second})
 	if err != nil {
 		return errors.Wrapf(err, "can't open %s to write indexes", out)
 	}
@@ -243,7 +243,7 @@ func collectResult(
 		bar.Start()
 	}
 	err := db.Batch(func(tx *bbolt.Tx) error {
-		b, err := tx.CreateBucketIfNotExists(constants.PaperBucket())
+		b, err := tx.CreateBucketIfNotExists(consts.PaperBucket())
 		if err != nil {
 			return errors.Wrap(err, "can't create bucket, maybe indexes file is not writeable")
 		}
@@ -298,7 +298,7 @@ func dumpToFile(tx *bbolt.Tx, name string) (err error) {
 	}()
 
 	// Assume bucket exists and has keys
-	b := tx.Bucket(constants.PaperBucket())
+	b := tx.Bucket(consts.PaperBucket())
 
 	c := b.Cursor()
 

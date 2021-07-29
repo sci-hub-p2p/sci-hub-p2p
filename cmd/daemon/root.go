@@ -22,10 +22,10 @@ import (
 	"go.uber.org/zap"
 
 	"sci_hub_p2p/internal/utils"
-	"sci_hub_p2p/pkg/constants"
+	"sci_hub_p2p/pkg/consts"
 	"sci_hub_p2p/pkg/daemon"
 	"sci_hub_p2p/pkg/logger"
-	"sci_hub_p2p/pkg/variable"
+	"sci_hub_p2p/pkg/vars"
 )
 
 var Cmd = &cobra.Command{
@@ -35,19 +35,19 @@ var Cmd = &cobra.Command{
 var startCmd = &cobra.Command{
 	Use:     "start",
 	Short:   "start daemon",
-	PreRunE: utils.EnsureDir(variable.GetAppBaseDir()),
+	PreRunE: utils.EnsureDir(vars.GetAppBaseDir()),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		logger.Info("open database", zap.String("db", variable.IpfsBoltPath()))
-		db, err := bbolt.Open(variable.IpfsBoltPath(), constants.DefaultFilePerm, bbolt.DefaultOptions)
+		logger.Info("open database", zap.String("db", vars.IpfsBoltPath()))
+		db, err := bbolt.Open(vars.IpfsBoltPath(), consts.DefaultFilePerm, bbolt.DefaultOptions)
 		if err != nil {
 			return errors.Wrap(err, "failed to open database")
 		}
 		defer db.Close()
 		err = db.View(func(tx *bbolt.Tx) error {
-			if tx.Bucket(constants.BlockBucketName()) == nil {
+			if tx.Bucket(consts.BlockBucketName()) == nil {
 				return errors.New("database is empty")
 			}
-			if tx.Bucket(constants.NodeBucketName()) == nil {
+			if tx.Bucket(consts.NodeBucketName()) == nil {
 				return errors.New("database is empty")
 			}
 

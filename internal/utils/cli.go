@@ -23,7 +23,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"sci_hub_p2p/pkg/constants"
+	"sci_hub_p2p/pkg/consts"
 )
 
 func MarkFlagsRequired(c *cobra.Command, flags ...string) error {
@@ -42,7 +42,7 @@ func EnsureDir(name string) func(cmd *cobra.Command, args []string) error {
 		s, err := os.Stat(name)
 		if err != nil {
 			if os.IsNotExist(err) {
-				err := os.MkdirAll(name, constants.DefaultDirPerm)
+				err := os.MkdirAll(name, consts.DefaultDirPerm)
 				if err != nil {
 					return errors.Wrapf(err, "can't create app base dir %s", name)
 				}

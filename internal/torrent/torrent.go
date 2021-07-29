@@ -24,7 +24,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"sci_hub_p2p/pkg/constants/size"
+	"sci_hub_p2p/pkg/consts/size"
 )
 
 type Node struct {
