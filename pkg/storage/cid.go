@@ -13,41 +13,44 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package dagserv
+package storage
 
 import (
 	"io"
 
 	"github.com/ipfs/go-cid"
 	chunker "github.com/ipfs/go-ipfs-chunker"
+	files "github.com/ipfs/go-ipfs-files"
 	ipld "github.com/ipfs/go-ipld-format"
 	"github.com/ipfs/go-unixfs/importer/balanced"
 	"github.com/ipfs/go-unixfs/importer/helpers"
 	"github.com/multiformats/go-multihash"
 	"github.com/pkg/errors"
-	"go.etcd.io/bbolt"
 )
 
-func Add(db *bbolt.DB, r io.Reader, abs string, size, baseOffset uint64) (ipld.Node, error) {
+func DefaultPrefix() cid.Prefix {
+	return cid.Prefix{
+		Version:  1,
+		Codec:    cid.DagProtobuf,
+		MhType:   multihash.Names["blake2b-256"],
+		MhLength: -1,
+	}
+}
+
+// Add a reader to given dag service.
+func Add(service ipld.DAGService, r io.Reader) (ipld.Node, error) {
+	_, ok := r.(files.FileInfo)
 	dbp := helpers.DagBuilderParams{
-		Dagserv:    New(db, baseOffset),
-		NoCopy:     true,
+		Dagserv:    service,
+		NoCopy:     ok,
 		RawLeaves:  true,
 		Maxlinks:   helpers.DefaultLinksPerBlock,
 		CidBuilder: DefaultPrefix(),
 	}
-	// NoCopy require a `FileInfo` on chunker
-	f := CompressedFile{
-		reader:             r,
-		zipPath:            abs,
-		compressedFilePath: "path/in/zip/article.pdf",
-		size:               size,
-	}
 
-	chunk, err := chunker.FromString(f, "default")
-	if err != nil {
-		return nil, errors.Wrapf(err, "can't create default chunker")
-	}
+	// NoCopy require a `FileInfo` on chunker
+	chunk := chunker.NewSizeSplitter(r, chunker.DefaultBlockSize)
+
 	dbh, err := dbp.New(chunk)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't create dag builder from chunker")
@@ -57,14 +60,5 @@ func Add(db *bbolt.DB, r io.Reader, abs string, size, baseOffset uint64) (ipld.N
 		return nil, errors.Wrapf(err, "can't layout all chunk")
 	}
 
-	return n, errors.Wrap(db.Sync(), "failed to flush data to disk")
-}
-
-func DefaultPrefix() cid.Prefix {
-	return cid.Prefix{
-		Version:  1,
-		Codec:    cid.DagProtobuf,
-		MhType:   multihash.Names["blake2b-256"],
-		MhLength: -1,
-	}
+	return n, nil
 }

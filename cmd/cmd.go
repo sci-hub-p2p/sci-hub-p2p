@@ -20,12 +20,16 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"runtime/pprof"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 
+	"sci_hub_p2p/cmd/daemon"
 	"sci_hub_p2p/cmd/flag"
 	"sci_hub_p2p/cmd/indexes"
+	"sci_hub_p2p/cmd/ipfs"
 	"sci_hub_p2p/cmd/paper"
 	"sci_hub_p2p/cmd/torrent"
 	"sci_hub_p2p/pkg/logger"
@@ -45,10 +49,26 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			return errors.Wrap(err, "Can't setup logger")
 		}
+		if flag.CPUProfile {
+			logger.Info("start profile, save data to ./cpu_profile")
+			f, err := os.Create("cpu_profile")
+			if err != nil {
+				logger.Error("failed to open ./cpu_profile to write profile data", zap.Error(err))
+			} else {
+				err = pprof.StartCPUProfile(f)
+				if err != nil {
+					logger.Error("failed to start profile", zap.Error(err))
+				}
+			}
+		}
 
 		return nil
 	},
 	PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
+		if flag.CPUProfile {
+			pprof.StopCPUProfile()
+		}
+
 		return logger.Sync()
 	},
 }
@@ -74,7 +94,7 @@ var debugCmd = &cobra.Command{
 }
 
 func Execute() {
-	rootCmd.AddCommand(indexes.Cmd, torrent.Cmd, paper.Cmd, debugCmd)
+	rootCmd.AddCommand(daemon.Cmd, indexes.Cmd, torrent.Cmd, paper.Cmd, debugCmd, ipfs.Cmd)
 
 	rootCmd.PersistentFlags().StringVar(&flag.LogFile, "log-file", "", "extra logger file, eg: ./out/log.jsonlines")
 	rootCmd.PersistentFlags().BoolVar(&flag.Debug, "debug", false, "enable Debug")
@@ -82,6 +102,8 @@ func Execute() {
 
 	rootCmd.PersistentFlags().IntVarP(&flag.Parallel, "parallel", "n",
 		defaultParallel, "how many CPU will be used")
+
+	rootCmd.PersistentFlags().BoolVar(&flag.CPUProfile, "cpu-profile", false, "generate a cpu profile")
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)

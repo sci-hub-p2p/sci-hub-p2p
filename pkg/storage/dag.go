@@ -13,84 +13,102 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package dagserv
+// Package storage is the common storage layout for dag and data store
+package storage
 
 import (
 	"fmt"
-	"io"
-	"os"
 
 	blocks "github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-cid"
-	posinfo "github.com/ipfs/go-ipfs-posinfo"
 	ipld "github.com/ipfs/go-ipld-format"
 	"github.com/ipfs/go-merkledag"
-	pb "github.com/ipfs/go-merkledag/pb"
+	merkledag_pb "github.com/ipfs/go-merkledag/pb"
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
 	"google.golang.org/protobuf/proto"
+
+	"sci_hub_p2p/internal/utils"
+	"sci_hub_p2p/pkg/constants"
+	"sci_hub_p2p/pkg/pb"
 )
 
 func ReadFileStoreNode(b *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {
-	var v = &Record{}
+	var v = &pb.Block{}
 	data := b.Get(c.Bytes())
 	if data == nil {
-		return nil, ErrNotFound
+		return nil, ipld.ErrNotFound
 	}
 
 	err := proto.Unmarshal(data, v)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't marshal persist.Record to binary")
 	}
-	f, err := os.Open(v.Filename)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to open file %s", v.Filename)
-	}
-	defer f.Close()
 
-	_, err = f.Seek(int64(v.Offset), io.SeekStart)
+	p, err := utils.ReadFileAt(v.Filename, v.Offset, v.Size)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to seek file %s", v.Filename)
-	}
-
-	var p = make([]byte, v.Length)
-
-	_, err = io.ReadFull(f, p)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to read file %s", v.Filename)
+		return nil, errors.Wrap(err, "filed to read from disk")
 	}
 
 	block, err := blocks.NewBlockWithCid(p, c)
 
-	return &posinfo.FilestoreNode{Node: &merkledag.RawNode{Block: block}}, errors.Wrap(err, "failed to create block")
+	return &merkledag.RawNode{Block: block}, errors.Wrap(err, "failed to create block")
 }
 
-func SaveFileStoreMeta(b *bbolt.Bucket, c cid.Cid, name string, offset, size uint64) error {
-	v := &Record{
+func SaveFileStoreMeta(tx *bbolt.Tx, c cid.Cid, name string, offset, size int64) error {
+	nb := tx.Bucket(constants.NodeBucketName())
+	bb := tx.Bucket(constants.BlockBucketName())
+
+	var block = pb.Block{
+		Type:     pb.BlockType_file,
+		CID:      c.Bytes(),
 		Offset:   offset,
-		Length:   size,
+		Size:     size,
 		Filename: name,
 	}
-	raw, err := proto.Marshal(v)
+
+	value, err := proto.Marshal(&block)
 	if err != nil {
-		return errors.Wrap(err, "can't marshal persist.Record to binary")
+		return errors.Wrap(err, "failed to marshal block record to bytes")
 	}
 
-	return errors.Wrap(b.Put(c.Bytes(), raw), "failed to save data to database")
+	err = bb.Put(c.Hash(), value)
+	if err != nil {
+		return errors.Wrap(err, "failed to save block record to database")
+	}
+
+	return errors.Wrap(nb.Put(c.Bytes(), value), "failed to save data to database")
 }
 
-func SaveProtoNode(b *bbolt.Bucket, c cid.Cid, n *merkledag.ProtoNode) error {
-	return errors.Wrap(b.Put(c.Bytes(), n.RawData()), "failed to save data to database")
+func SaveProtoNode(tx *bbolt.Tx, c cid.Cid, n *merkledag.ProtoNode) error {
+	nb := tx.Bucket(constants.NodeBucketName())
+	bb := tx.Bucket(constants.BlockBucketName())
+
+	var v = pb.Block{Type: pb.BlockType_proto, CID: c.Bytes(), Size: int64(len(n.RawData()))}
+	value, err := proto.Marshal(&v)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal block record to bytes")
+	}
+
+	err = bb.Put(c.Hash(), value)
+	if err != nil {
+		return errors.Wrap(err, "failed to save block record to database")
+	}
+
+	return errors.Wrap(nb.Put(c.Bytes(), n.RawData()), "failed to save node record to database")
 }
 
-func ReadProtoNode(b *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {
-	data := b.Get(c.Bytes())
+func ReadProtoNode(nb *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {
+	data := nb.Get(c.Bytes())
 	if data == nil {
-		return nil, ErrNotFound
+		return nil, ipld.ErrNotFound
 	}
 	v, err := unmarshal(data, c)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal data to `merkledag.ProtoNode`")
+	}
 
-	return v, errors.Wrap(err, "failed to unmarshal data to `merkledag.ProtoNode`")
+	return v, nil
 }
 
 // from https://github.com/ipfs/go-merkledag/blob/v0.3.2/coding.go#L25-L46
@@ -103,7 +121,7 @@ func unmarshal(encoded []byte, c cid.Cid) (*merkledag.ProtoNode, error) {
 		MhLength: -1,
 	})
 
-	var pbn pb.PBNode
+	var pbn merkledag_pb.PBNode
 
 	if err := pbn.Unmarshal(encoded); err != nil {
 		return nil, errors.Wrap(err, "unmarshal failed")
@@ -129,3 +147,5 @@ func unmarshal(encoded []byte, c cid.Cid) (*merkledag.ProtoNode, error) {
 
 	return n, nil
 }
+
+var ErrNotSupportNode = errors.New("not supported error")

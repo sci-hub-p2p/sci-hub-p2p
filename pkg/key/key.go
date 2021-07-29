@@ -13,39 +13,19 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package hash
+package key
 
 import (
-	"io"
-
-	"github.com/ipfs/go-cid"
-	ipld "github.com/ipfs/go-ipld-format"
-	"github.com/pkg/errors"
-
-	"sci_hub_p2p/internal/memorydag"
-	"sci_hub_p2p/pkg/storage"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 )
 
-func Black2dBalancedSized256K(r io.Reader) ([]byte, error) {
-	var c, err = Cid(r)
-	if err != nil {
-		return nil, errors.Wrap(err, "can't generate cid")
-	}
-
-	return c.Bytes(), nil
-}
-
-func Cid(r io.Reader) (cid.Cid, error) {
-	var n, err = addFile(r)
-	if err != nil {
-		return cid.Cid{}, errors.Wrap(err, "can't generate cid")
-	}
-
-	return n.Cid(), nil
-}
-
-func addFile(r io.Reader) (ipld.Node, error) {
-	n, err := storage.Add(memorydag.New(), r)
-
-	return n, errors.Wrap(err, "failed to generate DAG from reader")
+func ExportRsaPrivateKeyAsPem(key *rsa.PrivateKey) []byte {
+	return pem.EncodeToMemory(
+		&pem.Block{
+			Type:  "RSA PRIVATE KEY",
+			Bytes: x509.MarshalPKCS1PrivateKey(key),
+		},
+	)
 }

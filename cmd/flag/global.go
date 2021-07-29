@@ -20,4 +20,5 @@ var (
 	Debug              bool
 	DisableProgressBar bool
 	LogFile            string
+	CPUProfile         bool
 )

@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package dagserv
+package dag
 
 import (
 	"io"
@@ -30,22 +30,29 @@ import (
 var _ interface {
 	files.FileInfo
 	io.Reader
-} = CompressedFile{}
+} = (*CompressedFile)(nil)
+
+func wrapZipFile(r io.Reader, zipPath string, size uint64) *CompressedFile {
+	return &CompressedFile{
+		r:    r,
+		abs:  zipPath,
+		size: size,
+	}
+}
 
 type CompressedFile struct {
-	reader             io.Reader
-	zipPath            string
-	compressedFilePath string
-	size               uint64
+	r    io.Reader
+	abs  string
+	size uint64
 }
 
 func (c CompressedFile) Read(p []byte) (int, error) {
-	n, err := c.reader.Read(p)
+	n, err := c.r.Read(p)
 	if err == io.EOF {
 		return n, io.EOF
 	}
 
-	return n, errors.Wrapf(err, "can't read from reader %s", c.zipPath)
+	return n, errors.Wrapf(err, "can't read from r %s", c.abs)
 }
 
 func (c CompressedFile) Close() error {
@@ -57,21 +64,20 @@ func (c CompressedFile) Size() (int64, error) {
 }
 
 func (c CompressedFile) AbsPath() string {
-	return c.zipPath
+	return c.abs
 }
 
 func (c CompressedFile) Stat() os.FileInfo {
-	return CompressedFileInfo{c.zipPath, c.compressedFilePath, int64(c.size)}
+	return CompressedFileInfo{c.abs, int64(c.size)}
 }
 
 type CompressedFileInfo struct {
-	zipPath            string
-	compressedFilePath string
-	size               int64
+	zipPath string
+	size    int64
 }
 
 func (c CompressedFileInfo) Name() string {
-	return c.compressedFilePath
+	return c.zipPath
 }
 
 func (c CompressedFileInfo) Size() int64 {

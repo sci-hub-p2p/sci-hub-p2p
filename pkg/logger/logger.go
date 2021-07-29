@@ -18,6 +18,7 @@ package logger
 import (
 	"os"
 
+	ds "github.com/ipfs/go-datastore"
 	"github.com/natefinch/lumberjack"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -28,16 +29,14 @@ import (
 
 const defaultLogFileMaxSize = 100 // MB
 
-var log *zap.Logger
+var log *zap.Logger = zap.NewNop()
 
 func Setup() error {
 	consoleEncoding := zapcore.EncoderConfig{
 		TimeKey:        "time",
 		LevelKey:       "level",
 		NameKey:        "logger",
-		CallerKey:      "caller",
 		MessageKey:     "msg",
-		StacktraceKey:  "",
 		LineEnding:     zapcore.DefaultLineEnding,
 		EncodeLevel:    zapcore.LowercaseColorLevelEncoder,
 		EncodeTime:     zapcore.TimeEncoderOfLayout("01-02 15:04:05"),
@@ -57,23 +56,19 @@ func Setup() error {
 		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
 
-	var infoLevel = zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
-		return lvl >= zapcore.InfoLevel
-	})
-	var onlyInfo = zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+	var stdoutLevel = zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
 		return lvl <= zapcore.InfoLevel
 	})
-	var errorLevel = zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
-		return lvl >= zapcore.ErrorLevel
-	})
 	if !flag.Debug {
-		onlyInfo = func(lvl zapcore.Level) bool {
+		stdoutLevel = func(lvl zapcore.Level) bool {
 			return lvl == zapcore.InfoLevel
 		}
 	}
 	cores := []zapcore.Core{
-		zapcore.NewCore(zapcore.NewConsoleEncoder(consoleEncoding), zapcore.NewMultiWriteSyncer(os.Stdout), onlyInfo),
-		zapcore.NewCore(zapcore.NewConsoleEncoder(consoleEncoding), zapcore.NewMultiWriteSyncer(os.Stderr), errorLevel),
+		zapcore.NewCore(zapcore.NewConsoleEncoder(consoleEncoding),
+			zapcore.NewMultiWriteSyncer(os.Stdout), stdoutLevel),
+		zapcore.NewCore(zapcore.NewConsoleEncoder(consoleEncoding),
+			zapcore.NewMultiWriteSyncer(os.Stderr), zap.NewAtomicLevelAt(zap.ErrorLevel)),
 	}
 
 	if flag.LogFile != "" {
@@ -82,8 +77,8 @@ func Setup() error {
 			MaxSize:  defaultLogFileMaxSize,
 			Compress: false,
 		}
-		cores = append(cores,
-			zapcore.NewCore(zapcore.NewJSONEncoder(jsonEncoding), zapcore.AddSync(lumberJackLogger), infoLevel))
+		cores = append(cores, zapcore.NewCore(zapcore.NewJSONEncoder(jsonEncoding),
+			zapcore.AddSync(lumberJackLogger), zap.NewAtomicLevel()))
 	}
 	log = zap.New(zapcore.NewTee(cores...))
 
@@ -116,4 +111,8 @@ func Fatal(msg string, fields ...zapcore.Field) {
 
 func Sync() error {
 	return errors.Wrap(log.Sync(), "failed to flush log to disk")
+}
+
+func Key(key ds.Key) zapcore.Field {
+	return zap.String("key", key.String())
 }

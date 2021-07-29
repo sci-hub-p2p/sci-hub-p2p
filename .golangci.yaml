@@ -125,6 +125,7 @@ linters-settings:
           - return
           - assign
         ignored-functions: cobra\..*Args
+
   gosimple:
     # Select the Go version to target. The default is '1.13'.
     go: "1.16"
@@ -138,6 +139,10 @@ linters-settings:
         pkg: "github.com/ipfs/go-ipld-format"
       - alias: chunker
         pkg: "github.com/ipfs/go-ipfs-chunker"
+      - alias: ds
+        pkg: "github.com/ipfs/go-datastore"
+      - alias: dshelp
+        pkg: "github.com/ipfs/go-ipfs-ds-help"
 
   lll:
     # max line length, lines longer will be reported. Default is 120.
@@ -202,10 +207,20 @@ linters-settings:
       - .Wrap(
       - .Wrapf(
       - .WithMessage(
-      - "(*go.etcd.io/bbolt.Bucket).Delete"
-      - "(*go.etcd.io/bbolt.Bucket).Get"
-      - "(*go.etcd.io/bbolt.Bucket).Put"
-      - "(*go.etcd.io/bbolt.Tx).CreateBucketIfNotExists"
+      - "func (*go.etcd.io/bbolt.Bucket).Delete"
+      - "func (*go.etcd.io/bbolt.Bucket).Get"
+      - "func (*go.etcd.io/bbolt.Bucket).Put"
+      - "func (*go.etcd.io/bbolt.Tx).CreateBucketIfNotExists"
+      - "func (*go.etcd.io/bbolt.DB).Batch"
+      - "func (*go.etcd.io/bbolt.DB).View"
+      - "func (*go.etcd.io/bbolt.Bucket).ForEach"
+
+  ifshort:
+    # Maximum length of variable declaration measured in number of lines, after which linter won't suggest using short syntax.
+    # Has higher priority than max-decl-chars.
+    max-decl-lines: 1
+    # Maximum length of variable declaration measured in number of characters, after which linter won't suggest using short syntax.
+    max-decl-chars: 30
 
 linters:
   enable-all: true
@@ -231,7 +246,7 @@ issues:
     - path: 'cmd[/\\].*'
       linters: [gochecknoglobals, gochecknoinits, goerr113, wrapcheck]
 
-    - path: 'pkg[/\\]variable[/\\].*'
+    - path: 'pkg[/\\]variable[/\\].*\.go'
       linters: [gochecknoglobals]
 
     - path: 'internal[/\\]utils[/\\]file\.go'
@@ -239,6 +254,14 @@ issues:
 
     - path: '.*_test\.go'
       linters: [gocritic, nlreturn]
+
+    - path: '.*variable\.go'
+      linters:
+        - gochecknoglobals
+
+    # these code are copied from external
+    - path: 'internal[/\\]ipfslite[/\\].*'
+      linters: [gochecknoinits, gochecknoglobals, importas, wrapcheck]
 
     - source: "var log"
       linters: [gochecknoglobals]
