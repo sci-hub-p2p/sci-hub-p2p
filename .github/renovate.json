@@ -1,17 +1,10 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "local>Trim21/renovate-config"
-  ],
+  "extends": ["local>Trim21/renovate-config"],
   "packageRules": [
     {
-      "matchManagers": [
-        "gomod"
-      ],
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ]
+      "matchManagers": ["gomod"],
+      "matchUpdateTypes": ["minor", "patch"]
     }
   ]
 }
