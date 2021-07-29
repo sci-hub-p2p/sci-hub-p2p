@@ -34,13 +34,13 @@ if you met the error: `Too many arguments`, try the `--glob` flag:
 sci-hub indexes load --glob './indexes/*.jsonlines.lzma'
 ```
 
-## Fetch the pdf
+## Fetch a paper
 
 ```bash
 sci-hub paper fetch --doi '10.1145/1327452.1327492' -o map-reduce.pdf
 ```
 
-You will see a CID a new pdf file at `./map-reduce.pdf` and a CID verify
+You will see a new pdf file at `./map-reduce.pdf` and a CID verify
 
 ```
 start downloading
