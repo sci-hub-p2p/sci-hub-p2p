@@ -25,6 +25,7 @@ require (
 	github.com/ipfs/go-ipld-format v0.2.0
 	github.com/ipfs/go-ipns v0.1.2
 	github.com/ipfs/go-log v1.0.5
+	github.com/ipfs/go-log/v2 v2.3.0 // indirect
 	github.com/ipfs/go-merkledag v0.3.2
 	github.com/ipfs/go-unixfs v0.2.6
 	github.com/itchio/lzma v0.0.0-20190703113020-d3e24e3e3d49
