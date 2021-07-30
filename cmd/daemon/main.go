@@ -16,7 +16,7 @@
 package main
 
 import (
-	"sci_hub_p2p/cmd"
+	"sci_hub_p2p/cmd/daemon/cmd"
 )
 
 func main() {

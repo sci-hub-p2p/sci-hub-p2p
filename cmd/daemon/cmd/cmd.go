@@ -13,14 +13,17 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-package daemon
+package cmd
 
 import (
+	"os"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"go.etcd.io/bbolt"
 	"go.uber.org/zap"
 
+	"sci_hub_p2p/cmd/shared"
 	"sci_hub_p2p/internal/utils"
 	"sci_hub_p2p/pkg/consts"
 	"sci_hub_p2p/pkg/daemon"
@@ -28,8 +31,8 @@ import (
 	"sci_hub_p2p/pkg/vars"
 )
 
-var Cmd = &cobra.Command{
-	Use: "daemon",
+var rootCmd = &cobra.Command{
+	Use: "sci-hub-daemon",
 }
 
 var startCmd = &cobra.Command{
@@ -57,14 +60,24 @@ var startCmd = &cobra.Command{
 			return err
 		}
 
-		return daemon.Start(db, port)
+		return daemon.Start(db, daemonPort)
 	},
+	PersistentPreRunE:  shared.PersistentPreRunE,
+	PersistentPostRunE: shared.PersistentPostRunE,
 }
-var port int
 
 const defaultDaemonPort = 4005
 
+var daemonPort int
+
 func init() {
-	Cmd.AddCommand(startCmd)
-	startCmd.Flags().IntVarP(&port, "port", "p", defaultDaemonPort, "IPFS peer default port")
+	shared.SetupGlobalFlag(rootCmd)
+	rootCmd.AddCommand(startCmd, shared.DebugCmd)
+	startCmd.Flags().IntVarP(&daemonPort, "daemonPort", "p", defaultDaemonPort, "IPFS peer default daemonPort")
+}
+
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		os.Exit(1)
+	}
 }
