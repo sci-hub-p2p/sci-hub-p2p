@@ -36,7 +36,7 @@ jobs:
 
       - name: lint
         run: |
-          prettier --write ./
+          prettier --write --list-different ./
           TMPFILE=$(mktemp)
           git diff >"${TMPFILE}"
           git stash -u && git stash drop
