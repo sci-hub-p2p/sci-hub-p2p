@@ -41,7 +41,7 @@ jobs:
 
       - name: create review
         if: ${{ failure() }}
-        run:
+        run: |
           TMPFILE=$(mktemp)
           git diff >"${TMPFILE}"
           git reset --hard HEAD
