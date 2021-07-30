@@ -19,6 +19,7 @@ import (
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
 
+	"sci_hub_p2p/internal/torrent"
 	"sci_hub_p2p/pkg/consts"
 	"sci_hub_p2p/pkg/indexes"
 	"sci_hub_p2p/pkg/vars"
@@ -49,4 +50,33 @@ func GetIndexRecord(doi []byte) (*indexes.Record, error) {
 	}
 
 	return r, nil
+}
+
+// GetTorrent accept a raw sha1 hash, return a parsed torrent
+func GetTorrent(hash []byte) (*torrent.Torrent, error) {
+	tDB, err := bbolt.Open(vars.TorrentDBPath(), consts.DefaultFilePerm, bbolt.DefaultOptions)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to open torrent database")
+	}
+	defer tDB.Close()
+
+	var raw []byte
+	err = tDB.View(func(tx *bbolt.Tx) error {
+		raw = tx.Bucket(consts.TorrentBucket()).Get(hash)
+
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read from torrent DB")
+	}
+	if raw == nil {
+		return nil, errors.Wrap(ErrNotFound, "failed to find torrent in DB")
+	}
+
+	t, err := torrent.ParseRaw(raw)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse torrent in database")
+	}
+
+	return t, nil
 }

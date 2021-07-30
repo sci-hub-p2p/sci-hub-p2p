@@ -58,12 +58,14 @@ func ParseRaw(raw []byte) (*Torrent, error) {
 		return nil, err
 	}
 
+	tt.raw = raw
+
 	infoHash, err := getInfoHash(raw)
 	if err != nil {
 		return nil, err
 	}
 
-	tt.SetInfoHash(infoHash)
+	tt.setInfoHash(infoHash)
 
 	return tt, nil
 }

@@ -70,13 +70,13 @@ func (t torrentFile) toTorrent() (*Torrent, error) {
 	var torrent Torrent
 	torrent.Name = t.Info.GetName()
 	torrent.PieceLength = t.Info.PieceLength
-	err := torrent.SetPieces(t.Info.Pieces)
+	err := torrent.setPieces(t.Info.Pieces)
 	if err != nil {
 		return nil, err
 	}
 	torrent.Announce = t.Announce
 	torrent.AnnounceList = t.AnnounceList
-	torrent.SetFiles(t.Info.Files)
+	torrent.setFiles(t.Info.Files)
 
 	n, err := castNodes(t.Nodes)
 	if err != nil {

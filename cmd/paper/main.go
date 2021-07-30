@@ -21,10 +21,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"go.etcd.io/bbolt"
 
 	"sci_hub_p2p/internal/client"
-	"sci_hub_p2p/internal/torrent"
 	"sci_hub_p2p/internal/utils"
 	"sci_hub_p2p/pkg/consts"
 	"sci_hub_p2p/pkg/persist"
@@ -53,29 +51,9 @@ var fetchCmd = &cobra.Command{
 			return err
 		}
 
-		tDB, err := bbolt.Open(vars.TorrentDBPath(), consts.DefaultFilePerm, bbolt.DefaultOptions)
+		t, err := persist.GetTorrent(r.InfoHash[:])
 		if err != nil {
-			return errors.Wrap(err, "failed to open torrent database")
-		}
-		defer tDB.Close()
-
-		var raw []byte
-		err = tDB.View(func(tx *bbolt.Tx) error {
-			raw = tx.Bucket(consts.TorrentBucket()).Get(r.InfoHash[:])
-
-			return nil
-		})
-		if err != nil {
-			return errors.Wrap(err, "failed to read from torrent DB")
-		}
-		if raw == nil {
-			return errors.Wrap(err, "failed to find torrent in DB")
-		}
-
-		t, err := torrent.ParseRaw(raw)
-		if err != nil {
-			return errors.Wrapf(err, "failed to parse torrent from DB, please reload torrent %s it into database",
-				r.HexInfoHash())
+			return err
 		}
 
 		p, err := r.Build(doi, t)
@@ -83,7 +61,7 @@ var fetchCmd = &cobra.Command{
 			return err
 		}
 
-		b, err := client.Fetch(p, raw)
+		b, err := client.Fetch(p, t.Raw())
 		if err != nil {
 			return err
 		}
