@@ -261,7 +261,7 @@ issues:
 
     # these code are copied from external
     - path: 'internal[/\\]ipfslite[/\\].*'
-      linters: [gochecknoinits, gochecknoglobals, importas, wrapcheck]
+      linters: [wrapcheck]
 
     - source: "var log"
       linters: [gochecknoglobals]

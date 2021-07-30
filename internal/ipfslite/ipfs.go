@@ -25,13 +25,12 @@ import (
 	"github.com/ipfs/go-bitswap/network"
 	"github.com/ipfs/go-blockservice"
 	"github.com/ipfs/go-cid"
-	"github.com/ipfs/go-datastore"
+	ds "github.com/ipfs/go-datastore"
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
 	offline "github.com/ipfs/go-ipfs-exchange-offline"
 	provider "github.com/ipfs/go-ipfs-provider"
 	"github.com/ipfs/go-ipfs-provider/queue"
 	"github.com/ipfs/go-ipfs-provider/simple"
-	cbor "github.com/ipfs/go-ipld-cbor"
 	ipld "github.com/ipfs/go-ipld-format"
 	"github.com/ipfs/go-merkledag"
 	ufsio "github.com/ipfs/go-unixfs/io"
@@ -43,14 +42,8 @@ import (
 	"sci_hub_p2p/pkg/logger"
 )
 
-func init() {
-	ipld.Register(cid.DagProtobuf, merkledag.DecodeProtobufBlock)
-	ipld.Register(cid.Raw, merkledag.DecodeRawBlock)
-	ipld.Register(cid.DagCBOR, cbor.DecodeBlock) // need to decode CBOR
-}
-
 const (
-	defaultReprovideInterval = 12 * time.Hour
+	defaultReprovideInterval = 12*time.Hour + 5*time.Minute
 )
 
 // Config wraps configuration options for the Peer.
@@ -76,7 +69,7 @@ type Peer struct {
 
 	host  host.Host
 	dht   routing.Routing
-	store datastore.Batching
+	store ds.Batching
 
 	ipld.DAGService // become a DAG service
 	bstore          blockstore.Blockstore
@@ -84,13 +77,13 @@ type Peer struct {
 	reprovider      provider.System
 }
 
-// New creates an IPFS-Lite Peer. It uses the given datastore, libp2p Host and
+// New creates an IPFS-Lite Peer. It uses the given ds, libp2p Host and
 // Routing (usuall the DHT). The Host and the Routing may be nil if
 // config.Offline is set to true, as they are not used in that case. Peer
 // implements the ipld.DAGService interface.
 func New(
 	ctx context.Context,
-	store datastore.Batching,
+	store ds.Batching,
 	host host.Host,
 	dht routing.Routing,
 	cfg *Config,

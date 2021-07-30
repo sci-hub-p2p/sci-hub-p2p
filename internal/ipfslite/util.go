@@ -19,7 +19,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/ipfs/go-datastore"
+	ds "github.com/ipfs/go-datastore"
 	config "github.com/ipfs/go-ipfs-config"
 	"github.com/ipfs/go-ipns"
 	"github.com/libp2p/go-libp2p"
@@ -68,7 +68,7 @@ func DefaultLibp2pOptions() []libp2p.Option {
 // SetupLibp2p returns a routed host and DHT instances that can be used to
 // easily create a ipfslite Peer. You may consider to use Peer.Bootstrap()
 // after creating the IPFS-Lite Peer to connect to other peers. When the
-// datastore parameter is nil, the DHT will use an in-memory datastore, so all
+// ds parameter is nil, the DHT will use an in-memory ds, so all
 // provider records are lost on program shutdown.
 //
 // Additional libp2p options can be passed. Note that the Identity,
@@ -83,7 +83,7 @@ func SetupLibp2p(
 	hostKey crypto.PrivKey,
 	secret pnet.PSK,
 	listenAddrs []multiaddr.Multiaddr,
-	ds datastore.Batching,
+	ds ds.Batching,
 	opts ...libp2p.Option,
 ) (host.Host, *dualdht.DHT, error) {
 	var ddht *dualdht.DHT
@@ -113,7 +113,7 @@ func SetupLibp2p(
 	return h, ddht, nil
 }
 
-func newDHT(ctx context.Context, h host.Host, ds datastore.Batching) (*dualdht.DHT, error) {
+func newDHT(ctx context.Context, h host.Host, ds ds.Batching) (*dualdht.DHT, error) {
 	dhtOpts := []dualdht.Option{
 		dualdht.DHTOption(dht.NamespacedValidator("pk", record.PublicKeyValidator{})),
 		dualdht.DHTOption(dht.NamespacedValidator("ipns", ipns.Validator{KeyBook: h.Peerstore()})),
