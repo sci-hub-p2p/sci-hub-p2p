@@ -43,17 +43,13 @@ func GetAppTmpDir() string {
 }
 
 func IndexesBoltPath() string {
-	return filepath.Join(GetAppBaseDir(), "papers.bolt")
+	return filepath.Join(GetAppBaseDir(), "indexes.bolt")
 }
 
 func TorrentDBPath() string {
 	return filepath.Join(GetAppBaseDir(), "torrent.bolt")
 }
 
-func GetTorrentStoragePath() string {
-	return filepath.Join(GetAppBaseDir(), "torrents")
-}
-
-func IpfsBoltPath() string {
+func IpfsDBPath() string {
 	return filepath.Join(GetAppBaseDir(), consts.IPFSBlockDB)
 }

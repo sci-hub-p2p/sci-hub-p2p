@@ -52,7 +52,7 @@ func GetIndexRecord(doi []byte) (*indexes.Record, error) {
 	return r, nil
 }
 
-// GetTorrent accept a raw sha1 hash, return a parsed torrent
+// GetTorrent accept a raw sha1 hash, return a parsed torrent.
 func GetTorrent(hash []byte) (*torrent.Torrent, error) {
 	tDB, err := bbolt.Open(vars.TorrentDBPath(), consts.DefaultFilePerm, bbolt.DefaultOptions)
 	if err != nil {
