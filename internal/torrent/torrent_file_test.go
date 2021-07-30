@@ -26,6 +26,7 @@ import (
 
 func TestParseFile(t *testing.T) {
 	t.Parallel()
+
 	f, err := filepath.Abs("../../testdata/sm_00900000-00999999.torrent")
 	assert.Nil(t, err)
 	tor, err := torrent.ParseFile(f)

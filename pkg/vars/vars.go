@@ -28,6 +28,7 @@ func GetAppBaseDir() string {
 	if appBaseDir != "" {
 		return appBaseDir
 	}
+
 	home, err := os.UserHomeDir()
 	if err != nil {
 		panic(err)

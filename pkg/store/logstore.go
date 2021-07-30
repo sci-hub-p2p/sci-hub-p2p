@@ -132,6 +132,7 @@ type LogBatch struct {
 
 func (d *LogDatastore) Batch() (ds.Batch, error) {
 	d.logger.Debug("Batch")
+
 	if bds, ok := d.child.(ds.Batching); ok {
 		b, err := bds.Batch()
 

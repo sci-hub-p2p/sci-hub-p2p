@@ -66,10 +66,12 @@ func (d *Archive) Get(ctx context.Context, c cid.Cid) (ipld.Node, error) {
 	d.log.Debug("Get Node", zap.String("CID", c.String()))
 	d.RLock()
 	defer d.RUnlock()
+
 	if c.Version() == 0 {
 		return nil, ipld.ErrNotFound
 	}
 	var n ipld.Node
+
 	switch c.Type() {
 	case cid.DagProtobuf:
 		err := d.db.View(func(tx *bbolt.Tx) error {
@@ -99,6 +101,7 @@ func (d *Archive) Get(ctx context.Context, c cid.Cid) (ipld.Node, error) {
 // GetMany TODO: need to parallel this, but I'm lazy.
 func (d *Archive) GetMany(ctx context.Context, cids []cid.Cid) <-chan *ipld.NodeOption {
 	var c = make(chan *ipld.NodeOption)
+
 	go func() {
 		for _, cid := range cids {
 			i, err := d.Get(ctx, cid)

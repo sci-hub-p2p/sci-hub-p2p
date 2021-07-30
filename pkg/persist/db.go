@@ -35,6 +35,7 @@ func GetIndexRecord(doi []byte) (*indexes.Record, error) {
 	defer iDB.Close()
 
 	var r *indexes.Record
+
 	err = iDB.View(func(tx *bbolt.Tx) error {
 		if v := tx.Bucket(consts.IndexBucketName()).Get(doi); v != nil {
 			r = indexes.LoadRecordV0(v)
@@ -45,6 +46,7 @@ func GetIndexRecord(doi []byte) (*indexes.Record, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read from Database")
 	}
+
 	if r == nil {
 		return nil, errors.Wrap(ErrNotFound, "failed to read doi in DB")
 	}
@@ -61,6 +63,7 @@ func GetTorrent(hash []byte) (*torrent.Torrent, error) {
 	defer tDB.Close()
 
 	var raw []byte
+
 	err = tDB.View(func(tx *bbolt.Tx) error {
 		value := tx.Bucket(consts.TorrentBucket()).Get(hash)
 		if value == nil {

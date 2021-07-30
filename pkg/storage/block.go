@@ -41,7 +41,9 @@ func ReadLen(tx *bbolt.Tx, log *zap.Logger, mh []byte) (int, error) {
 	if err := proto.Unmarshal(v, r); err != nil {
 		return -1, errors.Wrap(err, "failed to decode block Record from database raw value")
 	}
+
 	log.Debug("find block in KV, type", zap.String("type", r.Type.String()))
+
 	switch r.Type {
 	case pb.BlockType_proto:
 		n := nb.Get(r.CID)
@@ -70,6 +72,7 @@ func ReadBlock(tx *bbolt.Tx, mh []byte) ([]byte, error) {
 	if err := proto.Unmarshal(v, r); err != nil {
 		return nil, errors.Wrap(err, "failed to decode block Record from database raw value")
 	}
+
 	switch r.Type {
 	case pb.BlockType_proto:
 		p := nb.Get(r.CID)

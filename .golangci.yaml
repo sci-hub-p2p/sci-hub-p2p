@@ -221,11 +221,15 @@ linters-settings:
     max-decl-lines: 1
     # Maximum length of vars declaration measured in number of characters, after which linter won't suggest using short syntax.
     max-decl-chars: 30
+  wsl:
+    allow-cuddle-declarations: true
+    allow-assign-and-call: true
+    force-err-cuddling: false
 
 linters:
   enable-all: true
   disable:
-    - wsl # noisy
+    #    - wsl # noisy
     - exhaustivestruct
     - gofumpt # break import grouping
     - tagliatelle

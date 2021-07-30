@@ -59,11 +59,13 @@ func Setup() error {
 	var stdoutLevel = zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
 		return lvl <= zapcore.InfoLevel
 	})
+
 	if !flag.Debug {
 		stdoutLevel = func(lvl zapcore.Level) bool {
 			return lvl == zapcore.InfoLevel
 		}
 	}
+
 	cores := []zapcore.Core{
 		zapcore.NewCore(zapcore.NewConsoleEncoder(consoleEncoding),
 			zapcore.NewMultiWriteSyncer(os.Stdout), stdoutLevel),
@@ -80,6 +82,7 @@ func Setup() error {
 		cores = append(cores, zapcore.NewCore(zapcore.NewJSONEncoder(jsonEncoding),
 			zapcore.AddSync(lumberJackLogger), zap.NewAtomicLevel()))
 	}
+
 	log = zap.New(zapcore.NewTee(cores...))
 
 	return nil

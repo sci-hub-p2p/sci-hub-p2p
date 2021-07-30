@@ -15,18 +15,6 @@
 
 package torrent
 
-import (
-	"math/bits"
-
-	"github.com/pkg/errors"
-
-	"sci_hub_p2p/internal/convert"
-)
-
-const (
-	MaxInt int64 = (1<<bits.UintSize)/2 - 1
-)
-
 type file struct {
 	Path     []string `json:"path" bencode:"path"`
 	PathUTF8 []string `bencode:"path.utf-8,omitempty"`
@@ -70,38 +58,15 @@ func (t torrentFile) toTorrent() (*Torrent, error) {
 	var torrent Torrent
 	torrent.Name = t.Info.GetName()
 	torrent.PieceLength = t.Info.PieceLength
+
 	err := torrent.setPieces(t.Info.Pieces)
 	if err != nil {
 		return nil, err
 	}
+
 	torrent.Announce = t.Announce
 	torrent.AnnounceList = t.AnnounceList
 	torrent.setFiles(t.Info.Files)
 
-	n, err := castNodes(t.Nodes)
-	if err != nil {
-		return nil, err
-	}
-
-	torrent.Nodes = n
-
 	return &torrent, nil
-}
-
-func castNodes(i [][]interface{}) ([]Node, error) {
-	nodes := make([]Node, len(i))
-
-	for index, item := range i {
-		var (
-			n   Node
-			err = convert.ScanSlice(item, &n)
-		)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to convert from %s", item)
-		}
-
-		nodes[index] = n
-	}
-
-	return nodes, nil
 }

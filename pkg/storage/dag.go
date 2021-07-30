@@ -35,6 +35,7 @@ import (
 
 func ReadFileStoreNode(b *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {
 	var v = &pb.Block{}
+
 	data := b.Get(c.Bytes())
 	if data == nil {
 		return nil, ipld.ErrNotFound
@@ -85,6 +86,7 @@ func SaveProtoNode(tx *bbolt.Tx, c cid.Cid, n *merkledag.ProtoNode) error {
 	bb := tx.Bucket(consts.BlockBucketName())
 
 	var v = pb.Block{Type: pb.BlockType_proto, CID: c.Bytes(), Size: int64(len(n.RawData()))}
+
 	value, err := proto.Marshal(&v)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal block record to bytes")
@@ -103,6 +105,7 @@ func ReadProtoNode(nb *bbolt.Bucket, c cid.Cid) (ipld.Node, error) {
 	if data == nil {
 		return nil, ipld.ErrNotFound
 	}
+
 	v, err := unmarshal(data, c)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal data to `merkledag.ProtoNode`")
@@ -133,6 +136,7 @@ func unmarshal(encoded []byte, c cid.Cid) (*merkledag.ProtoNode, error) {
 		if err != nil {
 			return nil, fmt.Errorf("link hash #%d is not valid multihash. %w", i, err)
 		}
+
 		err = n.AddRawLink(l.GetName(), &ipld.Link{
 			Name: l.GetName(),
 			Size: l.GetTsize(),

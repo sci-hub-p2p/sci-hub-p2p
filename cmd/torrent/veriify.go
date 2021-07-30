@@ -93,58 +93,57 @@ type pieceReader struct {
 
 // this can be better, because we won't need to verify a single piece, we just need to verify whole torrent.
 func (r pieceReader) readPiece(i int) ([]byte, error) {
-	var (
-		currentFileStart    int64
-		currentFileEnd      int64
-		pieceLength         = int(r.t.PieceLength)
-		bytesStart          = r.t.PieceLength * int64(i)
-		currentFileIndex    = 0
-		pieceExpectedLength = pieceLength
-	)
+	var currentFileStart int64
+	var currentFileEnd int64
+	var pieceLength = int(r.t.PieceLength)
+	var bytesStart = r.t.PieceLength * int64(i)
+	var currentFileIndex = 0
+	var pieceExpectedLength = pieceLength
+
 	if i == r.t.PieceCount()-1 {
 		var count int64
 		for _, file := range r.t.Files {
 			count += file.Length
 		}
+
 		pieceExpectedLength = int(count % int64(pieceLength))
 	}
 	var needToRead = pieceExpectedLength
-
 	var p = make([]byte, pieceExpectedLength)
 
 	for needToRead > 0 {
-		var readOffset = +int64(pieceExpectedLength - needToRead)
-
+		readOffset := +int64(pieceExpectedLength - needToRead)
 		file := r.t.Files[currentFileIndex]
+
 		currentFileEnd = currentFileStart + file.Length
 		if currentFileEnd < bytesStart {
-			currentFileIndex++
 			currentFileStart += file.Length
+			currentFileIndex++
 
 			continue
 		}
+
 		err := func() error {
 			f, err := os.Open(filepath.Join(r.path, file.Name()))
 			if err != nil {
 				return err
 			}
 			defer f.Close()
-			_, err = f.Seek(bytesStart-currentFileStart+readOffset, io.SeekStart)
-			if err != nil {
-				return err
-			}
-			size, err := f.Read(p[readOffset:])
-			needToRead -= size
-			if errors.Is(err, io.EOF) {
-				currentFileIndex++
-				currentFileStart += file.Length
-				err = nil
-			}
-			if err != nil {
+
+			if _, err = f.Seek(bytesStart-currentFileStart+readOffset, io.SeekStart); err != nil {
 				return err
 			}
 
-			return nil
+			size, err := f.Read(p[readOffset:])
+			needToRead -= size
+
+			if errors.Is(err, io.EOF) {
+				currentFileStart += file.Length
+				err = nil
+				currentFileIndex++
+			}
+
+			return err
 		}()
 
 		if err != nil {

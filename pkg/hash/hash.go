@@ -29,9 +29,8 @@ func Sha1SumReader(r io.Reader) (string, error) {
 	if _, err := io.Copy(h, r); err != nil {
 		return "", errors.Wrap(err, "can't hash content")
 	}
-	sum := h.Sum(nil)
 
-	return hex.EncodeToString(sum), nil
+	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
 func Sha256SumReaderBytes(r io.Reader) ([]byte, error) {
@@ -39,9 +38,8 @@ func Sha256SumReaderBytes(r io.Reader) ([]byte, error) {
 	if _, err := io.Copy(h, r); err != nil {
 		return nil, errors.Wrap(err, "can't hash content")
 	}
-	sum := h.Sum(nil)
 
-	return sum, nil
+	return h.Sum(nil), nil
 }
 
 func Sha256SumReader(r io.Reader) (string, error) {

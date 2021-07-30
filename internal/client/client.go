@@ -39,6 +39,7 @@ func Fetch(p *indexes.PerFile, rawTorrent []byte) ([]byte, error) {
 		logger.Fatal("can't initialize BitTorrent client", zap.Error(err))
 	}
 	defer c.Close()
+
 	mi, err := metainfo.Load(bytes.NewReader(rawTorrent))
 	if err != nil {
 		return nil, errors.Wrap(err, "can't parse torrent file")
@@ -75,19 +76,25 @@ func getClient() (*torrent.Client, error) {
 func extract(t *torrent.Torrent, p *indexes.PerFile) ([]byte, error) {
 	fmt.Println("start downloading")
 	t.DownloadPieces(p.PieceStart, p.PieceEnd+1)
-	var tmpBinary = make([]byte, p.CompressedSize)
-	file := t.Files()[p.FileIndex]
-	reader := file.NewReader()
+
+	var (
+		tmpBinary = make([]byte, p.CompressedSize)
+		file      = t.Files()[p.FileIndex]
+		reader    = file.NewReader()
+	)
+
 	defer reader.Close()
 
 	if _, err := reader.Seek(p.OffsetFromZip, io.SeekStart); err != nil {
 		return nil, errors.Wrap(err, "can't download data from BitTorrent network")
 	}
+
 	if _, err := reader.Read(tmpBinary); err != nil {
 		return nil, errors.Wrap(err, "can't download data from BitTorrent network")
 	}
 
 	fmt.Println("expected CID:", p.CID)
+
 	hex, err := hash.Cid(bytes.NewReader(tmpBinary))
 	if err != nil {
 		return tmpBinary, errors.Wrap(err, "can't calculate CID file data")
@@ -96,6 +103,7 @@ func extract(t *torrent.Torrent, p *indexes.PerFile) ([]byte, error) {
 	if hex != p.CID {
 		return nil, fmt.Errorf("received CID: %s %w", hex, ErrHashMisMatch)
 	}
+
 	fmt.Println("received CID:", hex)
 
 	return tmpBinary, nil

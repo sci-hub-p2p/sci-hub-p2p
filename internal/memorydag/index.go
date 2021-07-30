@@ -31,6 +31,7 @@ type DumpDagServ struct {
 func (d *DumpDagServ) Get(ctx context.Context, cid cid.Cid) (ipld.Node, error) {
 	d.Lock()
 	defer d.Unlock()
+
 	i, ok := d.M[cid.String()]
 	if !ok {
 		return nil, ipld.ErrNotFound
@@ -41,6 +42,7 @@ func (d *DumpDagServ) Get(ctx context.Context, cid cid.Cid) (ipld.Node, error) {
 
 func (d *DumpDagServ) GetMany(ctx context.Context, cids []cid.Cid) <-chan *ipld.NodeOption {
 	var c = make(chan *ipld.NodeOption)
+
 	go func() {
 		for _, cid := range cids {
 			i, err := d.Get(ctx, cid)
@@ -62,6 +64,7 @@ func (d *DumpDagServ) Add(ctx context.Context, node ipld.Node) error {
 func (d *DumpDagServ) AddMany(ctx context.Context, nodes []ipld.Node) error {
 	d.Lock()
 	defer d.Unlock()
+
 	for _, node := range nodes {
 		d.M[node.Cid().String()] = node
 	}
@@ -80,6 +83,7 @@ func (d *DumpDagServ) Remove(ctx context.Context, cid cid.Cid) error {
 func (d *DumpDagServ) RemoveMany(ctx context.Context, cids []cid.Cid) error {
 	d.Lock()
 	defer d.Unlock()
+
 	for _, c := range cids {
 		delete(d.M, c.String())
 	}

@@ -102,14 +102,14 @@ func New(
 		store: store,
 	}
 
-	err := p.setupBlockstore()
-	if err != nil {
+	if err := p.setupBlockstore(); err != nil {
 		return nil, err
 	}
+
 	p.setupBlockService()
 	p.setupDAGService()
-	err = p.setupReprovider()
-	if err != nil {
+
+	if err := p.setupReprovider(); err != nil {
 		p.bserv.Close()
 
 		return nil, err
@@ -123,10 +123,12 @@ func New(
 func (p *Peer) setupBlockstore() error {
 	bs := blockstore.NewBlockstore(p.store)
 	bs = blockstore.NewIdStore(bs)
+
 	cachedbs, err := blockstore.CachedBlockstore(p.ctx, bs, blockstore.DefaultCacheOpts())
 	if err != nil {
 		return err
 	}
+
 	p.bstore = cachedbs
 
 	return nil
@@ -197,14 +199,16 @@ func (p *Peer) Bootstrap(peers []peer.AddrInfo) {
 	for _, pinfo := range peers {
 		// h.Peerstore().AddAddrs(pinfo.ID, pinfo.Addrs, peerstore.PermanentAddrTTL)
 		wg.Add(1)
+
 		go func(pinfo peer.AddrInfo) {
 			defer wg.Done()
-			err := p.host.Connect(p.ctx, pinfo)
-			if err != nil {
+
+			if err := p.host.Connect(p.ctx, pinfo); err != nil {
 				logger.Warn("", zap.Error(err))
 
 				return
 			}
+
 			connected <- struct{}{}
 		}(pinfo)
 	}
@@ -218,6 +222,7 @@ func (p *Peer) Bootstrap(peers []peer.AddrInfo) {
 	for range connected {
 		i++
 	}
+
 	if nPeers := len(peers); i < nPeers/2 {
 		logger.Warn(fmt.Sprintf("only connected to %d bootstrap peers out of %d", i, nPeers))
 	}

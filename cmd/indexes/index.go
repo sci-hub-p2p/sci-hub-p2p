@@ -101,9 +101,11 @@ func init() {
 	genCmd.Flags().BoolVar(
 		&flag.DisableProgressBar, "disable-progress", false, "disable progress bar if you don't like it",
 	)
+
 	if err := utils.MarkFlagsRequired(genCmd, "data", "torrent"); err != nil {
 		log.Fatalln(err)
 	}
+
 	if err := genCmd.MarkFlagFilename("torrent", "torrentPath"); err != nil {
 		panic(err)
 	}

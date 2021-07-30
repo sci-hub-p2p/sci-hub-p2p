@@ -33,7 +33,9 @@ import (
 
 func Test_AddSingleFile(t *testing.T) {
 	raw, err := os.ReadFile("./../../testdata/big_file.bin")
+
 	t.Parallel()
+
 	var (
 		start  = 642
 		length = 256*1024*3 + 8
@@ -42,7 +44,9 @@ func Test_AddSingleFile(t *testing.T) {
 
 	db, err := bbolt.Open(filepath.Join(t.TempDir(), "test.bolt"), consts.DefaultFilePerm, bbolt.DefaultOptions)
 	assert.Nil(t, err)
+
 	defer db.Close()
+
 	assert.Nil(t, InitDB(db))
 	var n ipld.Node
 	assert.Nil(t, db.Batch(func(tx *bbolt.Tx) error {
@@ -50,8 +54,8 @@ func Test_AddSingleFile(t *testing.T) {
 			io.LimitReader(bytes.NewReader(raw[start:]), int64(length)), int64(start), uint64(length))
 		return err
 	}))
-	dag := New(db)
 
+	dag := New(db)
 	r, err := ufsio.NewDagReader(context.TODO(), n, dag)
 	assert.Nil(t, err)
 

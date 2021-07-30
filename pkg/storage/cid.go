@@ -55,6 +55,7 @@ func Add(service ipld.DAGService, r io.Reader) (ipld.Node, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "can't create dag builder from chunker")
 	}
+
 	n, err := balanced.Layout(dbh)
 	if err != nil {
 		return nil, errors.Wrapf(err, "can't layout all chunk")
