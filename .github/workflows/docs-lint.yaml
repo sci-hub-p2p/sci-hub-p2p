@@ -1,0 +1,29 @@
+name: Lint Docs
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "**.md"
+  pull_request:
+    branches:
+      - master
+    paths:
+      - "**.md"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Node LTS
+        uses: actions/setup-node@v2
+        with:
+          go-version: 1.14.x
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - run: npm i -g prettier
+
+      - run: pretter --check ./docs/
