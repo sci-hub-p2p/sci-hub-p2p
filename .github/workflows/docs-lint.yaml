@@ -9,6 +9,7 @@ on:
       - "**.yaml"
       - "**.yml"
   pull_request_target:
+    types: [ opened, synchronize ]
     branches:
       - master
     paths:
