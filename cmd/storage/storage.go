@@ -16,12 +16,12 @@
 package storage
 
 import (
+	"github.com/pkg/errors"
+	"go.etcd.io/bbolt"
+
 	"sci_hub_p2p/pkg/consts"
 	"sci_hub_p2p/pkg/indexes"
 	"sci_hub_p2p/pkg/vars"
-
-	"github.com/pkg/errors"
-	"go.etcd.io/bbolt"
 )
 
 func GetIndexRecord(doi []byte) (*indexes.Record, error) {
