@@ -66,10 +66,12 @@ func IndexZipFile(c chan *PDFFileOffSet, dataDir string, index int, t *torrent.T
 	if !strings.HasSuffix(fs, ".zip") {
 		return nil
 	}
+
 	s, err := os.Stat(abs)
 	if err != nil {
 		return errors.Wrapf(err, "can't generate indexes, file %s is broken", fs)
 	}
+
 	if s.Size() != file.Length {
 		return errors.Wrapf(err, "can't generate indexes, file %s has a wrong size, expected %d", fs, file.Length)
 	}
@@ -96,10 +98,12 @@ func IndexZipFile(c chan *PDFFileOffSet, dataDir string, index int, t *torrent.T
 		if f.CompressedSize64 == 0 {
 			continue
 		}
+
 		i, err := zipFileToRecord(f, currentZipOffset, t.PieceLength, path.Join(t.Name, filepath.Base(abs)))
 		if err != nil {
 			return err
 		}
+
 		i.InfoHash = infoHash
 		c <- i
 	}
@@ -145,8 +149,7 @@ func zipFileToRecord(file *zip.File, currentZipOffset, pieceLength int64, zipFil
 
 	go func() {
 		crc := crc32.NewIEEE()
-		_, _ = crc.Write(raw)
-		if crc.Sum32() != oldCrc32 {
+		if _, _ = crc.Write(raw); crc.Sum32() != oldCrc32 {
 			m := md5.New()
 			m.Write(raw)
 			md5Sum := m.Sum(nil)
@@ -169,11 +172,9 @@ func zipFileToRecord(file *zip.File, currentZipOffset, pieceLength int64, zipFil
 }
 
 func Generate(dataDir, outDir string, t *torrent.Torrent, disableProgress bool) error {
-	exist, err := utils.DirExist(filepath.Join(dataDir, t.Name))
-	if err != nil {
+	if exist, err := utils.DirExist(filepath.Join(dataDir, t.Name)); err != nil {
 		return errors.Wrap(err, "can't find torrent data at "+filepath.Join(dataDir, t.Name))
-	}
-	if !exist {
+	} else if !exist {
 		return errors.New("can't find torrent data " + filepath.Join(dataDir, t.Name))
 	}
 
@@ -191,6 +192,7 @@ func Generate(dataDir, outDir string, t *torrent.Torrent, disableProgress bool) 
 		return errors.Wrapf(err, "can't open %s to write indexes", out)
 	}
 	defer db.Close()
+
 	go collectResult(c, outDir, t, done, db, disableProgress)
 
 	for i := 0; i < flag.Parallel; i++ {
@@ -203,6 +205,7 @@ func Generate(dataDir, outDir string, t *torrent.Torrent, disableProgress bool) 
 					break
 				}
 			}
+
 			logger.Debug("exit worker", zap.Int("worker", index+1))
 			wg.Done()
 		}(i, t)
@@ -215,14 +218,14 @@ func Generate(dataDir, outDir string, t *torrent.Torrent, disableProgress bool) 
 	}
 
 	logger.Debug("wait for all zip file to be indexed")
+
 	for len(in) > 0 {
 		time.Sleep(time.Second)
 	}
-	close(in)
 
+	close(in)
 	logger.Debug("wait all worker exit")
 	wg.Wait()
-
 	close(c)
 	logger.Debug("wait closing write db worker")
 	<-done
@@ -242,6 +245,7 @@ func collectResult(
 	if !disablePB {
 		bar.Start()
 	}
+
 	err := db.Batch(func(tx *bbolt.Tx) error {
 		b, err := tx.CreateBucketIfNotExists(consts.IndexBucketName())
 		if err != nil {
@@ -258,6 +262,7 @@ func collectResult(
 
 		return nil
 	})
+
 	bar.Finish()
 
 	if err != nil {
@@ -265,16 +270,18 @@ func collectResult(
 
 		return
 	}
+
 	fmt.Println("start dumping data to file")
+
 	err = db.View(func(tx *bbolt.Tx) error {
 		return dumpToFile(tx, filepath.Join(outDir, t.InfoHash))
 	})
-
 	if err != nil {
 		logger.Error("can't dump database", zap.Error(err))
 	}
 
 	logger.Debug("sync database")
+
 	if err := db.Sync(); err != nil {
 		logger.Error("failed to flush data to disk", zap.Error(err))
 	}
@@ -286,6 +293,7 @@ func dumpToFile(tx *bbolt.Tx, name string) (err error) {
 	if err != nil {
 		return errors.Wrap(err, "can't create lzma file to save indexes")
 	}
+
 	defer func() {
 		if e := t.Close(); e != nil {
 			e = errors.Wrap(e, "can't save lzma file to disk")
@@ -317,8 +325,7 @@ func dumpToFile(tx *bbolt.Tx, name string) (err error) {
 
 	for k, v := c.First(); k != nil; k, v = c.Next() {
 		b64 := base64.StdEncoding.EncodeToString(v)
-		_, err := fmt.Fprintf(w, "[\"%s\", \"%s\"]\n", k, b64)
-		if err != nil {
+		if _, err := fmt.Fprintf(w, "[\"%s\", \"%s\"]\n", k, b64); err != nil {
 			return errors.Wrap(err, "can't write to compressed file")
 		}
 	}

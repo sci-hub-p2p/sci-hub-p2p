@@ -19,7 +19,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/ipfs/go-datastore"
+	ds "github.com/ipfs/go-datastore"
 	config "github.com/ipfs/go-ipfs-config"
 	"github.com/ipfs/go-ipns"
 	"github.com/libp2p/go-libp2p"
@@ -52,23 +52,23 @@ func DefaultBootstrapPeers() []peer.AddrInfo {
 	return defaults
 }
 
-// Libp2pOptionsExtra provides some useful libp2p options
-// to create a fully featured libp2p host. It can be used with
-// SetupLibp2p.
-var Libp2pOptionsExtra = []libp2p.Option{
-	libp2p.NATPortMap(),
-	libp2p.ConnectionManager(connmgr.NewConnManager(defaultLowConnectionNum, defaultHighConnectionNum, time.Minute)),
-	libp2p.EnableAutoRelay(),
-	libp2p.EnableNATService(),
-	libp2p.Security(libp2ptls.ID, libp2ptls.New),
-	libp2p.Transport(libp2pquic.NewTransport),
-	libp2p.DefaultTransports,
+func DefaultLibp2pOptions() []libp2p.Option {
+	return []libp2p.Option{
+		libp2p.NATPortMap(),
+		libp2p.ConnectionManager(connmgr.NewConnManager(defaultLowConnectionNum,
+			defaultHighConnectionNum, time.Minute)),
+		libp2p.EnableAutoRelay(),
+		libp2p.EnableNATService(),
+		libp2p.Security(libp2ptls.ID, libp2ptls.New),
+		libp2p.Transport(libp2pquic.NewTransport),
+		libp2p.DefaultTransports,
+	}
 }
 
 // SetupLibp2p returns a routed host and DHT instances that can be used to
 // easily create a ipfslite Peer. You may consider to use Peer.Bootstrap()
 // after creating the IPFS-Lite Peer to connect to other peers. When the
-// datastore parameter is nil, the DHT will use an in-memory datastore, so all
+// ds parameter is nil, the DHT will use an in-memory ds, so all
 // provider records are lost on program shutdown.
 //
 // Additional libp2p options can be passed. Note that the Identity,
@@ -83,7 +83,7 @@ func SetupLibp2p(
 	hostKey crypto.PrivKey,
 	secret pnet.PSK,
 	listenAddrs []multiaddr.Multiaddr,
-	ds datastore.Batching,
+	ds ds.Batching,
 	opts ...libp2p.Option,
 ) (host.Host, *dualdht.DHT, error) {
 	var ddht *dualdht.DHT
@@ -113,7 +113,7 @@ func SetupLibp2p(
 	return h, ddht, nil
 }
 
-func newDHT(ctx context.Context, h host.Host, ds datastore.Batching) (*dualdht.DHT, error) {
+func newDHT(ctx context.Context, h host.Host, ds ds.Batching) (*dualdht.DHT, error) {
 	dhtOpts := []dualdht.Option{
 		dualdht.DHTOption(dht.NamespacedValidator("pk", record.PublicKeyValidator{})),
 		dualdht.DHTOption(dht.NamespacedValidator("ipns", ipns.Validator{KeyBook: h.Peerstore()})),

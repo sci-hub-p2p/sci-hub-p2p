@@ -33,6 +33,7 @@ func TestUnique(t *testing.T) {
 
 func TestGlob(t *testing.T) {
 	t.Parallel()
+
 	v, err := utils.GlobWithExpand("./cli_*.go")
 	assert.Nil(t, err)
 	assert.ElementsMatch(t, v, []string{"cli_test.go"})

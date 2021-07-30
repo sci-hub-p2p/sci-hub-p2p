@@ -26,12 +26,12 @@ nav:
       - "zh/安装.md"
       - 使用:
           - "zh/usage/索引.md"
-      # - "zh/常见问题.md"
+      - "zh/常见问题.md"
   - English:
       - "en/introduction.md"
       - "en/installation.md"
       - "en/usage.md"
-      # - "en/fqd.md"
+      - "en/faq.md"
   - About:
       - Contributing: "contributing.md"
 

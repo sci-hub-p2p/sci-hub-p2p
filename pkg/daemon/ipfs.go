@@ -44,18 +44,24 @@ const interval = time.Second * 20
 
 func Start(db *bbolt.DB, port int) error {
 	setupIPFSLogger()
+
 	ctx := context.Background()
 	var datastore ds.Batching = store.NewArchiveFallbackDatastore(db)
+
 	if flag.Debug {
 		startHTTPServer(datastore)
 		datastore = store.NewLogDatastore(datastore, "LogDatastore")
 	}
+
 	privKey, err := genKey()
 	if err != nil {
 		return err
 	}
+
 	logger.Info("finish load key")
+
 	listen, _ := multiaddr.NewMultiaddr("/ip4/0.0.0.0/tcp/" + strconv.Itoa(port))
+
 	pnetKey, err := pnetKey()
 	if err != nil {
 		return err
@@ -67,7 +73,7 @@ func Start(db *bbolt.DB, port int) error {
 		pnetKey,
 		[]multiaddr.Multiaddr{listen},
 		datastore,
-		ipfslite.Libp2pOptionsExtra...,
+		ipfslite.DefaultLibp2pOptions()...,
 	)
 
 	if err != nil {

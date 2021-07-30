@@ -105,12 +105,15 @@ func loadIndexFile(b *bbolt.Bucket, name string) (success int, err error) {
 	defer f.Close()
 	reader := lzma.NewReader(f)
 	scanner := bufio.NewScanner(reader)
+
 	for scanner.Scan() {
 		var s []string
+
 		err = json.Unmarshal(scanner.Bytes(), &s)
 		if err != nil || len(s) != 2 {
 			return 0, errors.Wrap(err, "can't parse json "+scanner.Text())
 		}
+
 		value, err := base64.StdEncoding.DecodeString(s[1])
 		if err != nil {
 			return 0, errors.Wrap(err, "can't decode base64")
@@ -120,10 +123,12 @@ func loadIndexFile(b *bbolt.Bucket, name string) (success int, err error) {
 		if err != nil {
 			return 0, err
 		}
+
 		err = b.Put([]byte(key), value)
 		if err != nil {
 			return 0, errors.Wrap(err, "can't save record to database")
 		}
+
 		success++
 	}
 

@@ -53,6 +53,7 @@ func (d *MapDataStore) Put(key ds.Key, value []byte) (err error) {
 	if key.IsDescendantOf(topLevelBlockKey) {
 		logger.Debug("try to put block, put it in memory")
 	}
+
 	d.Lock()
 	d.values[key] = value
 	d.Unlock()
@@ -73,6 +74,7 @@ func (d *MapDataStore) Get(key ds.Key) ([]byte, error) {
 		d.RLock()
 		val, found := d.values[key]
 		d.RUnlock()
+
 		if !found {
 			return nil, ds.ErrNotFound
 		}
@@ -83,6 +85,7 @@ func (d *MapDataStore) Get(key ds.Key) ([]byte, error) {
 	// /blocks/{multi hash}
 
 	log.Debug("didn't find in memory, now check it in KV database")
+
 	mh, err := dshelp.DsKeyToMultihash(ds.NewKey(key.BaseNamespace()))
 	if err != nil {
 		d.logger.Error("block key is not a valid multi hash", zap.Error(err))
@@ -106,10 +109,12 @@ func (d *MapDataStore) Get(key ds.Key) ([]byte, error) {
 		if errors.Is(err, ds.ErrNotFound) {
 			return nil, ds.ErrNotFound
 		}
+
 		log.Debug("read block got", zap.Error(err))
 
 		return nil, err
 	}
+
 	d.keysSizeCache.Store(key, len(p))
 
 	return p, nil
@@ -125,6 +130,7 @@ func (d *MapDataStore) Has(key ds.Key) (exists bool, err error) {
 		d.RLock()
 		_, found := d.values[key]
 		d.RUnlock()
+
 		if !found {
 			return false, nil
 		}
@@ -137,10 +143,12 @@ func (d *MapDataStore) Has(key ds.Key) (exists bool, err error) {
 	}
 
 	var found bool
+
 	mh, err := dshelp.DsKeyToMultihash(ds.NewKey(key.BaseNamespace()))
 	if err != nil {
 		return false, errors.Wrap(err, "failed to decode key to multi HASH")
 	}
+
 	_ = d.db.View(func(tx *bbolt.Tx) error {
 		b := tx.Bucket(consts.BlockBucketName())
 		if b.Get(mh) != nil {
@@ -161,6 +169,7 @@ func (d *MapDataStore) GetSize(key ds.Key) (int, error) {
 		d.RLock()
 		v, found := d.values[key]
 		d.RUnlock()
+
 		if found {
 			return len(v), nil
 		}
@@ -169,6 +178,7 @@ func (d *MapDataStore) GetSize(key ds.Key) (int, error) {
 	}
 
 	log.Debug("didn't find key in kv, try get size from cache")
+
 	v, ok := d.keysSizeCache.Load(key.String())
 	if ok {
 		return v.(int), nil
@@ -193,10 +203,12 @@ func (d *MapDataStore) GetSize(key ds.Key) (int, error) {
 		if errors.Is(err, ds.ErrNotFound) {
 			return 0, ds.ErrNotFound
 		}
+
 		log.Debug("read block got", zap.Error(err))
 
 		return 0, err
 	}
+
 	d.keysSizeCache.Store(key, l)
 
 	return l, nil
@@ -219,13 +231,16 @@ func (d *MapDataStore) Query(q dsq.Query) (dsq.Results, error) {
 		d.RLock()
 		defer d.RUnlock()
 		re := make([]dsq.Entry, 0, len(d.values))
+
 		for k, v := range d.values {
 			e := dsq.Entry{Key: k.String(), Size: len(v)}
 			if !q.KeysOnly {
 				e.Value = v
 			}
+
 			re = append(re, e)
 		}
+
 		r := dsq.ResultsWithEntries(q, re)
 		r = dsq.NaiveQueryApply(q, r)
 

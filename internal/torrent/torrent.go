@@ -27,11 +27,6 @@ import (
 	"sci_hub_p2p/pkg/consts/size"
 )
 
-type Node struct {
-	Host string `tuple:"0"`
-	Port int    `tuple:"1"`
-}
-
 type File struct {
 	Path   []string
 	Length int64
@@ -57,7 +52,6 @@ type Torrent struct {
 	Pieces       [][]byte
 	Files        []File
 	AnnounceList [][]string
-	Nodes        []Node
 	PieceLength  int64
 	CreationDate int
 }
@@ -81,9 +75,11 @@ func (t *Torrent) setInfoHash(p []byte) {
 func (t *Torrent) setPieces(s string) error {
 	sizeOfSha1 := size.Sha1Bytes
 	p := []byte(s)
+
 	if len(p)%sizeOfSha1 != 0 {
 		return ErrWrongPieces
 	}
+
 	t.Pieces = make([][]byte, len(p)/sizeOfSha1)
 	for i := 0; i < len(p)/sizeOfSha1; i++ {
 		t.Pieces[i] = p[i*sizeOfSha1 : (i+1)*sizeOfSha1]
@@ -132,7 +128,6 @@ func (t *Torrent) Copy() Torrent {
 	}
 
 	copy(n.Pieces, t.Pieces)
-	copy(n.Nodes, t.Nodes)
 	copy(n.Files, t.Files)
 
 	return n
@@ -154,25 +149,11 @@ func (t *Torrent) DumpIndent() (string, error) {
 	m["Name"] = t.Name
 	m["PieceLength"] = t.PieceLength
 	m["..."] = "..."
+
 	v, err := json.MarshalIndent(m, "", "  ")
 	if err != nil {
 		return "", errors.Wrap(err, "can't encode torrent to JSON format")
 	}
 
 	return string(v), nil
-}
-
-func Load(p []byte) (*Torrent, error) {
-	var t = &Torrent{}
-	if err := json.Unmarshal(p, t); err != nil {
-		return nil, errors.Wrap(err, "can't decode torrent from JSON format")
-	}
-	v, err := hex.DecodeString(t.InfoHash)
-	if err != nil {
-		return nil, errors.Wrap(err, "can't decode InfoHash, maybe data broken, you need to reload this torrent")
-	}
-
-	t.setInfoHash(v)
-
-	return t, nil
 }

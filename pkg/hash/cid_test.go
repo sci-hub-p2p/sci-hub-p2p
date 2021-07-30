@@ -30,6 +30,7 @@ import (
 
 func TestCID(t *testing.T) {
 	t.Parallel()
+
 	e, err := cid.Parse("bafykbzaceavd6aaauynuqgkkrg6lapmno5crbsyinmp3um5sn3daztzsghvl2")
 	assert.Nil(t, err)
 

@@ -28,6 +28,7 @@ import (
 	"sci_hub_p2p/pkg/consts"
 	"sci_hub_p2p/pkg/key"
 	"sci_hub_p2p/pkg/logger"
+	"sci_hub_p2p/pkg/vars"
 )
 
 func pnetKey() (pnet.PSK, error) {
@@ -36,6 +37,7 @@ func pnetKey() (pnet.PSK, error) {
 		return nil, errors.Wrap(err, "failed to detect homedir")
 	}
 	var keyPath = filepath.Join(home, ".ipfs/swarm.key")
+
 	r, err := os.Open(keyPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -48,31 +50,37 @@ func pnetKey() (pnet.PSK, error) {
 	}
 	defer r.Close()
 	logger.WithLogger("ipfs").Info("using pnet key")
+
 	k, err := pnet.DecodeV1PSK(r)
 
 	return k, errors.Wrap(err, "failed to decode pnet KEY")
 }
 
 func genKey() (crypto.PrivKey, error) {
-	const keyPath = "./out/private.key"
+	var keyPath = filepath.Join(vars.GetAppBaseDir(), "private.key")
+
 	var raw, err = os.ReadFile(keyPath)
 	if errors.Is(err, os.ErrNotExist) {
 		logger.Info("Generating New Rsa Key")
+
 		priv, _, err := crypto.GenerateKeyPair(crypto.RSA, consts.PrivateKeyLength)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to generate RSA key")
 		}
+
 		stdKey, err := crypto.PrivKeyToStdKey(priv)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to convert libp2p key to std key")
 		}
+
 		v, ok := stdKey.(*rsa.PrivateKey)
 		if !ok {
 			panic("can't cast private key to *rsa.PrivateKey")
 		}
+
 		raw = key.ExportRsaPrivateKeyAsPem(v)
-		err = os.WriteFile(keyPath, raw, consts.SecurityPerm)
-		if err != nil {
+
+		if err := os.WriteFile(keyPath, raw, consts.SecurityPerm); err != nil {
 			return nil, errors.Wrapf(err, "failed to save key to file %s", keyPath)
 		}
 
@@ -83,6 +91,7 @@ func genKey() (crypto.PrivKey, error) {
 	if block == nil {
 		return nil, errors.New("failed to parse PEM block containing the key")
 	}
+
 	k, err := crypto.UnmarshalRsaPrivateKey(block.Bytes)
 
 	return k, errors.Wrap(err, "filed to parse encode keyfile content")

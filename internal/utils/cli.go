@@ -52,6 +52,7 @@ func EnsureDir(name string) func(cmd *cobra.Command, args []string) error {
 
 			return errors.Wrap(err, "unexpected error")
 		}
+
 		if !s.IsDir() {
 			return errors.Wrapf(err, "app base dir %s is not a dir", name)
 		}
@@ -68,6 +69,7 @@ func Unique(s []string) []string {
 	for _, v := range s {
 		if _, value := m[v]; !value {
 			m[v] = true
+
 			n = append(n, v)
 		}
 	}
@@ -79,13 +81,16 @@ var ErrEmptyResult = errors.New("glob and args contain 0 files")
 
 func MergeGlob(args []string, glob string) ([]string, error) {
 	args = expandToABS(args)
+
 	if glob != "" {
 		s, err := GlobWithExpand(glob)
 		if err != nil {
 			return nil, errors.Wrapf(err, "can't search torrents with glob '%s'", glob)
 		}
+
 		args = Unique(append(args, expandToABS(s)...))
 	}
+
 	if len(args) == 0 {
 		return nil, ErrEmptyResult
 	}
@@ -99,6 +104,7 @@ func expandToABS(s []string) []string {
 		if err != nil {
 			panic(fmt.Errorf("can't get it's absolute path %w", err))
 		}
+
 		s[i] = ss
 	}
 

@@ -57,6 +57,7 @@ func GlobWithExpand(glob string) ([]string, error) {
 
 		glob = strings.ReplaceAll(glob, "~", homedir)
 	}
+
 	s, err := filepath.Glob(glob)
 
 	return s, err
@@ -70,6 +71,7 @@ func FileExist(name string) (bool, error) {
 	if os.IsNotExist(err) {
 		return false, nil
 	}
+
 	if s.IsDir() {
 		return false, ErrNotAFile
 	}
@@ -82,6 +84,7 @@ func DirExist(name string) (bool, error) {
 	if os.IsNotExist(err) {
 		return false, nil
 	}
+
 	if !s.IsDir() {
 		return false, ErrNotADir
 	}
