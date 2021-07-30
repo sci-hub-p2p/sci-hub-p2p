@@ -28,4 +28,11 @@ jobs:
 
       - run: npm i -g prettier
 
-      - run: prettier --check ./
+
+      - name: lint
+        run: |
+          prettier --write ./
+          TMPFILE=$(mktemp)
+          git diff >"${TMPFILE}"
+          git stash -u && git stash drop
+          reviewdog -f=diff -f.diff.strip=1 -reporter=github-pr-review < "${TMPFILE}"
