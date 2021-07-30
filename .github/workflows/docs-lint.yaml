@@ -6,13 +6,15 @@ on:
       - master
     paths:
       - "**.md"
-      - .github/workflows/docs-lint.yaml
+      - '**.yaml'
+      - '**.yml'
   pull_request:
     branches:
       - master
     paths:
       - "**.md"
-      - .github/workflows/docs-lint.yaml
+      - '**.yaml'
+      - '**.yml'
 
 jobs:
   lint:
@@ -31,7 +33,7 @@ jobs:
       - uses: reviewdog/action-setup@v1
         with:
           reviewdog_version: latest # Optional. [latest,nightly,v.X.Y.Z]
-          
+
       - name: lint
         run: |
           prettier --write ./
