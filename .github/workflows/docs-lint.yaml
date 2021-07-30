@@ -8,7 +8,7 @@ on:
       - "**.md"
       - "**.yaml"
       - "**.yml"
-  pull_request:
+  pull_request_target:
     branches:
       - master
     paths:
