@@ -26,4 +26,4 @@ jobs:
 
       - run: npm i -g prettier
 
-      - run: pretter --check ./docs/
+      - run: prettier --check --ignore-path .github/.prettierignore ./
