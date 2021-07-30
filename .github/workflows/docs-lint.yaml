@@ -38,13 +38,13 @@ jobs:
         run: prettier --write --list-different ./
 
       - run: git diff --exit-code
-        
+
       - name: create review
         if: ${{ failure() }}
         run:
           TMPFILE=$(mktemp)
           git diff >"${TMPFILE}"
-          git stash -u && git stash drop
+          git reset --hard HEAD
           reviewdog -f=diff -f.diff.strip=1 -reporter=github-pr-review < "${TMPFILE}"
           exit 1
         env:
