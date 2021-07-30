@@ -19,7 +19,7 @@ This project is aiming to provide same experience as the original [Sci-Hub websi
 !!! note
     Due to lack of IPFS nodes, only BitTorrent network is supported at this moment.
 
-    In the future, adopting IPFS network can be simple. User only need to update the tool without addional requirement.
+    In the future, adopting IPFS network can be simple. Users only need to update the tool without additional requirement.
 
 ## Project Stage:
 
