@@ -243,7 +243,7 @@ func collectResult(
 		bar.Start()
 	}
 	err := db.Batch(func(tx *bbolt.Tx) error {
-		b, err := tx.CreateBucketIfNotExists(consts.PaperBucket())
+		b, err := tx.CreateBucketIfNotExists(consts.IndexBucketName())
 		if err != nil {
 			return errors.Wrap(err, "can't create bucket, maybe indexes file is not writeable")
 		}
@@ -298,7 +298,7 @@ func dumpToFile(tx *bbolt.Tx, name string) (err error) {
 	}()
 
 	// Assume bucket exists and has keys
-	b := tx.Bucket(consts.PaperBucket())
+	b := tx.Bucket(consts.IndexBucketName())
 
 	c := b.Cursor()
 

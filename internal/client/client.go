@@ -19,56 +19,27 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"os"
 
 	"github.com/anacrolix/log"
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/anacrolix/torrent/storage"
 	"github.com/pkg/errors"
-	"go.etcd.io/bbolt"
 	"go.uber.org/zap"
 
-	"sci_hub_p2p/pkg/consts"
 	"sci_hub_p2p/pkg/hash"
 	"sci_hub_p2p/pkg/indexes"
 	"sci_hub_p2p/pkg/logger"
-	"sci_hub_p2p/pkg/persist"
 	"sci_hub_p2p/pkg/vars"
 )
 
-func Fetch(doi string) ([]byte, error) {
-	db, err := bbolt.Open(vars.GetPaperBoltPath(), consts.DefaultFilePerm, bbolt.DefaultOptions)
-	if err != nil {
-		return nil, errors.Wrap(err, "can't open indexes database file")
-	}
-	var p *indexes.PerFile
-	var raw []byte
-	err = db.View(func(tx *bbolt.Tx) error {
-		b := tx.Bucket(consts.PaperBucket())
-		var err error
-		p, raw, err = persist.GetPerFileAndRawTorrent(b, doi)
-		if err != nil {
-			return errors.Wrap(err, "can't get file indexes")
-		}
-
-		return nil
-	})
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, errors.Wrap(err,
-				"find doi in index, but we can't find torrent file contains this paper, try load torrents again")
-		}
-
-		return nil, errors.Wrap(err, "can't find indexes of this paper")
-	}
-
+func Fetch(p *indexes.PerFile, rawTorrent []byte) ([]byte, error) {
 	c, err := getClient()
 	if err != nil {
 		logger.Fatal("can't initialize BitTorrent client", zap.Error(err))
 	}
 	defer c.Close()
-	mi, err := metainfo.Load(bytes.NewReader(raw))
+	mi, err := metainfo.Load(bytes.NewReader(rawTorrent))
 	if err != nil {
 		return nil, errors.Wrap(err, "can't parse torrent file")
 	}

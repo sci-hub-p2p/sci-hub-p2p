@@ -42,8 +42,12 @@ func GetAppTmpDir() string {
 	return filepath.Join(GetAppBaseDir(), "tmp")
 }
 
-func GetPaperBoltPath() string {
+func IndexesBoltPath() string {
 	return filepath.Join(GetAppBaseDir(), "papers.bolt")
+}
+
+func TorrentDBPath() string {
+	return filepath.Join(GetAppBaseDir(), "torrent.bolt")
 }
 
 func GetTorrentStoragePath() string {

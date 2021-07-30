@@ -17,7 +17,7 @@ package consts
 
 import "os"
 
-func PaperBucket() []byte     { return []byte("paper-v0") }
+func IndexBucketName() []byte { return []byte("index-v0") }
 func TorrentBucket() []byte   { return []byte("torrent-v0") }
 func NodeBucketName() []byte  { return []byte("node-v0") }
 func BlockBucketName() []byte { return []byte("block-v0") }

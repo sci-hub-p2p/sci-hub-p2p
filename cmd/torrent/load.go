@@ -18,7 +18,7 @@ package torrent
 import (
 	"encoding/hex"
 	"fmt"
-	"path/filepath"
+	"os"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -30,7 +30,6 @@ import (
 	"sci_hub_p2p/pkg/consts"
 	"sci_hub_p2p/pkg/consts/size"
 	"sci_hub_p2p/pkg/logger"
-	"sci_hub_p2p/pkg/persist"
 	"sci_hub_p2p/pkg/vars"
 )
 
@@ -45,18 +44,16 @@ var loadCmd = &cobra.Command{
 	Short:         "Load torrents into database.",
 	Example:       "torrent load 1.torrent 2.torrent [--glob '/path/to/data/*.torrent']",
 	SilenceErrors: false,
-	PreRunE:       utils.EnsureDir(vars.GetTorrentStoragePath()),
+	PreRunE:       utils.EnsureDir(vars.GetAppBaseDir()),
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		args, err = utils.MergeGlob(args, glob)
 		if err != nil {
 			return errors.Wrap(err, "can't load any torrent files")
 		}
 
-		db, err := bbolt.Open(filepath.Join(vars.GetAppBaseDir(), "torrent.bolt"),
-			consts.DefaultFilePerm, bbolt.DefaultOptions)
-
+		db, err := bbolt.Open(vars.TorrentDBPath(), consts.DefaultFilePerm, bbolt.DefaultOptions)
 		if err != nil {
-			return errors.Wrap(err, "can't open database file, maybe another process is running")
+			return errors.Wrap(err, "can't open Torrent DB")
 		}
 		defer func(db *bbolt.DB) {
 			if e := db.Close(); e != nil {
@@ -75,18 +72,19 @@ var loadCmd = &cobra.Command{
 				return errors.Wrap(err, "can't create bucket in database")
 			}
 			for _, file := range args {
-				f, err := torrent.ParseFile(file)
+				raw, err := os.ReadFile(file)
+				if err != nil {
+					return errors.Wrap(err, "failed to read file content")
+				}
+
+				t, err := torrent.ParseRaw(raw)
+				if err != nil {
+					return errors.Wrapf(err, "failed to parse torrent %s", file)
+				}
+
+				err = b.Put(t.RawInfoHash(), raw)
 				if err != nil {
 					return err
-				}
-				err = persist.PutTorrent(b, f)
-				if err != nil {
-					return err
-				}
-				dst := filepath.Join(vars.GetTorrentStoragePath(), f.InfoHash+".torrent")
-				err = utils.Copy(file, dst)
-				if err != nil {
-					return errors.Wrapf(err, "can't copy torrent file to %s", dst)
 				}
 			}
 
@@ -113,8 +111,7 @@ var getCmd = &cobra.Command{
 		}
 
 		var db *bbolt.DB
-		db, err = bbolt.Open(filepath.Join(vars.GetAppBaseDir(), "torrent.bolt"),
-			consts.DefaultFilePerm, bbolt.DefaultOptions)
+		db, err = bbolt.Open(vars.TorrentDBPath(), consts.DefaultFilePerm, bbolt.DefaultOptions)
 		if err != nil {
 			return errors.Wrap(err, "cant' open database file, maybe another process is running?")
 		}
@@ -138,7 +135,11 @@ var getCmd = &cobra.Command{
 			if b == nil {
 				return fmt.Errorf("can't find data in database")
 			}
-			t, err := persist.GetTorrent(b, p)
+			raw := b.Get(p)
+			if raw == nil {
+				return fmt.Errorf("can't find torrent in database")
+			}
+			t, err := torrent.ParseRaw(raw)
 			if err != nil {
 				return err
 			}
