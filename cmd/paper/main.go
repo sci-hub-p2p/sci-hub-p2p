@@ -23,11 +23,11 @@ import (
 	"github.com/spf13/cobra"
 	"go.etcd.io/bbolt"
 
-	"sci_hub_p2p/cmd/storage"
 	"sci_hub_p2p/internal/client"
 	"sci_hub_p2p/internal/torrent"
 	"sci_hub_p2p/internal/utils"
 	"sci_hub_p2p/pkg/consts"
+	"sci_hub_p2p/pkg/persist"
 	"sci_hub_p2p/pkg/vars"
 )
 
@@ -48,7 +48,7 @@ var fetchCmd = &cobra.Command{
 		}
 
 		doi = strings.TrimSuffix(doi, ".pdf")
-		r, err := storage.GetIndexRecord([]byte(doi))
+		r, err := persist.GetIndexRecord([]byte(doi))
 		if err != nil {
 			return err
 		}

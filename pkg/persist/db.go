@@ -19,21 +19,34 @@ import (
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
 
-	"sci_hub_p2p/internal/torrent"
+	"sci_hub_p2p/pkg/consts"
+	"sci_hub_p2p/pkg/indexes"
+	"sci_hub_p2p/pkg/vars"
 )
 
-var ErrNotFound = errors.New("not found in database")
+var ErrNotFound = errors.New("Not found in database")
 
-func GetTorrent(b *bbolt.Bucket, hash []byte) (*torrent.Torrent, error) {
-	raw := b.Get(hash)
-	if raw == nil {
-		return nil, ErrNotFound
-	}
-
-	t, err := torrent.Load(raw)
+func GetIndexRecord(doi []byte) (*indexes.Record, error) {
+	iDB, err := bbolt.Open(vars.IndexesBoltPath(), consts.DefaultFilePerm, bbolt.DefaultOptions)
 	if err != nil {
-		return nil, errors.Wrap(err, "can't parse torrent")
+		return nil, errors.Wrap(err, "failed to open indexes database")
+	}
+	defer iDB.Close()
+
+	var r *indexes.Record
+	err = iDB.View(func(tx *bbolt.Tx) error {
+		if v := tx.Bucket(consts.IndexBucketName()).Get(doi); v != nil {
+			r = indexes.LoadRecordV0(v)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read from Database")
+	}
+	if r == nil {
+		return nil, errors.Wrap(ErrNotFound, "failed to read doi in DB")
 	}
 
-	return t, nil
+	return r, nil
 }
