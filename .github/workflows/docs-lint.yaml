@@ -28,7 +28,10 @@ jobs:
 
       - run: npm i -g prettier
 
-
+      - uses: reviewdog/action-setup@v1
+        with:
+          reviewdog_version: latest # Optional. [latest,nightly,v.X.Y.Z]
+          
       - name: lint
         run: |
           prettier --write ./
