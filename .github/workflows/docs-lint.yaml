@@ -6,11 +6,13 @@ on:
       - master
     paths:
       - "**.md"
+      - .github/workflows/docs-lint.yaml
   pull_request:
     branches:
       - master
     paths:
       - "**.md"
+      - .github/workflows/docs-lint.yaml
 
 jobs:
   lint:
