@@ -28,4 +28,4 @@ jobs:
 
       - run: npm i -g prettier
 
-      - run: prettier --check --list-different --ignore-path .github/.prettierignore ./
+      - run: prettier --list-different --ignore-path .github/.prettierignore ./
