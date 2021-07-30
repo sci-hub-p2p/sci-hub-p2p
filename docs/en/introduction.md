@@ -13,7 +13,7 @@ However, Sci-Hub (libgen scimag) is continuously under attack by the censorship 
 ---
 
 ## Development Goals
-This project is aiming to provide same experience as the original [Sci-Hub website](https://sci-hub.st/). Fetching papers from the p2p network by using DOI while not relying on any web or DNS server.
+This project is aiming to provide same experience as the original [Sci-Hub website](https://sci-hub.st/). Fetching papers from the P2P network by using DOI while not relying on any web or DNS server.
 
 <!-- prettier-ignore -->
 !!! note
