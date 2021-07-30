@@ -47,7 +47,7 @@ var loadCmd = &cobra.Command{
 		if err != nil {
 			return errors.Wrap(err, "can't load any index files")
 		}
-		db, err := bbolt.Open(vars.GetPaperBoltPath(), consts.DefaultFilePerm, bbolt.DefaultOptions)
+		db, err := bbolt.Open(vars.IndexesBoltPath(), consts.DefaultFilePerm, bbolt.DefaultOptions)
 		if err != nil {
 			return errors.Wrap(err, "cant' open database file, maybe another process is running")
 		}
@@ -64,7 +64,7 @@ var loadCmd = &cobra.Command{
 
 		var count int
 		err = db.Batch(func(tx *bbolt.Tx) error {
-			b, err := tx.CreateBucketIfNotExists(consts.PaperBucket())
+			b, err := tx.CreateBucketIfNotExists(consts.IndexBucketName())
 			if err != nil {
 				return errors.Wrap(err, "can't create bucket in database")
 			}

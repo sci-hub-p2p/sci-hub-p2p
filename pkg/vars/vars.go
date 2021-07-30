@@ -42,14 +42,14 @@ func GetAppTmpDir() string {
 	return filepath.Join(GetAppBaseDir(), "tmp")
 }
 
-func GetPaperBoltPath() string {
-	return filepath.Join(GetAppBaseDir(), "papers.bolt")
+func IndexesBoltPath() string {
+	return filepath.Join(GetAppBaseDir(), "indexes.bolt")
 }
 
-func GetTorrentStoragePath() string {
-	return filepath.Join(GetAppBaseDir(), "torrents")
+func TorrentDBPath() string {
+	return filepath.Join(GetAppBaseDir(), "torrent.bolt")
 }
 
-func IpfsBoltPath() string {
+func IpfsDBPath() string {
 	return filepath.Join(GetAppBaseDir(), consts.IPFSBlockDB)
 }

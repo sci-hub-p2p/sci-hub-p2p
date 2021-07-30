@@ -16,70 +16,67 @@
 package persist
 
 import (
-	"os"
-	"path/filepath"
-
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
 
 	"sci_hub_p2p/internal/torrent"
+	"sci_hub_p2p/pkg/consts"
 	"sci_hub_p2p/pkg/indexes"
 	"sci_hub_p2p/pkg/vars"
 )
 
-var ErrNotFound = errors.New("not found in database")
+var ErrNotFound = errors.New("Not found in database")
 
-func GetTorrent(b *bbolt.Bucket, hash []byte) (*torrent.Torrent, error) {
-	raw := b.Get(hash)
-	if raw == nil {
-		return nil, ErrNotFound
+func GetIndexRecord(doi []byte) (*indexes.Record, error) {
+	iDB, err := bbolt.Open(vars.IndexesBoltPath(), consts.DefaultFilePerm, bbolt.DefaultOptions)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to open indexes database")
+	}
+	defer iDB.Close()
+
+	var r *indexes.Record
+	err = iDB.View(func(tx *bbolt.Tx) error {
+		if v := tx.Bucket(consts.IndexBucketName()).Get(doi); v != nil {
+			r = indexes.LoadRecordV0(v)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read from Database")
+	}
+	if r == nil {
+		return nil, errors.Wrap(ErrNotFound, "failed to read doi in DB")
 	}
 
-	t, err := torrent.Load(raw)
+	return r, nil
+}
+
+// GetTorrent accept a raw sha1 hash, return a parsed torrent.
+func GetTorrent(hash []byte) (*torrent.Torrent, error) {
+	tDB, err := bbolt.Open(vars.TorrentDBPath(), consts.DefaultFilePerm, bbolt.DefaultOptions)
 	if err != nil {
-		return nil, errors.Wrap(err, "can't parse torrent")
+		return nil, errors.Wrap(err, "failed to open torrent database")
+	}
+	defer tDB.Close()
+
+	var raw []byte
+	err = tDB.View(func(tx *bbolt.Tx) error {
+		raw = tx.Bucket(consts.TorrentBucket()).Get(hash)
+
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read from torrent DB")
+	}
+	if raw == nil {
+		return nil, errors.Wrap(ErrNotFound, "failed to find torrent in DB")
+	}
+
+	t, err := torrent.ParseRaw(raw)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse torrent in database")
 	}
 
 	return t, nil
-}
-
-func PutTorrent(b *bbolt.Bucket, t *torrent.Torrent) error {
-	d, err := t.Dump()
-	if err != nil {
-		return errors.Wrap(err, "can't dump torrent to bytes")
-	}
-	err = b.Put(t.RawInfoHash(), d)
-	if err != nil {
-		return errors.Wrap(err, "can't save torrent to database")
-	}
-
-	return nil
-}
-
-func GetRecord(b *bbolt.Bucket, doi string) (*indexes.Record, error) {
-	var raw = b.Get([]byte(doi))
-	if raw == nil {
-		return nil, ErrNotFound
-	}
-
-	return indexes.LoadRecordV0(raw), nil
-}
-
-func GetPerFileAndRawTorrent(b *bbolt.Bucket, doi string) (*indexes.PerFile, []byte, error) {
-	record, err := GetRecord(b, doi)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "can't find record")
-	}
-	r, err := os.ReadFile(filepath.Join(vars.GetTorrentStoragePath(), record.HexInfoHash()+".torrent"))
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "can't read torrent data")
-	}
-
-	t, err := torrent.ParseRaw(r)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "can't parse torrent")
-	}
-	p, err := record.Build(doi, t)
-
-	return p, r, errors.Wrapf(err, "can't contract PerFile from record")
 }

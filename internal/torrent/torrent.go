@@ -53,6 +53,7 @@ type Torrent struct {
 	Announce     string
 	Name         string
 	infoHash     []byte
+	raw          []byte
 	Pieces       [][]byte
 	Files        []File
 	AnnounceList [][]string
@@ -67,13 +68,17 @@ func (t *Torrent) RawInfoHash() []byte {
 	return t.infoHash
 }
 
-func (t *Torrent) SetInfoHash(p []byte) {
+func (t *Torrent) Raw() []byte {
+	return t.raw
+}
+
+func (t *Torrent) setInfoHash(p []byte) {
 	t.infoHash = make([]byte, size.Sha1Bytes)
 	copy(t.infoHash, p)
 	t.InfoHash = hex.EncodeToString(p)
 }
 
-func (t *Torrent) SetPieces(s string) error {
+func (t *Torrent) setPieces(s string) error {
 	sizeOfSha1 := size.Sha1Bytes
 	p := []byte(s)
 	if len(p)%sizeOfSha1 != 0 {
@@ -102,7 +107,7 @@ func (t Torrent) Piece(i int) []byte {
 	return s
 }
 
-func (t *Torrent) SetFiles(files []file) {
+func (t *Torrent) setFiles(files []file) {
 	t.Files = make([]File, len(files))
 	for i, f := range files {
 		t.Files[i] = File{
@@ -167,7 +172,7 @@ func Load(p []byte) (*Torrent, error) {
 		return nil, errors.Wrap(err, "can't decode InfoHash, maybe data broken, you need to reload this torrent")
 	}
 
-	t.SetInfoHash(v)
+	t.setInfoHash(v)
 
 	return t, nil
 }

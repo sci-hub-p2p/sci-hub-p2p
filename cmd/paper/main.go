@@ -17,12 +17,15 @@ package paper
 
 import (
 	"os"
+	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	"sci_hub_p2p/internal/client"
 	"sci_hub_p2p/internal/utils"
 	"sci_hub_p2p/pkg/consts"
+	"sci_hub_p2p/pkg/persist"
 	"sci_hub_p2p/pkg/vars"
 )
 
@@ -38,7 +41,27 @@ var fetchCmd = &cobra.Command{
 	SilenceErrors: false,
 	PreRunE:       utils.EnsureDir(vars.GetAppTmpDir()),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		var b, err = client.Fetch(doi)
+		if doi == "" {
+			return errors.New("doi can't be empty string")
+		}
+
+		doi = strings.TrimSuffix(doi, ".pdf")
+		r, err := persist.GetIndexRecord([]byte(doi))
+		if err != nil {
+			return err
+		}
+
+		t, err := persist.GetTorrent(r.InfoHash[:])
+		if err != nil {
+			return err
+		}
+
+		p, err := r.Build(doi, t)
+		if err != nil {
+			return err
+		}
+
+		b, err := client.Fetch(p, t.Raw())
 		if err != nil {
 			return err
 		}

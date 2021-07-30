@@ -68,8 +68,8 @@ var addCmd = &cobra.Command{
 			}
 		}
 
-		logger.Info("open database", zap.String("db", vars.IpfsBoltPath()))
-		db, err := bbolt.Open(vars.IpfsBoltPath(), consts.DefaultFilePerm, &bbolt.Options{NoSync: true})
+		logger.Info("open database", zap.String("db", vars.IpfsDBPath()))
+		db, err := bbolt.Open(vars.IpfsDBPath(), consts.DefaultFilePerm, &bbolt.Options{NoSync: true})
 		if err != nil {
 			return errors.Wrap(err, "failed to open database")
 		}
