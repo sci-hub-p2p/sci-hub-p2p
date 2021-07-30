@@ -13,8 +13,8 @@ on:
       - master
     paths:
       - "**.md"
-      - '**.yaml'
-      - '**.yml'
+      - "**.yaml"
+      - "**.yml"
 
 jobs:
   lint:
