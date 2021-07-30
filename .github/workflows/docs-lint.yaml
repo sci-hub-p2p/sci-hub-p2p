@@ -14,7 +14,7 @@ on:
     paths:
       - "**.md"
       - "**.yaml"
-      - '**.yml'
+      - "**.yml"
 
 jobs:
   lint:
