@@ -62,15 +62,17 @@ func GetTorrent(hash []byte) (*torrent.Torrent, error) {
 
 	var raw []byte
 	err = tDB.View(func(tx *bbolt.Tx) error {
-		raw = tx.Bucket(consts.TorrentBucket()).Get(hash)
+		value := tx.Bucket(consts.TorrentBucket()).Get(hash)
+		if value == nil {
+			return errors.Wrap(ErrNotFound, "failed to find torrent in DB")
+		}
+		raw = make([]byte, len(value))
+		copy(raw, value)
 
 		return nil
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read from torrent DB")
-	}
-	if raw == nil {
-		return nil, errors.Wrap(ErrNotFound, "failed to find torrent in DB")
+		return nil, err
 	}
 
 	t, err := torrent.ParseRaw(raw)

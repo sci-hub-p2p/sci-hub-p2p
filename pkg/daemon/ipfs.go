@@ -67,7 +67,7 @@ func Start(db *bbolt.DB, port int) error {
 		pnetKey,
 		[]multiaddr.Multiaddr{listen},
 		datastore,
-		ipfslite.Libp2pOptionsExtra...,
+		ipfslite.DefaultLibp2pOptions()...,
 	)
 
 	if err != nil {

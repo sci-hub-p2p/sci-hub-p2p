@@ -52,17 +52,17 @@ func DefaultBootstrapPeers() []peer.AddrInfo {
 	return defaults
 }
 
-// Libp2pOptionsExtra provides some useful libp2p options
-// to create a fully featured libp2p host. It can be used with
-// SetupLibp2p.
-var Libp2pOptionsExtra = []libp2p.Option{
-	libp2p.NATPortMap(),
-	libp2p.ConnectionManager(connmgr.NewConnManager(defaultLowConnectionNum, defaultHighConnectionNum, time.Minute)),
-	libp2p.EnableAutoRelay(),
-	libp2p.EnableNATService(),
-	libp2p.Security(libp2ptls.ID, libp2ptls.New),
-	libp2p.Transport(libp2pquic.NewTransport),
-	libp2p.DefaultTransports,
+func DefaultLibp2pOptions() []libp2p.Option {
+	return []libp2p.Option{
+		libp2p.NATPortMap(),
+		libp2p.ConnectionManager(connmgr.NewConnManager(defaultLowConnectionNum,
+			defaultHighConnectionNum, time.Minute)),
+		libp2p.EnableAutoRelay(),
+		libp2p.EnableNATService(),
+		libp2p.Security(libp2ptls.ID, libp2ptls.New),
+		libp2p.Transport(libp2pquic.NewTransport),
+		libp2p.DefaultTransports,
+	}
 }
 
 // SetupLibp2p returns a routed host and DHT instances that can be used to
