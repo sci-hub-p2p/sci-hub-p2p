@@ -1,9 +1,8 @@
 openapi: 3.0.3
 info:
-  license:
-    name: GPL-3.0-or-later
   title: Sci-Hub P2P
   version: 0.0.1
+  description: "[go back to documents](./)"
 
 servers:
   - variables:
