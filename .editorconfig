@@ -15,6 +15,7 @@ profile = black
 length_sort = true
 
 [*.{yaml,yml,json}]
+indent_style = space
 indent_size = 2
 
 [{Makefile,*.mk,*.go}]
