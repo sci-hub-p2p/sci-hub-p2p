@@ -37,10 +37,10 @@ paths:
                     "type": "string"
                   "arch":
                     "type": "string"
-                  "base-dir":
+                  "base_dir":
                     "type": "string"
                 "required":
-                  ["arch", "base-dir", "commit", "compiler", "os", "version"]
+                  ["arch", "base_dir", "commit", "compiler", "os", "version"]
               example:
                 version: v0.0.1
                 commit: 8aj2nsa8
