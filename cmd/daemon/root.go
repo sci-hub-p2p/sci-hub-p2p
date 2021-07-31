@@ -22,15 +22,25 @@ import (
 	"sci_hub_p2p/pkg/daemon"
 	"sci_hub_p2p/pkg/logger"
 	"sci_hub_p2p/pkg/vars"
+	"sci_hub_p2p/pkg/web"
 )
 
 var Cmd = &cobra.Command{
 	Use: "daemon",
 }
 
-var startCmd = &cobra.Command{
-	Use:     "start",
-	Short:   "start daemon",
+var httpAPICmd = &cobra.Command{
+	Use:     "http",
+	Short:   "start http server for http api and Web-UI",
+	PreRunE: utils.EnsureDir(vars.GetAppBaseDir()),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return web.Start(port)
+	},
+}
+
+var ipfsCmd = &cobra.Command{
+	Use:     "ipfs",
+	Short:   "start ipfs node",
 	PreRunE: utils.EnsureDir(vars.GetAppBaseDir()),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		logger.Info("open database", zap.String("db", vars.IpfsDBPath()))
@@ -59,8 +69,10 @@ var startCmd = &cobra.Command{
 var port int
 
 const defaultDaemonPort = 4005
+const defaultWebPort = 2333
 
 func init() {
-	Cmd.AddCommand(startCmd)
-	startCmd.Flags().IntVarP(&port, "port", "p", defaultDaemonPort, "IPFS peer default port")
+	Cmd.AddCommand(ipfsCmd, httpAPICmd)
+	ipfsCmd.Flags().IntVarP(&port, "port", "p", defaultDaemonPort, "IPFS peer default port")
+	httpAPICmd.Flags().IntVarP(&port, "port", "p", defaultWebPort, "IPFS peer default port")
 }

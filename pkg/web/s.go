@@ -27,3 +27,13 @@ type JSON409 struct {
 	} `json:"data,omitempty"`
 	Error `yaml:",inline"`
 }
+
+type DebugInfo struct {
+	Version   string `json:"version"`
+	Commit    string `json:"commit"`
+	Builder   string `json:"builder"`
+	BuildTime string `json:"build_time"`
+	Os        string `json:"os"`
+	Arch      string `json:"arch"`
+	BaseDir   string `json:"base_dir"`
+}

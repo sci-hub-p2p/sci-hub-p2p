@@ -30,7 +30,9 @@ paths:
                     "type": "string"
                   "commit":
                     "type": "string"
-                  "compiler":
+                  "builder":
+                    "type": "string"
+                  "build_time":
                     "type": "string"
                   "os":
                     "type": "string"
@@ -39,14 +41,21 @@ paths:
                   "base_dir":
                     "type": "string"
                 "required":
-                  ["arch", "base_dir", "commit", "compiler", "os", "version"]
+                  - "arch"
+                  - "base_dir"
+                  - "commit"
+                  - "builder"
+                  - "build_time"
+                  - "os"
+                  - "version"
               example:
                 version: v0.0.1
                 commit: 8aj2nsa8
-                compiler: "go version go1.16.6 windows/amd64"
+                builder: "go version go1.16.6 windows/amd64"
+                build_time: "2021-07-31T19:44:54.569Z"
                 os: "windows"
                 arch: "amd64"
-                base-dir: "/path/to/.sci-hub-p2p"
+                base_dir: "/path/to/.sci-hub-p2p"
 
   "/torrent":
     put:

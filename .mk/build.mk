@@ -1,9 +1,12 @@
 include .mk/args.mk
+Static = $(wildcard ./pkg/web/static/*.html)
+Template = $(wildcard ./pkg/web/template/*.gohtml)
+
 ProtoFiles = $(shell find . -path "*/.*" -prune -o -name "*.proto" -print)
 GoProtoFiles=$(patsubst %.proto,%.pb.go,$(ProtoFiles))
 
 GoSrc = $(shell find . -path "*/.*" -prune -o -name "*.go" -print)
-GoSrc += $(GoProtoFiles)
+GoSrc += $(GoProtoFiles) pkg/web/pkged.go
 
 $(GoProtoFiles): $(ProtoFiles)
 	protoc --go_out=. $^
@@ -26,7 +29,10 @@ dist/sci-hub_linux_64: $(GoSrc)
 dist/sci-hub_macos_64: $(GoSrc)
 	env CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o $@ $(GoBuildArgs)
 
-generate: $(GoProtoFiles)
+generate: $(GoProtoFiles) pkg/web/pkged.go
+
+pkg/web/pkged.go:
+	pkger -o pkg/web
 
 clean::
 	rm -rf ./dist

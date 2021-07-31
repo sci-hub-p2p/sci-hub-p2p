@@ -46,7 +46,7 @@ func ParseRaw(raw []byte) (*Torrent, error) {
 
 	err := bencode.Unmarshal(bytes.NewReader(raw), t)
 	if err != nil {
-		return nil, errors.Wrap(err, "can't parse torrent")
+		return nil, errors.Wrap(err, "content is not valid bencoding bytes")
 	}
 
 	tt, err := t.toTorrent()

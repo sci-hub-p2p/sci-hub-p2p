@@ -7,7 +7,7 @@ require (
 	github.com/anacrolix/log v0.9.0
 	github.com/anacrolix/torrent v1.29.1
 	github.com/cheggaaa/pb/v3 v3.0.8
-	github.com/gorilla/mux v1.8.0
+	github.com/gofiber/fiber/v2 v2.16.0
 	github.com/ipfs/go-bitswap v0.3.4
 	github.com/ipfs/go-block-format v0.0.3
 	github.com/ipfs/go-blockservice v0.1.7
@@ -30,6 +30,7 @@ require (
 	github.com/itchio/lzma v0.0.0-20190703113020-d3e24e3e3d49
 	github.com/jackpal/bencode-go v1.0.0
 	github.com/jbenet/goprocess v0.1.4
+	github.com/kr/text v0.2.0 // indirect
 	github.com/libp2p/go-libp2p v0.14.4
 	github.com/libp2p/go-libp2p-connmgr v0.2.4
 	github.com/libp2p/go-libp2p-core v0.8.6

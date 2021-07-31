@@ -12,15 +12,8 @@
 package indexes
 
 import (
-	"bufio"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"net/url"
-	"os"
-	"strings"
 
-	"github.com/itchio/lzma"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"go.etcd.io/bbolt"
@@ -28,6 +21,7 @@ import (
 
 	"sci_hub_p2p/internal/utils"
 	"sci_hub_p2p/pkg/consts"
+	"sci_hub_p2p/pkg/indexes"
 	"sci_hub_p2p/pkg/logger"
 	"sci_hub_p2p/pkg/vars"
 )
@@ -66,7 +60,7 @@ var loadCmd = &cobra.Command{
 			}
 
 			for _, file := range args {
-				c, err := loadIndexFile(b, file)
+				c, err := indexes.LoadIndexFile(b, file)
 				if err != nil {
 					return errors.Wrap(err, "can't load indexes file "+file)
 				}
@@ -91,47 +85,4 @@ var glob string
 func init() {
 	loadCmd.Flags().StringVar(&glob, "glob", "",
 		"glob pattern to search indexes to avoid 'Argument list too long' error")
-}
-
-func loadIndexFile(b *bbolt.Bucket, name string) (success int, err error) {
-	f, err := os.Open(name)
-	if err != nil {
-		return 0, err
-	}
-	defer f.Close()
-	reader := lzma.NewReader(f)
-	scanner := bufio.NewScanner(reader)
-
-	for scanner.Scan() {
-		var s []string
-
-		err = json.Unmarshal(scanner.Bytes(), &s)
-		if err != nil || len(s) != 2 {
-			return 0, errors.Wrap(err, "can't parse json "+scanner.Text())
-		}
-
-		value, err := base64.StdEncoding.DecodeString(s[1])
-		if err != nil {
-			return 0, errors.Wrap(err, "can't decode base64")
-		}
-
-		key, err := url.QueryUnescape(strings.TrimSuffix(s[0], ".pdf"))
-		if err != nil {
-			return 0, err
-		}
-
-		err = b.Put([]byte(key), value)
-		if err != nil {
-			return 0, errors.Wrap(err, "can't save record to database")
-		}
-
-		success++
-	}
-
-	err = scanner.Err()
-	if err != nil {
-		return 0, errors.Wrap(err, "can't scan file")
-	}
-
-	return success, errors.Wrap(scanner.Err(), "can't scan file")
 }
