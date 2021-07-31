@@ -10,7 +10,7 @@ servers:
       port:
         default: "4005"
       basePath:
-        default: "api/v1"
+        default: "api/v0"
     url: http://127.0.0.1:{port}/{basePath}
 
 paths:
