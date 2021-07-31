@@ -18,7 +18,7 @@ on:
       - "**.yml"
 
 jobs:
-  lint:
+  lint-docs:
     runs-on: ubuntu-latest
     steps:
       - name: Install Node LTS
