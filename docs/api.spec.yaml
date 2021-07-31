@@ -1,0 +1,167 @@
+openapi: 3.0.3
+info:
+  license:
+    name: GPL-3.0-or-later
+  title: Sci-Hub P2P
+  version: 0.0.1
+
+servers:
+  - variables:
+      port:
+        default: "4005"
+      basePath:
+        default: "api/v1"
+    url: http://127.0.0.1:{port}/{basePath}
+
+paths:
+  "/debug":
+    get:
+      description: get debug info
+      responses:
+        200:
+          description: ""
+          content:
+            application/json:
+              schema:
+                "title": "debug"
+                "type": "object"
+                "additionalProperties": false
+                "properties":
+                  "version":
+                    "type": "string"
+                  "commit":
+                    "type": "string"
+                  "compiler":
+                    "type": "string"
+                  "os":
+                    "type": "string"
+                  "arch":
+                    "type": "string"
+                  "base-dir":
+                    "type": "string"
+                "required":
+                  ["arch", "base-dir", "commit", "compiler", "os", "version"]
+              example:
+                version: v0.0.1
+                commit: 8aj2nsa8
+                compiler: "go version go1.16.6 windows/amd64"
+                os: "windows"
+                arch: "amd64"
+                base-dir: "/path/to/.sci-hub-p2p"
+
+  "/torrent":
+    put:
+      description: add a torrent to database
+      requestBody:
+        required: true
+        description: should be raw bencoding encoded binary content
+        content:
+          application/octet-stream:
+            example: binary
+      responses:
+        200:
+          description: torrent already loaded, and load again
+        201:
+          description: torrent never loaded, and got loaded now, no need to distingish with `200`
+
+        400:
+          $ref: "#/components/responses/RequestWrongBodyEncoding"
+        402:
+          $ref: "#/components/responses/RequestEmptyBody"
+
+  "/indexes":
+    put:
+      description: add a indexes file to database
+      requestBody:
+        required: true
+        description: should be raw lzma compressed jsonlines file
+        content:
+          application/octet-stream:
+            example: binary
+      responses:
+        200:
+          description: successfully load torrents
+          content:
+            application/json:
+              example:
+                count: 99996
+        400:
+          $ref: "#/components/responses/RequestWrongBodyEncoding"
+        402:
+          $ref: "#/components/responses/RequestEmptyBody"
+
+  "/paper":
+    get:
+      description: Get paper from P2P network.
+      parameters:
+        - name: doi
+          in: query
+      responses:
+        200:
+          description: successfully load torrents
+          content:
+            application/pdf: {}
+        404:
+          description: Can't found DOI in database
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+        409:
+          description: |
+            found the DOI record, but can't find the torrent in the database.
+
+            Should notify users that they need to load a torrent with specific info hash.
+          content:
+            application/json:
+              schema:
+                example:
+                  data:
+                    status: error
+                    message: missing torrent in database
+                    info_hash: "{info hash in hex string}"
+                allOf:
+                  - $ref: "#/components/schemas/error"
+                  - properties:
+                      data:
+                        type: object
+                        properties:
+                          info_hash:
+                            type: string
+components:
+  schemas:
+    error:
+      title: "Error"
+      description: error with message
+      type: "object"
+      additionalProperties: false
+      "properties":
+        "status":
+          type: "string"
+          enum: ["error"]
+        "message":
+          "type": "string"
+      required:
+        - status
+        - messag
+
+  responses:
+    RequestEmptyBody:
+      description: empty request body
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error"
+          example:
+            status: error
+            mesage: empty response body
+
+    RequestWrongBodyEncoding:
+      description: request body can'b be decoded
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error"
+          example:
+            status: error
+            mesage: can't decode request body
