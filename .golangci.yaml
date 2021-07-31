@@ -86,20 +86,9 @@ linters-settings:
   goheader:
     values:
       regexp:
-        author: ".*"
-        line: "\\n*?.*?(\\S*?Copyright 2021 .*\\n)*\\n*?"
-    template: |-
-      Copyright {{ YEAR-RANGE }} {{ author }}
-
-      This program is free software: you can redistribute it and/or modify
-      it under the terms of the GNU General Public License as published by
-      the Free Software Foundation, either version 3 of the License, or
-      (at your option) any later version.
-
-      This program is distributed in the hope that it will be useful,
-      but WITHOUT ANY WARRANTY; without even the implied warranty of
-      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-      See the GNU General Public License for more details.
+        author: ".* <.*>"
+        line: "^(Copyright 2021 .* <.*>\\n)+\\n*"
+    template: "{{line}}This program is free software: you can redistribute it and/or modify\nit under the terms of the GNU General Public License as published by\nthe Free Software Foundation, either version 3 of the License, or\n(at your option) any later version.\n\nThis program is distributed in the hope that it will be useful,\nbut WITHOUT ANY WARRANTY; without even the implied warranty of\nMERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\nSee the GNU General Public License for more details."
   goimports:
     # put imports beginning with prefix after 3rd-party packages;
     # it's a comma-separated list of prefixes

@@ -10,4 +10,4 @@ you can find more details in [document](https://sci-hub-p2p.readthedocs.io/en/la
 
 ## License
 
-AGPLv3
+GPL-3.0-or-later
