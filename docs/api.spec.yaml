@@ -95,6 +95,8 @@ paths:
       parameters:
         - name: doi
           in: query
+          schema:
+            type: string
       responses:
         200:
           description: successfully load torrents
