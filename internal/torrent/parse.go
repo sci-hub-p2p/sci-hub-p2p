@@ -9,6 +9,7 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU General Public License for more details.
+
 package torrent
 
 import (
@@ -22,6 +23,9 @@ import (
 
 	"sci_hub_p2p/pkg/hash"
 )
+
+var ErrEncoding = errors.New("failed to decode content as bencoding")
+var ErrNotValidTorrent = errors.New("bencoded content is not valid torrent")
 
 func ParseFile(name string) (*Torrent, error) {
 	b, err := os.ReadFile(name)
@@ -46,7 +50,7 @@ func ParseRaw(raw []byte) (*Torrent, error) {
 
 	err := bencode.Unmarshal(bytes.NewReader(raw), t)
 	if err != nil {
-		return nil, errors.Wrap(err, "content is not valid bencoding bytes")
+		return nil, ErrEncoding
 	}
 
 	tt, err := t.toTorrent()
@@ -69,15 +73,18 @@ func ParseRaw(raw []byte) (*Torrent, error) {
 func getInfoHash(content []byte) ([]byte, error) {
 	// it's annoying but we have to decode it twice to calculate info-hash
 	data, err := bencodeMap.Unmarshal(content)
+	if err != nil {
+		return nil, errors.Wrap(ErrEncoding, "failed to decode from content")
+	}
 
 	m, ok := data.(map[string]interface{})
 	if !ok {
-		return nil, errors.Wrap(err, "torrent data is not valid")
+		return nil, errors.Wrap(ErrNotValidTorrent, "torrent data is not valid")
 	}
 
 	info, ok := m["info"]
 	if !ok {
-		return nil, errors.Wrap(err, "torrent missing `info` field")
+		return nil, errors.Wrap(ErrNotValidTorrent, "torrent missing `info` field")
 	}
 
 	s, err := bencodeMap.Marshal(info)

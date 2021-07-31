@@ -13,20 +13,13 @@
 package web
 
 type Error struct {
-	Message *string `json:"message,omitempty"`
-	Status  string  `json:"status"`
+	Message string `json:"message,omitempty"`
+	Status  string `json:"status"`
 }
 
 type RequestEmptyBody Error
 
 type RequestWrongBodyEncoding Error
-
-type JSON409 struct {
-	Data struct {
-		InfoHash *string `json:"info_hash,omitempty"`
-	} `json:"data,omitempty"`
-	Error `yaml:",inline"`
-}
 
 type DebugInfo struct {
 	Version   string `json:"version"`
@@ -37,3 +30,15 @@ type DebugInfo struct {
 	Arch      string `json:"arch"`
 	BaseDir   string `json:"base_dir"`
 }
+
+type WithData struct {
+	Data interface{} `json:"data"`
+}
+
+type ErrWithData struct {
+	Data    interface{} `json:"data"`
+	Message string      `json:"message,omitempty"`
+	Status  string      `json:"status"`
+}
+
+type D = map[string]string

@@ -13,10 +13,8 @@
 package web
 
 import (
-	"fmt"
 	"runtime"
 	"strconv"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pkg/errors"
@@ -41,13 +39,13 @@ func Start(port int) error {
 	}
 	defer iDB.Close()
 
-	go func() {
-		time.Sleep(time.Second)
-
-		if err == nil {
-			openBrowser(fmt.Sprintf("http://127.0.0.1:%d/", port))
-		}
-	}()
+	// go func() {
+	// 	time.Sleep(time.Second)
+	//
+	// 	if err == nil {
+	// 		openBrowser(fmt.Sprintf("http://127.0.0.1:%d/", port))
+	// 	}
+	// }()
 
 	err = New(tDB, iDB).Listen(":" + strconv.Itoa(port))
 
@@ -60,6 +58,7 @@ func New(tDB, iDB *bbolt.DB) *fiber.App {
 			// Views:          engine,
 			ReadBufferSize: MB512,
 			BodyLimit:      MB512,
+			ErrorHandler:   errorHandler,
 		})
 
 	// app.Use("/static", filesystem.New(filesystem.Config{Root: pkger.Dir("./pkg/web/static")}))
@@ -84,7 +83,28 @@ func setupRouter(app *fiber.App, h *handler) {
 		})
 	})
 	router.Post("/", h.index)
-	router.Post("/torrent/load", h.torrentUpload)
-	router.Post("/indexes/load", h.indexesUpload)
+	router.Get("/torrents", h.torrentGet)
+	router.Put("/torrents", h.torrentUpload)
+	router.Put("/indexes", h.indexesUpload)
 	router.Get("/paper", h.paperQuery)
+}
+
+func errorHandler(c *fiber.Ctx, err error) error {
+	if err == nil {
+		return nil
+	}
+
+	// Default 500 StatusCode
+	code := fiber.StatusInternalServerError
+
+	var e *fiber.Error
+	if ok := errors.Is(err, e); ok {
+		// Override status code if fiber.Error type
+		code = e.Code //nolint:govet
+	}
+	// Set Content-Type: application/json; charset=utf-8
+	c.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSONCharsetUTF8)
+
+	// Return StatusCode with error message
+	return c.Status(code).JSON(Error{Status: "error", Message: err.Error()})
 }

@@ -13,16 +13,20 @@
 package web
 
 import (
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
-	"io"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
+	"go.uber.org/zap"
 
 	"sci_hub_p2p/internal/client"
+	"sci_hub_p2p/internal/torrent"
 	"sci_hub_p2p/pkg/consts"
 	"sci_hub_p2p/pkg/indexes"
+	"sci_hub_p2p/pkg/logger"
 	"sci_hub_p2p/pkg/persist"
 )
 
@@ -68,92 +72,84 @@ func (h *handler) index(c *fiber.Ctx) error {
 }
 
 func (h *handler) torrentUpload(c *fiber.Ctx) error {
-	mh, err := c.MultipartForm()
+	raw := c.Request().Body()
+	if raw == nil {
+		return c.Status(fiber.StatusPaymentRequired).JSON(Error{
+			Message: "error",
+			Status:  "request body are empty",
+		})
+	}
+
+	t, err := torrent.ParseRaw(raw)
 	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+		if errors.Is(err, torrent.ErrEncoding) {
+			return fiber.NewError(fiber.StatusPermanentRedirect, "file content is not Bencode encoded")
+		}
+
+		if errors.Is(err, torrent.ErrNotValidTorrent) {
+			return fiber.NewError(fiber.StatusPermanentRedirect, "file content is not valid torrent")
+		}
+
+		return fiber.NewError(fiber.StatusInternalServerError, "failed to parse torrent content")
 	}
 
-	files, ok := mh.File["files"]
-	if !ok {
-		return c.SendString("can't find any uploaded file")
-	}
-
-	err = h.torrentDB.Batch(func(tx *bbolt.Tx) error {
+	var existed bool
+	err = h.torrentDB.Update(func(tx *bbolt.Tx) error {
 		b, err := tx.CreateBucketIfNotExists(consts.TorrentBucket())
 		if err != nil {
 			return errors.Wrap(err, "failed to create bucket in the database")
 		}
-		for _, file := range files {
-			err := func() error {
-				f, err := file.Open()
-				if err != nil {
-					return errors.Wrap(err, "failed to read uploaded file content")
-				}
-				defer f.Close()
 
-				raw, err := io.ReadAll(f)
-				if err != nil {
-					return errors.Wrap(err, "failed to read uploaded file content")
-				}
+		existed = b.Get(t.RawInfoHash()) != nil
 
-				return errors.Wrapf(persist.SaveTorrent(b, raw), "failed to add torrent %s", file.Filename)
-			}()
-			if err != nil {
-				return err
-			}
-		}
-
-		return nil
+		return b.Put(t.RawInfoHash(), raw)
 	})
 
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to add torrent to database")
 	}
 
-	return c.SendString(fmt.Sprintf("%d torrent uploaded", len(files)))
+	if !existed {
+		c.Status(fiber.StatusCreated)
+	}
+
+	return nil
 }
 
 func (h *handler) indexesUpload(c *fiber.Ctx) error {
-	mh, err := c.MultipartForm()
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	raw := c.Request().Body()
+	if raw == nil {
+		return c.Status(fiber.StatusPaymentRequired).JSON(Error{
+			Message: "error",
+			Status:  "request body are empty",
+		})
 	}
 
-	files, ok := mh.File["files"]
-	if !ok {
-		return c.SendString("can't find any uploaded file")
-	}
-
-	err = h.indexesDB.Batch(func(tx *bbolt.Tx) error {
+	err := h.indexesDB.Batch(func(tx *bbolt.Tx) error {
 		b, err := tx.CreateBucketIfNotExists(consts.IndexBucketName())
 		if err != nil {
 			return errors.Wrap(err, "failed to create bucket in the database")
 		}
-		for _, file := range files {
-			err := func() error {
-				f, err := file.Open()
-				if err != nil {
-					return errors.Wrap(err, "failed to read uploaded file")
-				}
-				defer f.Close()
+		_, err = indexes.LoadIndexRaw(b, raw)
 
-				_, err = indexes.LoadIndexReader(b, f)
-
-				return errors.Wrapf(err, "failed to add indexes %s", file.Filename)
-			}()
-			if err != nil {
-				return err
-			}
-		}
-
-		return nil
+		return errors.Wrapf(err, "failed to add indexes file")
 	})
 
-	if err != nil {
-		return err
+	if err == nil {
+		return nil
 	}
 
-	return c.SendString(fmt.Sprintf("%d indexes uploaded", len(files)))
+	if errors.Is(err, &json.MarshalerError{}) {
+		return c.Status(fiber.StatusPaymentRequired).JSON(Error{
+			Message: "error",
+			Status:  "body content is not valid jsonlines file",
+		})
+	}
+
+	return c.Status(fiber.StatusInternalServerError).JSON(Error{
+		Message: "un-expected error:" + err.Error(),
+		Status:  "error",
+	})
 }
 
 func (h handler) getPaper(doi string, c *fiber.Ctx) error {
@@ -169,6 +165,16 @@ func (h handler) getPaper(doi string, c *fiber.Ctx) error {
 	t, err := persist.GetTorrentDB(h.torrentDB, r.InfoHash[:])
 	if err != nil {
 		return errors.Wrapf(err, "failed to get torrent data from Database, torrent infohash %s", r.HexInfoHash())
+	}
+
+	if t == nil {
+		return c.Status(fiber.StatusNotFound).JSON(ErrWithData{
+			Status:  "error",
+			Message: "missing torrent",
+			Data: D{
+				"info_hash": r.HexInfoHash(),
+			},
+		})
 	}
 
 	p, err := r.Build(doi, t)
@@ -193,4 +199,38 @@ func (h *handler) paperQuery(c *fiber.Ctx) error {
 	}
 
 	return h.getPaper(doi, c)
+}
+
+func (h *handler) torrentGet(c *fiber.Ctx) error {
+	torrents := make([]*torrent.Torrent, 0)
+
+	tx, err := h.torrentDB.Begin(false)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "failed to open database")
+	}
+
+	defer func() {
+		if err := tx.Rollback(); err != nil {
+			logger.Error("err close TX", zap.Error(err))
+		}
+	}()
+
+	b := tx.Bucket(consts.TorrentBucket())
+	if b == nil {
+		return c.Status(fiber.StatusNotFound).JSON(WithData{torrents})
+	}
+
+	cur := b.Cursor()
+
+	for k, v := cur.First(); k != nil; k, v = cur.Next() {
+		t, err := torrent.ParseRaw(v)
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError,
+				fmt.Sprintf("failed to parse torrent %s, please consider re-add it", hex.EncodeToString(k)))
+		}
+
+		torrents = append(torrents, t)
+	}
+
+	return c.JSON(WithData{torrents})
 }

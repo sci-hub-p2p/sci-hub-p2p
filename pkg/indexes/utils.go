@@ -75,6 +75,6 @@ func LoadIndexFile(b *bbolt.Bucket, name string) (success int, err error) {
 	return LoadIndexReader(b, f)
 }
 
-func LoadIndexContent(b *bbolt.Bucket, raw []byte) (success int, err error) {
+func LoadIndexRaw(b *bbolt.Bucket, raw []byte) (success int, err error) {
 	return LoadIndexReader(b, bytes.NewReader(raw))
 }

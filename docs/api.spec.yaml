@@ -112,32 +112,28 @@ paths:
           content:
             application/pdf: {}
         404:
-          description: Can't found DOI in database
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/error"
-        409:
           description: |
-            found the DOI record, but can't find the torrent in the database.
-
-            Should notify users that they need to load a torrent with specific info hash.
+            Can't found DOI or torrent in database
+            check `data.info_hash` to know if there's a torrent missing in database
           content:
             application/json:
               schema:
                 example:
+                  status: error
+                  message: can't find paper
                   data:
-                    status: error
-                    message: missing torrent in database
                     info_hash: "{info hash in hex string}"
-                allOf:
+                oneOf:
                   - $ref: "#/components/schemas/error"
-                  - properties:
-                      data:
-                        type: object
-                        properties:
-                          info_hash:
-                            type: string
+                  - type: object
+                    allOf:
+                      - $ref: "#/components/schemas/error"
+                      - properties:
+                          data:
+                            type: object
+                            properties:
+                              info_hash:
+                                type: string
 components:
   schemas:
     error:
