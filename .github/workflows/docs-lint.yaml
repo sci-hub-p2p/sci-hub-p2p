@@ -1,4 +1,4 @@
-name: Lint Docs
+name: Lint Other Language
 
 on:
   push:
@@ -8,6 +8,8 @@ on:
       - "**.md"
       - "**.yaml"
       - "**.yml"
+      - "**.html"
+      - "**.json"
   pull_request_target:
     types: [opened, synchronize, reopened]
     branches:
@@ -16,9 +18,11 @@ on:
       - "**.md"
       - "**.yaml"
       - "**.yml"
+      - "**.html"
+      - "**.json"
 
 jobs:
-  lint-docs:
+  lint-other:
     runs-on: ubuntu-latest
     steps:
       - name: Install Node LTS
@@ -26,14 +30,16 @@ jobs:
         with:
           node-version: 14.x.x
 
-      - name: Checkout code
-        uses: actions/checkout@v2
-
       - run: npm i -g prettier
 
       - uses: reviewdog/action-setup@v1
         with:
           reviewdog_version: latest # Optional. [latest,nightly,v.X.Y.Z]
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          ref: "refs/pull/${{ github.event.number }}/merge"
 
       - name: prettier
         run: prettier --write --list-different ./
