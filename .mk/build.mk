@@ -6,7 +6,7 @@ ProtoFiles = $(shell find . -path "*/.*" -prune -o -name "*.proto" -print)
 GoProtoFiles=$(patsubst %.proto,%.pb.go,$(ProtoFiles))
 
 GoSrc = $(shell find . -path "*/.*" -prune -o -name "*.go" -print)
-GoSrc += $(GoProtoFiles) pkg/web/pkged.go
+GoSrc += $(GoProtoFiles)
 
 $(GoProtoFiles): $(ProtoFiles)
 	protoc --go_out=. $^
@@ -29,10 +29,7 @@ dist/sci-hub_linux_64: $(GoSrc)
 dist/sci-hub_macos_64: $(GoSrc)
 	env CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o $@ $(GoBuildArgs)
 
-generate: $(GoProtoFiles) pkg/web/pkged.go
-
-pkg/web/pkged.go:
-	pkger -o pkg/web
+generate: $(GoProtoFiles)
 
 clean::
 	rm -rf ./dist
