@@ -86,3 +86,5 @@ So you need to download it with a filename query (again, unlikely at now)
 ```
 https://ipfs.io/ipfs/bafk2bzaceav734ba4n55d24e4ihka74oeuo42uwmh5a2dryiivcprt2ga3zde?filename=map-reduce.pdf
 ```
+
+[mode details about IPFS](./ipfs.md)

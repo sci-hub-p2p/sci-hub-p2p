@@ -33,6 +33,7 @@ nav:
       - "en/introduction.md"
       - "en/installation.md"
       - "en/usage.md"
+      - "en/ipfs.md"
       - "en/faq.md"
   - About:
       - Contributing: "contributing.md"
