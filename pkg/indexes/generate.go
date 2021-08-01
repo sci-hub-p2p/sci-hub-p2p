@@ -9,6 +9,7 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU General Public License for more details.
+
 package indexes
 
 import (
@@ -223,7 +224,7 @@ func Generate(dataDir, outDir string, t *torrent.Torrent, disableProgress bool) 
 	logger.Debug("wait all worker exit")
 	wg.Wait()
 	close(c)
-	logger.Debug("wait closing write db worker")
+	logger.Debug("wait closing write sql worker")
 	<-done
 
 	return nil
