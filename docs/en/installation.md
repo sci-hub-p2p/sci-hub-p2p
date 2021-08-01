@@ -1,4 +1,4 @@
-Core tool could be download at [Github Releases](https://github.com/Trim21/sci-hub-p2p/releases)
+Core tool could be download at [Github Releases](https://github.com/sci-hub-p2p/sci-hub-p2p/releases)
 
 <!-- prettier-ignore -->
 !!! note

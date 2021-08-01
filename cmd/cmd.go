@@ -37,7 +37,7 @@ var rootCmd = &cobra.Command{
 	Use:   "sci-hub",
 	Short: "sci-hub-p2p is cli tool to fetch paper from p2p network.",
 	Long: "Complete documentation is available at " +
-		"https://github.com/Trim21/sci-hub-p2p/wiki",
+		"https://sci-hub-p2p.readthedocs.io/en/latest/",
 	Version:       vars.Ref,
 	SilenceUsage:  true,
 	SilenceErrors: false,

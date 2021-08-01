@@ -14,4 +14,4 @@ This project is aiming to fetch paper from the p2p network with a DOI like you a
 
 For normal users: under heavy development, and it's not working at now.
 
-For developers: you can find more information in the [roadmap](https://github.com/Trim21/sci-hub-p2p/issues/2)
+For developers: you can find more information in the [roadmap](https://github.com/sci-hub-p2p/sci-hub-p2p/issues/2)
