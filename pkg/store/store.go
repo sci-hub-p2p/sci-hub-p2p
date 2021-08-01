@@ -80,7 +80,7 @@ func (d *MapDataStore) Sync(_ ds.Key) error {
 }
 
 func (d *MapDataStore) Get(key ds.Key) ([]byte, error) {
-	var log = d.logger.With(logger.Key(key))
+	var log = d.logger.Named("Get").With(logger.Key(key))
 	log.Debug("try to get block, check it in memory first")
 
 	if !isBlockKey(key) {
@@ -183,7 +183,7 @@ func (d *MapDataStore) cacheGet(key interface{}) []byte {
 
 // GetSize implements Datastore.GetSize.
 func (d *MapDataStore) GetSize(key ds.Key) (int, error) {
-	var log = d.logger.With(logger.Key(key))
+	var log = d.logger.Named("GetSize").With(logger.Key(key))
 	if !isBlockKey(key) {
 		log.Debug("non /blocks key, lookup in map")
 		d.RLock()
@@ -208,7 +208,7 @@ func (d *MapDataStore) GetSize(key ds.Key) (int, error) {
 		return 0, errors.Wrap(err, "failed to decode key to multi HASH")
 	}
 
-	log.Debug("lookup content in from Cache")
+	log.Debug("lookup size in from Cache")
 
 	if v := d.cacheGet([]byte(mh)); v != nil {
 		return len(v), nil
