@@ -4,19 +4,19 @@ In order to complete this guide, you will first need to perform the following ta
 
 **Create a folder** for this project, we would use `~/sci-hub/` in this guide.
 
-**Download latest release** from [GitHub Release](https://github.com/sci-hub-p2p/sci-hub-p2p/releases), and put them under `~/sci-hub/`
+**Download latest release** from [GitHub Release](https://github.com/sci-hub-p2p/sci-hub-p2p/releases), and put it under `~/sci-hub/.
 
-**SciMag torrent files**. To set this up, download all torrent files [here](https://libgen.rs/scimag/repository_torrent/) and put them in `~/sci-hub/torrents/`.
+**Download SciMag torrent files**. To set this up, download all torrent files [here](https://libgen.rs/scimag/repository_torrent/) and put them in `~/sci-hub/torrents/`.
 
-**Download indices files.** Make sure indices file are correctly located under `~/sci-hub/index`
+**Download indices files.** Make sure indices file are correctly located under `~/sci-hub/index`.
 
 <!-- prettier-ignore -->
 !!!warning
-    All data will be stored in `~/.sci-hub-p2p/` directory, there is not way to configure it yet.
+    All data will be stored in `~/.sci-hub-p2p/` directory, there is no way to configure it yet.
 
 ## Load torrents
 
-To import all torrent seeds under `~/.sci-hub/torrents/` , run:
+To import all torrent seeds under `~/.sci-hub/torrents/`, run:
 
 ```bash
 cd ~/sci-hub/
