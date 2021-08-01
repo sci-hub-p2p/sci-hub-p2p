@@ -27,7 +27,6 @@ import (
 	"github.com/libp2p/go-libp2p-core/routing"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	dualdht "github.com/libp2p/go-libp2p-kad-dht/dual"
-	libp2pquic "github.com/libp2p/go-libp2p-quic-transport"
 	record "github.com/libp2p/go-libp2p-record"
 	libp2ptls "github.com/libp2p/go-libp2p-tls"
 	"github.com/multiformats/go-multiaddr"
@@ -56,7 +55,6 @@ func DefaultLibp2pOptions() []libp2p.Option {
 		libp2p.EnableAutoRelay(),
 		libp2p.EnableNATService(),
 		libp2p.Security(libp2ptls.ID, libp2ptls.New),
-		libp2p.Transport(libp2pquic.NewTransport),
 		libp2p.DefaultTransports,
 	}
 }

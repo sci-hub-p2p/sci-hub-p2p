@@ -9,9 +9,13 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU General Public License for more details.
+
 package daemon
 
 import (
+	"fmt"
+	"math"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"go.etcd.io/bbolt"
@@ -63,16 +67,25 @@ var ipfsCmd = &cobra.Command{
 			return err
 		}
 
-		return daemon.Start(db, port)
+		fmt.Println(cacheSize * MB)
+		fmt.Println(math.Log2(float64(cacheSize * MB)))
+
+		return daemon.Start(db, port, cacheSize*MB)
 	},
 }
 var port int
+var cacheSize int64
 
+const MB int64 = 1 << 20
 const defaultDaemonPort = 4005
 const defaultWebPort = 2333
+const defaultCacheSize = 1 << 9
 
 func init() {
 	Cmd.AddCommand(ipfsCmd, httpAPICmd)
 	ipfsCmd.Flags().IntVarP(&port, "port", "p", defaultDaemonPort, "IPFS peer default port")
+	ipfsCmd.Flags().IntVarP(&port, "port", "p", defaultDaemonPort, "IPFS peer default port")
+	ipfsCmd.Flags().Int64Var(&cacheSize, "cache", defaultCacheSize, "memory cache size for disk in MB")
+
 	httpAPICmd.Flags().IntVarP(&port, "port", "p", defaultWebPort, "IPFS peer default port")
 }

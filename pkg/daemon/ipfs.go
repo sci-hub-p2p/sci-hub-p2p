@@ -9,6 +9,7 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU General Public License for more details.
+
 package daemon
 
 // This example launches an IPFS-Lite peer and fetches a hello-world
@@ -17,11 +18,12 @@ package daemon
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"time"
 
 	ds "github.com/ipfs/go-datastore"
 	log2 "github.com/ipfs/go-log"
+	"github.com/libp2p/go-libp2p"
+	libp2pquic "github.com/libp2p/go-libp2p-quic-transport"
 	"github.com/multiformats/go-multiaddr"
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
@@ -34,11 +36,11 @@ import (
 
 const interval = time.Second * 20
 
-func Start(db *bbolt.DB, port int) error {
-	setupIPFSLogger()
+func Start(db *bbolt.DB, port int, cacheSize int64) error {
+	var ctx = context.Background()
+	var datastore ds.Batching = store.NewArchiveFallbackDatastore(db, cacheSize)
 
-	ctx := context.Background()
-	var datastore ds.Batching = store.NewArchiveFallbackDatastore(db)
+	setupIPFSLogger()
 
 	if flag.Debug {
 		datastore = store.NewLogDatastore(datastore, "LogDatastore")
@@ -51,21 +53,32 @@ func Start(db *bbolt.DB, port int) error {
 
 	logger.Info("finish load key")
 
-	listen, _ := multiaddr.NewMultiaddr("/ip4/0.0.0.0/tcp/" + strconv.Itoa(port))
+	listen, err := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", port))
+	if err != nil {
+		panic(err)
+	}
+
+	listenAddrs := []multiaddr.Multiaddr{listen}
 
 	pnetKey, err := pnetKey()
 	if err != nil {
 		return err
 	}
 
-	h, dht, err := ipfslite.SetupLibp2p(
-		ctx,
-		privKey,
-		pnetKey,
-		[]multiaddr.Multiaddr{listen},
-		datastore,
-		ipfslite.DefaultLibp2pOptions()...,
-	)
+	var options = ipfslite.DefaultLibp2pOptions()
+
+	if pnetKey != nil {
+		logger.Warn("you are using pnet key, disable quic support")
+	} else {
+		options = append(options, libp2p.Transport(libp2pquic.NewTransport))
+		listen, err := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/0.0.0.0/udp/%d/quic", port))
+		if err != nil {
+			panic(err)
+		}
+		listenAddrs = append(listenAddrs, listen)
+	}
+
+	h, dht, err := ipfslite.SetupLibp2p(ctx, privKey, pnetKey, listenAddrs, datastore, options...)
 
 	if err != nil {
 		return errors.Wrap(err, "failed to start libp2p")
@@ -78,7 +91,6 @@ func Start(db *bbolt.DB, port int) error {
 
 	logger.WithLogger("ipfs").Info("peer started")
 	fmt.Printf("your peer address is /ip4/127.0.0.1/tcp/%d/p2p/%s\n", port, h.ID())
-
 	lite.Bootstrap(ipfslite.DefaultBootstrapPeers())
 
 	for {
