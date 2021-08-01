@@ -38,8 +38,13 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v2
+        if: ${{ github.event_name != 'push' }}
         with:
           ref: "refs/pull/${{ github.event.number }}/merge"
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+        if: ${{ github.event_name != 'push' }}
 
       - name: prettier
         run: prettier --write --list-different ./
