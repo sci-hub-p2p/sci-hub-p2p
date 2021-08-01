@@ -22,7 +22,7 @@ sci-hub torrent load --glob './torrents/*.torrent'
 
 ## Load indexes
 
-Load all indexes in the `./indexes` directory.
+Extract all indexes to `./indexes` directory, and load them:
 
 ```bash
 sci-hub indexes load ./indexes/*.jsonlines.lzma
@@ -33,6 +33,10 @@ if you met the error: `Too many arguments`, try the `--glob` flag:
 ```bash
 sci-hub indexes load --glob './indexes/*.jsonlines.lzma'
 ```
+
+<!-- prettier-ignore -->
+!!! warning
+    this will take about 30 mins and 17GB disk space.
 
 ## Fetch a paper
 
