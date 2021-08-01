@@ -7,7 +7,8 @@ require (
 	github.com/anacrolix/log v0.9.0
 	github.com/anacrolix/torrent v1.29.1
 	github.com/cheggaaa/pb/v3 v3.0.8
-	github.com/gorilla/mux v1.8.0
+	github.com/dgraph-io/ristretto v0.1.0
+	github.com/golang/glog v0.0.0-20210429001901-424d2337a529 // indirect
 	github.com/ipfs/go-bitswap v0.3.4
 	github.com/ipfs/go-block-format v0.0.3
 	github.com/ipfs/go-blockservice v0.1.7
@@ -48,6 +49,7 @@ require (
 	github.com/whyrusleeping/cbor-gen v0.0.0-20210219115102-f37d292932f2 // indirect
 	go.etcd.io/bbolt v1.3.6
 	go.uber.org/zap v1.18.1
+	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 )

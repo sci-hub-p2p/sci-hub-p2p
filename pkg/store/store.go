@@ -9,11 +9,13 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU General Public License for more details.
+
 package store
 
 import (
 	"sync"
 
+	"github.com/dgraph-io/ristretto"
 	ds "github.com/ipfs/go-datastore"
 	dsq "github.com/ipfs/go-datastore/query"
 	dshelp "github.com/ipfs/go-ipfs-ds-help"
@@ -23,31 +25,46 @@ import (
 
 	"sci_hub_p2p/pkg/consts"
 	"sci_hub_p2p/pkg/logger"
-	"sci_hub_p2p/pkg/storage"
 )
 
 var _ ds.Datastore = (*MapDataStore)(nil)
 
 type MapDataStore struct {
 	db            *bbolt.DB
+	cache         *ristretto.Cache
 	values        map[ds.Key][]byte
 	logger        *zap.Logger
 	keysSizeCache sync.Map // cache block key content size
 	sync.RWMutex
 }
 
-func NewArchiveFallbackDatastore(db *bbolt.DB) (d *MapDataStore) {
+const KB256 = 256 * 1024
+const defaultBufferItems = 64 // number of keys per Get buffer.
+
+func NewArchiveFallbackDatastore(db *bbolt.DB, cacheSize int64) (d *MapDataStore) {
+	cache, err := ristretto.NewCache(&ristretto.Config{
+		NumCounters: cacheSize / KB256,
+		MaxCost:     cacheSize,
+		BufferItems: defaultBufferItems,
+	})
+	if err != nil {
+		panic(err)
+	}
+
 	return &MapDataStore{
 		values: make(map[ds.Key][]byte),
 		db:     db,
 		logger: logger.WithLogger("MapDataStore"),
+		cache:  cache,
 	}
 }
 
 // Put implements Datastore.Put.
-func (d *MapDataStore) Put(key ds.Key, value []byte) (err error) {
-	if key.IsDescendantOf(topLevelBlockKey) {
-		logger.Debug("try to put block, put it in memory")
+func (d *MapDataStore) Put(key ds.Key, value []byte) error {
+	if isBlockKey(topLevelBlockKey) {
+		logger.Debug("try to put block, just skip")
+
+		return nil
 	}
 
 	d.Lock()
@@ -89,17 +106,9 @@ func (d *MapDataStore) Get(key ds.Key) ([]byte, error) {
 		return nil, errors.Wrapf(err, "failed to decode key to multihash for key %s", key)
 	}
 
-	var p []byte
+	var out []byte
 
-	err = d.db.View(func(tx *bbolt.Tx) error {
-		var e error
-		p, e = storage.ReadBlock(tx, mh)
-		if p != nil {
-			log.Debug("find in KV")
-		}
-
-		return errors.Wrap(e, "failed to read block")
-	})
+	out, err = CachedReadBlockW(d.db, d.cache, mh)
 
 	if err != nil {
 		if errors.Is(err, ds.ErrNotFound) {
@@ -111,9 +120,9 @@ func (d *MapDataStore) Get(key ds.Key) ([]byte, error) {
 		return nil, err
 	}
 
-	d.keysSizeCache.Store(key, len(p))
+	d.keysSizeCache.Store(key, len(out))
 
-	return p, nil
+	return out, nil
 }
 
 // Has returns whether the `key` is mapped to a `value`.
@@ -157,6 +166,21 @@ func (d *MapDataStore) Has(key ds.Key) (exists bool, err error) {
 	return found, nil
 }
 
+func (d *MapDataStore) cacheGet(key interface{}) []byte {
+	v, ok := d.cache.Get(key)
+	if !ok {
+		return nil
+	}
+
+	if b, ok := v.([]byte); ok {
+		return b
+	}
+
+	d.cache.Del(key)
+
+	return nil
+}
+
 // GetSize implements Datastore.GetSize.
 func (d *MapDataStore) GetSize(key ds.Key) (int, error) {
 	var log = d.logger.With(logger.Key(key))
@@ -173,24 +197,29 @@ func (d *MapDataStore) GetSize(key ds.Key) (int, error) {
 		return 0, ds.ErrNotFound
 	}
 
-	log.Debug("didn't find key in kv, try get size from cache")
+	log.Debug("didn't find key in map, try get size from cache")
 
-	v, ok := d.keysSizeCache.Load(key.String())
-	if ok {
+	if v, ok := d.keysSizeCache.Load(key.String()); ok {
 		return v.(int), nil
 	}
-
-	log.Debug("lookup size of from kV")
-	var l = -1
 
 	mh, err := dshelp.DsKeyToMultihash(ds.NewKey(key.BaseNamespace()))
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to decode key to multi HASH")
 	}
 
+	log.Debug("lookup content in from Cache")
+
+	if v := d.cacheGet([]byte(mh)); v != nil {
+		return len(v), nil
+	}
+
+	log.Debug("lookup size of from kV")
+	var l = -1
+
 	err = d.db.View(func(tx *bbolt.Tx) error {
 		var e error
-		l, e = storage.ReadLen(tx, d.logger, mh)
+		l, e = ReadLen(tx, d.logger, mh)
 
 		return errors.Wrap(e, "failed to get size from database")
 	})
