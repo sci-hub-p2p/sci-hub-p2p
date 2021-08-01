@@ -57,7 +57,26 @@ paths:
                 arch: "amd64"
                 base_dir: "/path/to/.sci-hub-p2p"
 
-  "/torrent":
+  "/torrents":
+    get:
+      description: list current torrent in database
+      responses:
+        200:
+          description: torrent already loaded, and load again
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        info_hash:
+                          type: string
+                        name:
+                          type: string
     put:
       description: add a torrent to database
       requestBody:
