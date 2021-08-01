@@ -7,7 +7,7 @@ In order to complete this guide, you will first need to perform the following ta
 **Download latest release** from [GitHub Release](https://github.com/sci-hub-p2p/sci-hub-p2p/releases), and put them under `~/sci-hub/`
 
 **SciMag torrent files**. To set this up, download all torrent files [here](https://libgen.rs/scimag/repository_torrent/) and put them in `~/sci-hub/torrents/`.
-            
+
 **Download indices files.** Make sure indices file are correctly located under `~/sci-hub/index`
 
 <!-- prettier-ignore -->
