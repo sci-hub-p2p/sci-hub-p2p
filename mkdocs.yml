@@ -25,7 +25,9 @@ nav:
       - "zh/简介.md"
       - "zh/安装.md"
       - 使用:
+          - "zh/usage/使用.md"
           - "zh/usage/索引.md"
+      - "zh/ipfs.md"
       - "zh/常见问题.md"
   - English:
       - "en/introduction.md"

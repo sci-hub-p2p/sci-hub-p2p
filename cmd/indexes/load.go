@@ -50,7 +50,7 @@ var loadCmd = &cobra.Command{
 		fmt.Printf("find %d files to load", len(args))
 
 		db, err := bbolt.Open(vars.IndexesBoltPath(), consts.DefaultFilePerm, &bbolt.Options{
-			FreelistType: bbolt.FreelistMapType,
+			FreelistType: bbolt.FreelistArrayType,
 			NoSync:       true,
 		})
 		if err != nil {
