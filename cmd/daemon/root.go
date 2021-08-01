@@ -84,7 +84,6 @@ const defaultCacheSize = 1 << 9
 func init() {
 	Cmd.AddCommand(ipfsCmd, httpAPICmd)
 	ipfsCmd.Flags().IntVarP(&port, "port", "p", defaultDaemonPort, "IPFS peer default port")
-	ipfsCmd.Flags().IntVarP(&port, "port", "p", defaultDaemonPort, "IPFS peer default port")
 	ipfsCmd.Flags().Int64Var(&cacheSize, "cache", defaultCacheSize, "memory cache size for disk in MB")
 
 	httpAPICmd.Flags().IntVarP(&port, "port", "p", defaultWebPort, "IPFS peer default port")
