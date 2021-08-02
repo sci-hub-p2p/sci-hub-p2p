@@ -8,6 +8,7 @@ require (
 	github.com/anacrolix/torrent v1.29.1
 	github.com/cheggaaa/pb/v3 v3.0.8
 	github.com/dgraph-io/ristretto v0.1.0
+	github.com/dustin/go-humanize v1.0.0
 	github.com/golang/glog v0.0.0-20210429001901-424d2337a529 // indirect
 	github.com/ipfs/go-bitswap v0.3.4
 	github.com/ipfs/go-block-format v0.0.3

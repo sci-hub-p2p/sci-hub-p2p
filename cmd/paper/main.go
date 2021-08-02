@@ -17,15 +17,16 @@ import (
 	"os"
 	"strings"
 
+	"github.com/dustin/go-humanize"
+	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
+
 	"sci_hub_p2p/internal/client"
 	"sci_hub_p2p/internal/utils"
 	"sci_hub_p2p/pkg/consts"
 	"sci_hub_p2p/pkg/persist"
 	"sci_hub_p2p/pkg/vars"
-
-	"github.com/jedib0t/go-pretty/v6/table"
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 )
 
 var Cmd = &cobra.Command{
@@ -98,7 +99,9 @@ var inspectCmd = &cobra.Command{
 		tab := table.NewWriter()
 		tab.AppendRow(table.Row{"doi", doi})
 		tab.AppendRow(table.Row{"torrent", r.HexInfoHash()})
-		tab.AppendRow(table.Row{"file", t.Files[p.FileIndex].Name()})
+		tab.AppendRow(table.Row{"zip file", t.Files[p.FileIndex].Name()})
+		tab.AppendRow(table.Row{"size", humanize.Bytes(uint64(p.CompressedSize))})
+		tab.AppendRow(table.Row{"CID", p.CID.String()})
 
 		fmt.Println(tab.Render())
 
