@@ -9,6 +9,7 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU General Public License for more details.
+
 package client
 
 import (
@@ -21,21 +22,13 @@ import (
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/anacrolix/torrent/storage"
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 
 	"sci_hub_p2p/pkg/hash"
 	"sci_hub_p2p/pkg/indexes"
-	"sci_hub_p2p/pkg/logger"
 	"sci_hub_p2p/pkg/vars"
 )
 
-func Fetch(p *indexes.PerFile, rawTorrent []byte) ([]byte, error) {
-	c, err := getClient()
-	if err != nil {
-		logger.Fatal("can't initialize BitTorrent client", zap.Error(err))
-	}
-	defer c.Close()
-
+func Fetch(c *torrent.Client, p *indexes.PerFile, rawTorrent []byte) ([]byte, error) {
 	mi, err := metainfo.Load(bytes.NewReader(rawTorrent))
 	if err != nil {
 		return nil, errors.Wrap(err, "can't parse torrent file")
@@ -58,7 +51,7 @@ func (l nilLogger) Log(_ log.Msg) {
 
 }
 
-func getClient() (*torrent.Client, error) {
+func GetClient() (*torrent.Client, error) {
 	cfg := torrent.NewDefaultClientConfig()
 	cfg.DefaultStorage = storage.NewBoltDB(vars.GetAppTmpDir())
 	cfg.Bep20 = "-GT0003-"

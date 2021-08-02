@@ -36,7 +36,7 @@ var Cmd = &cobra.Command{
 var httpAPICmd = &cobra.Command{
 	Use:     "http",
 	Short:   "start http server for http api and Web-UI",
-	PreRunE: utils.EnsureDir(vars.GetAppBaseDir()),
+	PreRunE: utils.EnsureDir(vars.GetAppTmpDir()),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return web.Start(port)
 	},

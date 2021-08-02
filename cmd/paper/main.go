@@ -9,9 +9,11 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU General Public License for more details.
+
 package paper
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -57,7 +59,17 @@ var fetchCmd = &cobra.Command{
 			return err
 		}
 
-		b, err := client.Fetch(p, t.Raw())
+		fmt.Println(r)
+		fmt.Println(p)
+		fmt.Println(t.Files[p.FileIndex])
+
+		c, err := client.GetClient()
+		if err != nil {
+			return errors.Wrap(err, "failed to start BitTorrent client")
+		}
+		defer c.Close()
+
+		b, err := client.Fetch(c, p, t.Raw())
 		if err != nil {
 			return err
 		}

@@ -16,10 +16,12 @@ import (
 	"runtime"
 	"strconv"
 
+	"github.com/anacrolix/torrent"
 	"github.com/gofiber/fiber/v2"
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
 
+	"sci_hub_p2p/internal/client"
 	"sci_hub_p2p/pkg/consts"
 	"sci_hub_p2p/pkg/vars"
 )
@@ -47,12 +49,18 @@ func Start(port int) error {
 	// 	}
 	// }()
 
-	err = New(tDB, iDB).Listen(":" + strconv.Itoa(port))
+	c, err := client.GetClient()
+	if err != nil {
+		return errors.Wrap(err, "failed to start BitTorrent client")
+	}
+	defer c.Close()
+
+	err = New(tDB, iDB, c).Listen(":" + strconv.Itoa(port))
 
 	return errors.Wrap(err, "failed to start http server")
 }
 
-func New(tDB, iDB *bbolt.DB) *fiber.App {
+func New(tDB, iDB *bbolt.DB, c *torrent.Client) *fiber.App {
 	app := fiber.New(
 		fiber.Config{
 			// Views:          engine,
@@ -63,7 +71,7 @@ func New(tDB, iDB *bbolt.DB) *fiber.App {
 
 	// app.Use("/static", filesystem.New(filesystem.Config{Root: pkger.Dir("./pkg/web/static")}))
 
-	h := newHandler(tDB, iDB)
+	h := &handler{torrentDB: tDB, indexesDB: iDB, btClient: c}
 	setupRouter(app, h)
 
 	return app

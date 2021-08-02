@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	torrent2 "github.com/anacrolix/torrent"
 	"github.com/gofiber/fiber/v2"
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
@@ -33,10 +34,7 @@ import (
 type handler struct {
 	torrentDB *bbolt.DB
 	indexesDB *bbolt.DB
-}
-
-func newHandler(tDB, iDB *bbolt.DB) *handler {
-	return &handler{torrentDB: tDB, indexesDB: iDB}
+	btClient  *torrent2.Client
 }
 
 func (h *handler) index(c *fiber.Ctx) error {
@@ -182,7 +180,7 @@ func (h handler) getPaper(doi string, c *fiber.Ctx) error {
 		return errors.Wrap(err, "failed to detect offset of PDF file")
 	}
 
-	b, err := client.Fetch(p, t.Raw())
+	b, err := client.Fetch(h.btClient, p, t.Raw())
 	if err != nil {
 		return errors.Wrap(err, "failed to fetch paper")
 	}
