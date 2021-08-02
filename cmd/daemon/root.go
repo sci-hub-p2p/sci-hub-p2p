@@ -42,8 +42,8 @@ var httpAPICmd = &cobra.Command{
 	},
 }
 
-var ipfsCmd = &cobra.Command{
-	Use:     "ipfs",
+var startIpfsCmd = &cobra.Command{
+	Use:     "start",
 	Short:   "start ipfs node",
 	PreRunE: utils.EnsureDir(vars.GetAppBaseDir()),
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -82,9 +82,9 @@ const defaultWebPort = 2333
 const defaultCacheSize = 1 << 9
 
 func init() {
-	Cmd.AddCommand(ipfsCmd, httpAPICmd)
-	ipfsCmd.Flags().IntVarP(&port, "port", "p", defaultDaemonPort, "IPFS peer default port")
-	ipfsCmd.Flags().Int64Var(&cacheSize, "cache", defaultCacheSize, "memory cache size for disk in MB")
+	Cmd.AddCommand(startIpfsCmd, httpAPICmd)
+	startIpfsCmd.Flags().IntVarP(&port, "port", "p", defaultDaemonPort, "IPFS peer default port")
+	startIpfsCmd.Flags().Int64Var(&cacheSize, "cache", defaultCacheSize, "memory cache size for disk in MB")
 
 	httpAPICmd.Flags().IntVarP(&port, "port", "p", defaultWebPort, "IPFS peer default port")
 }
