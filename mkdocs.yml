@@ -9,14 +9,14 @@ theme:
 
 extra:
   domain: "sci-hub-p2p.readthedocs.io"
-  # alternate:
-  #   - name: 中文
-  #     link: "zh/简介.md"
-  #     lang: zh
+  alternate:
+    - name: 中文
+      link: "zh/简介/"
+      lang: zh
 
-  #   - name: English
-  #     link: "en/introduction.md"
-  #     lang: en
+    - name: English
+      link: "en/introduction/"
+      lang: en
 
 nav:
   - "index.md"
@@ -30,7 +30,6 @@ nav:
       - "zh/常见问题.md"
   - English:
       - "en/introduction.md"
-      - "en/installation.md"
       - "en/usage.md"
       - "en/ipfs.md"
       - "en/faq.md"
