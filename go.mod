@@ -31,6 +31,7 @@ require (
 	github.com/itchio/lzma v0.0.0-20190703113020-d3e24e3e3d49
 	github.com/jackpal/bencode-go v1.0.0
 	github.com/jbenet/goprocess v0.1.4
+	github.com/jedib0t/go-pretty/v6 v6.2.4
 	github.com/libp2p/go-libp2p v0.14.4
 	github.com/libp2p/go-libp2p-connmgr v0.2.4
 	github.com/libp2p/go-libp2p-core v0.8.6

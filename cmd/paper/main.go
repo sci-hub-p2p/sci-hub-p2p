@@ -9,20 +9,23 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU General Public License for more details.
+
 package paper
 
 import (
+	"fmt"
 	"os"
 	"strings"
-
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 
 	"sci_hub_p2p/internal/client"
 	"sci_hub_p2p/internal/utils"
 	"sci_hub_p2p/pkg/consts"
 	"sci_hub_p2p/pkg/persist"
 	"sci_hub_p2p/pkg/vars"
+
+	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 )
 
 var Cmd = &cobra.Command{
@@ -67,12 +70,49 @@ var fetchCmd = &cobra.Command{
 	},
 }
 
+var inspectCmd = &cobra.Command{
+	Use:     "inspect",
+	Short:   "inspect the file information of a DOI",
+	Example: "paper inspect --doi '10.1145/1327452.1327492'",
+	PreRunE: utils.EnsureDir(vars.GetAppBaseDir()),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if doi == "" {
+			return errors.New("doi can't be empty string")
+		}
+
+		doi = strings.TrimSuffix(doi, ".pdf")
+		r, err := persist.GetIndexRecord([]byte(doi))
+		if err != nil {
+			return err
+		}
+
+		t, err := persist.GetTorrent(r.InfoHash[:])
+		if err != nil {
+			return err
+		}
+
+		p, err := r.Build(doi, t)
+		if err != nil {
+			return err
+		}
+		tab := table.NewWriter()
+		tab.AppendRow(table.Row{"doi", doi})
+		tab.AppendRow(table.Row{"torrent", r.HexInfoHash()})
+		tab.AppendRow(table.Row{"file", t.Files[p.FileIndex].Name()})
+
+		fmt.Println(tab.Render())
+
+		return nil
+	},
+}
+
 var doi string
 var out string
 
 func init() {
-	Cmd.AddCommand(fetchCmd)
+	Cmd.AddCommand(fetchCmd, inspectCmd)
 
+	inspectCmd.Flags().StringVar(&doi, "doi", "", "")
 	fetchCmd.Flags().StringVar(&doi, "doi", "", "")
 	fetchCmd.Flags().StringVarP(&out, "output", "o", "", "output file path")
 
