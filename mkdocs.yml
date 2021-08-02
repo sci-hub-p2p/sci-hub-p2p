@@ -11,11 +11,11 @@ extra:
   domain: "sci-hub-p2p.readthedocs.io"
   alternate:
     - name: 中文
-      link: "zh/简介.md"
+      link: "zh/简介/"
       lang: zh
 
     - name: English
-      link: "en/introduction.md"
+      link: "en/introduction/"
       lang: en
 
 nav:
