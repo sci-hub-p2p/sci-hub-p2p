@@ -68,7 +68,7 @@ func LoadIndexReader(b *bbolt.Bucket, r io.Reader) (success int, err error) {
 func LoadIndexFile(b *bbolt.Bucket, name string) (success int, err error) {
 	f, err := os.Open(name)
 	if err != nil {
-		return 0, err
+		return 0, errors.Wrap(err, "failed to read index file")
 	}
 	defer f.Close()
 
