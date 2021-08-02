@@ -71,7 +71,7 @@ func (h *handler) index(c *fiber.Ctx) error {
 
 func (h *handler) torrentUpload(c *fiber.Ctx) error {
 	raw := c.Request().Body()
-	if raw == nil {
+	if len(raw) == 0 {
 		return c.Status(fiber.StatusPaymentRequired).JSON(Error{
 			Message: "error",
 			Status:  "request body are empty",
@@ -116,25 +116,27 @@ func (h *handler) torrentUpload(c *fiber.Ctx) error {
 
 func (h *handler) indexesUpload(c *fiber.Ctx) error {
 	raw := c.Request().Body()
-	if raw == nil {
+	if len(raw) == 0 {
 		return c.Status(fiber.StatusPaymentRequired).JSON(Error{
 			Message: "error",
 			Status:  "request body are empty",
 		})
 	}
-
+	var count int
 	err := h.indexesDB.Batch(func(tx *bbolt.Tx) error {
 		b, err := tx.CreateBucketIfNotExists(consts.IndexBucketName())
 		if err != nil {
 			return errors.Wrap(err, "failed to create bucket in the database")
 		}
-		_, err = indexes.LoadIndexRaw(b, raw)
+		count, err = indexes.LoadIndexRaw(b, raw)
 
 		return errors.Wrapf(err, "failed to add indexes file")
 	})
 
 	if err == nil {
-		return nil
+		return c.JSON(fiber.Map{
+			"count": count,
+		})
 	}
 
 	if errors.Is(err, &json.MarshalerError{}) {

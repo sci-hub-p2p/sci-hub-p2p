@@ -13,7 +13,6 @@
 package paper
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
@@ -58,10 +57,6 @@ var fetchCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-
-		fmt.Println(r)
-		fmt.Println(p)
-		fmt.Println(t.Files[p.FileIndex])
 
 		c, err := client.GetClient()
 		if err != nil {
