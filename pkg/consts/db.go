@@ -9,6 +9,7 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU General Public License for more details.
+
 package consts
 
 import "os"
@@ -20,7 +21,7 @@ func BlockBucketName() []byte { return []byte("block-v0") }
 
 const (
 	DefaultFilePerm  os.FileMode = 0640
-	DefaultDirPerm               = os.ModeDir | DefaultFilePerm
+	DefaultDirPerm               = os.ModeDir | 0750
 	SecurityPerm     os.FileMode = 0600
 	PrivateKeyLength             = 4096
 	IPFSBlockDB                  = "ipfs.block.bolt"

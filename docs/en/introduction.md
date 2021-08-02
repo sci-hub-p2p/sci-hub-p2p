@@ -1,17 +1,17 @@
-Thanks to LibGen, and [this data holding project](https://www.reddit.com/r/libgen/comments/eo0y2c/library_genesis_project_update_25_million_books/),
-we have our papers in the p2p network now.
+Library Genesis (LibGen) is the largest free library in history. Thanks to all volunteers and contributors of [this data holding project](https://www.reddit.com/r/libgen/comments/eo0y2c/library_genesis_project_update_25_million_books/), LibGen books and scientific articles are seeded, saved, and preserved around the world with Peer to Peer (P2P) network.
 
-This project is aiming to fetch paper from the p2p network with a DOI like you are doing on sci-hub.
+## Development Goals
+
+This project is aiming to provide same experience as the original [Sci-Hub website](https://sci-hub.st/). Fetching papers from the P2P network by using DOI while not relying on any web or DNS server.
 
 <!-- prettier-ignore -->
 !!! warning
-    the whole function is based on P2P network.
-    If your ISP does not allow you to use P2P, **DO NOT USE IT**
+    Before you begin, make sure you understand [the legal implications of hosting and sharing copyrighted material](https://www.nolo.com/legal-encyclopedia/what-to-do-if-your-named-bit-torrent-lawsuit.html).
+
+    If your ISP does not allow BitTorrent traffic or you're not sure, **DO NOT USE IT!**
 
 ---
 
 ## project stage:
 
-For normal users: under heavy development, and it's not working at now.
-
-For developers: you can find more information in the [roadmap](https://github.com/Trim21/sci-hub-p2p/issues/2)
+you can find more developing information in the [roadmap](https://github.com/sci-hub-p2p/sci-hub-p2p/issues/2)

@@ -1,23 +1,22 @@
 site_name: Sci-Hub on P2P
 
 copyright: Copyright &copy; 2021 <a href='mailto:trim21.me@gmail.com'>Trim21</a>
-repo_url: https://github.com/Trim21/sci-hub-p2p/
+repo_url: https://github.com/sci-hub-p2p/sci-hub-p2p
 site_url: https://sci-hub-p2p.readthedocs.io/
 
 theme:
   name: material
-  custom_dir: ./docs/overrides
 
 extra:
   domain: "sci-hub-p2p.readthedocs.io"
-  # alternate:
-  #   - name: 中文
-  #     link: "zh/简介.md"
-  #     lang: zh
+  alternate:
+    - name: 中文
+      link: "zh/简介/"
+      lang: zh
 
-  #   - name: English
-  #     link: "en/introduction.md"
-  #     lang: en
+    - name: English
+      link: "en/introduction/"
+      lang: en
 
 nav:
   - "index.md"
@@ -25,12 +24,14 @@ nav:
       - "zh/简介.md"
       - "zh/安装.md"
       - 使用:
+          - "zh/usage/使用.md"
           - "zh/usage/索引.md"
+      - "zh/ipfs.md"
       - "zh/常见问题.md"
   - English:
       - "en/introduction.md"
-      - "en/installation.md"
       - "en/usage.md"
+      - "en/ipfs.md"
       - "en/faq.md"
   - About:
       - Contributing: "contributing.md"

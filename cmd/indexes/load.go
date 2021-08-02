@@ -9,19 +9,28 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU General Public License for more details.
+
 package indexes
 
 import (
+	"bufio"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"net/url"
+	"os"
+	"sort"
+	"strings"
 
+	"github.com/itchio/lzma"
 	"github.com/pkg/errors"
+	"github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
 	"go.etcd.io/bbolt"
 	"go.uber.org/zap"
 
 	"sci_hub_p2p/internal/utils"
 	"sci_hub_p2p/pkg/consts"
-	"sci_hub_p2p/pkg/indexes"
 	"sci_hub_p2p/pkg/logger"
 	"sci_hub_p2p/pkg/vars"
 )
@@ -37,7 +46,13 @@ var loadCmd = &cobra.Command{
 		if err != nil {
 			return errors.Wrap(err, "can't load any index files")
 		}
-		db, err := bbolt.Open(vars.IndexesBoltPath(), consts.DefaultFilePerm, bbolt.DefaultOptions)
+		sort.Strings(args)
+		fmt.Printf("find %d files to load", len(args))
+
+		db, err := bbolt.Open(vars.IndexesBoltPath(), consts.DefaultFilePerm, &bbolt.Options{
+			FreelistType: bbolt.FreelistArrayType,
+			NoSync:       true,
+		})
 		if err != nil {
 			return errors.Wrap(err, "cant' open database file, maybe another process is running")
 		}
@@ -52,29 +67,36 @@ var loadCmd = &cobra.Command{
 			}
 		}(db)
 
-		var count int
-		err = db.Batch(func(tx *bbolt.Tx) error {
-			b, err := tx.CreateBucketIfNotExists(consts.IndexBucketName())
-			if err != nil {
-				return errors.Wrap(err, "can't create bucket in database")
-			}
+		err = db.Update(func(tx *bbolt.Tx) error {
+			_, err := tx.CreateBucketIfNotExists(consts.IndexBucketName())
 
-			for _, file := range args {
-				c, err := indexes.LoadIndexFile(b, file)
+			return errors.Wrap(err, "failed to create bucket")
+		})
+		if err != nil {
+			return err
+		}
+
+		bar := progressbar.Default(int64(len(args)))
+		for _, file := range args {
+			_ = bar.Add64(1)
+
+			err = db.Batch(func(tx *bbolt.Tx) error {
+				err := loadIndexFile(tx.Bucket(consts.IndexBucketName()), file)
 				if err != nil {
 					return errors.Wrap(err, "can't load indexes file "+file)
 				}
-				count += c
 
+				return nil
+			})
+
+			if err != nil {
+				return errors.Wrap(err, "can't save torrent data to database")
+			}
+			if err := db.Sync(); err != nil {
+				return errors.Wrap(err, "failed to save data to disk")
 			}
 
-			return nil
-		})
-		if err != nil {
-			return errors.Wrap(err, "can't save torrent data to database")
 		}
-		fmt.Printf("successfully load %d index file into database\n", len(args))
-		fmt.Printf("%d records\n", count)
 
 		return nil
 	},
@@ -85,4 +107,45 @@ var glob string
 func init() {
 	loadCmd.Flags().StringVar(&glob, "glob", "",
 		"glob pattern to search indexes to avoid 'Argument list too long' error")
+}
+
+func loadIndexFile(b *bbolt.Bucket, name string) (err error) {
+	f, err := os.Open(name)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	reader := lzma.NewReader(f)
+	scanner := bufio.NewScanner(reader)
+
+	for scanner.Scan() {
+		var s []string
+
+		err = json.Unmarshal(scanner.Bytes(), &s)
+		if err != nil || len(s) != 2 {
+			return errors.Wrap(err, "can't parse json "+scanner.Text())
+		}
+
+		value, err := base64.StdEncoding.DecodeString(s[1])
+		if err != nil {
+			return errors.Wrap(err, "can't decode base64")
+		}
+
+		key, err := url.QueryUnescape(strings.TrimSuffix(s[0], ".pdf"))
+		if err != nil {
+			return err
+		}
+
+		err = b.Put([]byte(key), value)
+		if err != nil {
+			return errors.Wrap(err, "can't save record to database")
+		}
+	}
+
+	err = scanner.Err()
+	if err != nil {
+		return errors.Wrap(err, "can't scan file")
+	}
+
+	return errors.Wrap(scanner.Err(), "can't scan file")
 }
