@@ -91,9 +91,9 @@ func setupRouter(app *fiber.App, h *handler) {
 		})
 	})
 	router.Post("/", h.index)
-	router.Get("/torrents", h.torrentGet)
-	router.Put("/torrents", h.torrentUpload)
-	router.Put("/indexes", h.indexesUpload)
+	router.Get("/torrent", h.torrentGet)
+	router.Put("/torrent", h.torrentUpload)
+	router.Put("/index", h.indexesUpload)
 	router.Get("/paper", h.paperQuery)
 }
 

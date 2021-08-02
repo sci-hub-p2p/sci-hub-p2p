@@ -57,7 +57,7 @@ paths:
                 arch: "amd64"
                 base_dir: "/path/to/.sci-hub-p2p"
 
-  "/torrents":
+  "/torrent":
     get:
       description: list current torrent in database
       responses:
@@ -88,17 +88,15 @@ paths:
       responses:
         200:
           description: torrent already loaded, and load again
-        201:
-          description: torrent never loaded, and got loaded now, no need to distingish with `200`
 
         400:
           $ref: "#/components/responses/RequestWrongBodyEncoding"
         402:
           $ref: "#/components/responses/RequestEmptyBody"
 
-  "/indexes":
+  "/index":
     put:
-      description: add a indexes file to database
+      description: add a index file to database
       requestBody:
         required: true
         description: should be raw lzma compressed jsonlines file
@@ -107,7 +105,7 @@ paths:
             example: binary
       responses:
         200:
-          description: successfully load torrents
+          description: successfully load index file
           content:
             application/json:
               example:
@@ -127,7 +125,7 @@ paths:
             type: string
       responses:
         200:
-          description: successfully load torrents
+          description: successfully return a paper
           content:
             application/pdf: {}
         404:
