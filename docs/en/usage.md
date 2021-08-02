@@ -2,13 +2,21 @@
 
 In order to complete this guide, you will first need to perform the following tasks on your computer.
 
-**Create a folder** for this project, we would use `~/sci-hub/` in this guide.
+### Create a folder
 
-**Download latest release** from [GitHub Release](https://github.com/sci-hub-p2p/sci-hub-p2p/releases), and put it under `~/sci-hub/.
+Create a working folder for this project, we would use `~/sci-hub/` in this guide.
 
-**Download SciMag torrent files**. To set this up, download all torrent files [here](https://libgen.rs/scimag/repository_torrent/) and put them in `~/sci-hub/torrents/`.
+### Download Sci-hub-p2p
 
-**Download indices files.** Make sure indices file are correctly located under `~/sci-hub/index`.
+Download the latest release from [GitHub Release](https://github.com/sci-hub-p2p/sci-hub-p2p/releases), and put it under `~/sci-hub/`.
+
+### Download SciMag torrent files
+
+To set this up, download all torrent files [here](https://libgen.rs/scimag/repository_torrent/) and put them in `~/sci-hub/torrents/`.
+
+### Download index files
+
+Download index files [here](https://github.com/sci-hub-p2p/artifacts/releases/tag/0). Make sure indices file are correctly located under `~/sci-hub/index`.
 
 <!-- prettier-ignore -->
 !!!warning
@@ -35,7 +43,7 @@ To load all indices to database, run:
 
 <!-- prettier-ignore -->
 !!! warning
-    The whole process could take up to 30 minutes, make sure you have ~20G of hard disk space under your home folder (`~/.sci-hub-p2p/`).
+    The whole process could take about 30 minutes or longer, make sure you have ~20G of hard disk space under your home folder (`~/.sci-hub-p2p/`).
 
 ## Fetch a paper
 
