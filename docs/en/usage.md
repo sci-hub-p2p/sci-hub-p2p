@@ -16,7 +16,7 @@ To set this up, download all torrent files [here](https://libgen.rs/scimag/repos
 
 ### Download index files
 
-Download index files [here](https://github.com/sci-hub-p2p/artifacts/releases/tag/0). Make sure indices file are correctly located under `~/sci-hub/index`.
+Download index files [here](https://github.com/sci-hub-p2p/artifacts/releases/tag/0). Make sure index files are correctly located under `~/sci-hub/index`.
 
 <!-- prettier-ignore -->
 !!!warning
