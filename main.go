@@ -12,11 +12,9 @@
 package main
 
 import (
-	"os"
-
 	"sci_hub_p2p/cmd"
 )
 
 func main() {
-	cmd.Execute(os.Args[1:])
+	cmd.Execute()
 }
