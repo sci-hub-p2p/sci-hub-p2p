@@ -28,7 +28,7 @@ To import all torrent seeds under `~/.sci-hub/torrents/`, run:
 
 ```bash
 cd ~/sci-hub/
-./sci-hub torrent load --glob '~/.sci-hub/torrents/*.torrent'
+./sci-hub torrent load --glob '~/sci-hub/torrents/*.torrent'
 ```
 
 This process would only take a few seconds.
