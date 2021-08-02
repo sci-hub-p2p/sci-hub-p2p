@@ -6,7 +6,6 @@ site_url: https://sci-hub-p2p.readthedocs.io/
 
 theme:
   name: material
-  custom_dir: ./docs/overrides
 
 extra:
   domain: "sci-hub-p2p.readthedocs.io"
