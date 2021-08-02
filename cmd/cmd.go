@@ -66,7 +66,7 @@ var rootCmd = &cobra.Command{
 			pprof.StopCPUProfile()
 		}
 
-		return logger.Sync()
+		return nil
 	},
 }
 
