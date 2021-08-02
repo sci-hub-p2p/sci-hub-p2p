@@ -91,7 +91,10 @@ jobs:
       - name: Get Tag Name
         run: echo "TAG=${GITHUB_REF##*/}" >> $GITHUB_ENV
 
+      - name: hash files
+        run: sha256sum.exe ./dist/* > ./hash
+
       - name: Upload Github Release
-        run: gh release create "$TAG" ./dist/*
+        run: gh release create "$TAG" -F ./hash ./dist/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
