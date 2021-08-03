@@ -22,10 +22,6 @@ on:
       - "**.html"
       - "**.json"
 
-permissions:
-  pull-requests: write
-  issues: write
-
 jobs:
   lint-other:
     runs-on: ubuntu-latest
