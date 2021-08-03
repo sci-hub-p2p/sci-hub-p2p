@@ -10,7 +10,7 @@
   "packageRules": [
     {
       "groupName": "deps",
-      "matchManagers": [          "gomod"          ],
+      "matchManagers": ["gomod"],
       "matchUpdateTypes": ["patch", "minor"]
     }
   ]
