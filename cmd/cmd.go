@@ -90,7 +90,7 @@ var debugCmd = &cobra.Command{
 	},
 }
 
-func Execute(args []string) {
+func Execute() {
 	rootCmd.AddCommand(daemon.Cmd, indexes.Cmd, torrent.Cmd, paper.Cmd, debugCmd, ipfs.Cmd)
 
 	rootCmd.PersistentFlags().StringVar(&flag.LogFile, "log-file", "", "extra logger file, eg: ./out/log.jsonlines")
@@ -101,8 +101,6 @@ func Execute(args []string) {
 		defaultParallel, "how many CPU will be used")
 
 	rootCmd.PersistentFlags().BoolVar(&flag.CPUProfile, "cpu-profile", false, "generate a cpu profile")
-
-	rootCmd.SetArgs(args)
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
