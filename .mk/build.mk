@@ -1,8 +1,8 @@
 include .mk/args.mk
-ProtoFiles = $(shell find . -path "*/.*" -prune -o -name "*.proto" -print)
+ProtoFiles = $(shell python ./scripts/wildcard.py proto)
 GoProtoFiles=$(patsubst %.proto,%.pb.go,$(ProtoFiles))
 
-GoSrc = $(shell find . -path "*/.*" -prune -o -name "*.go" -print)
+GoSrc = $(shell python ./scripts/wildcard.py go)
 GoSrc += $(GoProtoFiles)
 
 $(GoProtoFiles): $(ProtoFiles)
