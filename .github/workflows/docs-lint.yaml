@@ -11,7 +11,7 @@ on:
       - "**.html"
       - "**.json"
   pull_request_target:
-    types: [opened, synchronize, reopened, review_requested]
+    types: [opened, synchronize, reopened]
     branches:
       - master
       - test
