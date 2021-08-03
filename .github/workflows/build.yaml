@@ -50,5 +50,5 @@ jobs:
 
       - uses: actions/upload-artifact@v2
         with:
-          name: build-artifact
+          name: ${{ runner.os }} ${{ env.REF }} ${{ env.SHA }}
           path: ./dist/
