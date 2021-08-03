@@ -16,10 +16,11 @@ if ref.startswith(
 elif match := re.match("refs/pull/(.*)/merge", ref):
     ref = "pr-" + match.group(1)
 
-print(
-    f"""
+content = f"""
 REF="{ref}"
 SHA="{SHA}"
 TIME="{build_time}"
 """
-)
+
+with open(os.getenv("GITHUB_ENV"), "a+", encoding="utf8") as f:
+    f.write(content)

@@ -45,7 +45,7 @@ jobs:
 
       - name: Set Version Env Vars
         shell: bash
-        run: scripts/build_info.py >>$GITHUB_ENV
+        run: python .github/scripts/build_info.py
 
       - name: Build
         run: make --debug=V ${{ runner.os }}
