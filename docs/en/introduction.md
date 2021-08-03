@@ -20,11 +20,11 @@ Get papers from P2P network through DOI, similar to SciHub website. No additiona
 
 This project provides a tool that allows SciMag seeders on BT networks to seed directly on IPFS networks without unzipping archived packages.
 
-In other words, if your are seeding SciMag Collection and using this tool at the same time, you can seed on the IPFS network with almost no additional hard disk space.
+In other words, if your are seeding SciMag Collection and using this tool at the same time, you can seed on the IPFS network with almost no extra storage cost.
 
 <!-- prettier-ignore -->
 !!!note
-    "Almost no additional hard disk space" means that each seed data (about 100GB) needs to consume about 200MB of additional space.
+    "Almost no extra storage cost" means that each seed data (about 100GB) takes up about 200MB of additional space.
 
 For more information, please refer to the relevant documentation of [IPFS](./ipfs.md).
 
