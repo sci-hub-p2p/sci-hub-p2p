@@ -70,7 +70,7 @@ func LoadRecordV0(p []byte) *Record {
 }
 
 func (r Record) Build(doi string, t *torrent.Torrent) (*PerFile, error) {
-	var pieceOffset = t.PieceLength * int64(r.PieceStart)
+	var pieceOffset = t.PieceLength*int64(r.PieceStart) + r.OffsetInPiece
 	var currentZipOffset int64
 	var fileStart int64 = -1
 	var f torrent.File
