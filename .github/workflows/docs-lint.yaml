@@ -50,6 +50,16 @@ jobs:
       - name: prettier
         run: prettier --write --list-different ./
 
+      - name: try review api
+        run: |
+          curl -X POST \
+            -H "Authorization: token ${REVIEWDOG_GITHUB_API_TOKEN}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/sci-hub-p2p/sci-hub-p2p/pulls/57/reviews \
+            -d '{"body": "a review", "event": "COMMENT"}'
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.REVIEWDOG_TOKEN }}
+
       - run: git diff --exit-code
 
       - name: create review
