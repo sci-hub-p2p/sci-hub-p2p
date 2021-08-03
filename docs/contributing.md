@@ -5,7 +5,6 @@ This project use GUN make to control the build process. You can try `make help` 
 - go 1.16+
 - python 3.6+ (only std lib)
 - protobuf 3 (if you want to edit or add any `.proto` file)
-- bash
 
 ## Documents
 
