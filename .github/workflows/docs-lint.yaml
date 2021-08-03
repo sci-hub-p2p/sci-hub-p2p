@@ -68,7 +68,7 @@ jobs:
           TMPFILE=$(mktemp)
           git diff >"${TMPFILE}"
           git reset --hard HEAD
-          reviewdog -f=diff -f.diff.strip=1 -reporter=github-pr-review < "${TMPFILE}"
+          reviewdog -f=diff -f.diff.strip=1 -reporter=github-pr-review -tee < "${TMPFILE}"
           exit 1
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.REVIEWDOG_TOKEN }}
