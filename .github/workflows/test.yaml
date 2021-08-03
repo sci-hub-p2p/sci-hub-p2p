@@ -33,21 +33,17 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Setup Cache Dir
-        run: |
-          python -c "from os.path import *;print('GOCACHE='+normpath(expanduser('~/.cache/go-build')))" >> $GITHUB_ENV
-        shell: bash
-
       - name: Cache Dependencies
         uses: actions/cache@v2
         with:
           path: |
-            ${{ env.GOCACHE }}
+            ~/appdata/local/go-build
+            ~/Library/Caches/go-build
+            ~/.cache/go-build
             ~/go/pkg/mod
           key: ${{ runner.os }}-go-1-${{ hashFiles('**/go.sum') }}-test
           restore-keys: |
             ${{ runner.os }}-go-1-${{ hashFiles('**/go.sum') }}-
-            ${{ runner.os }}-go-1-
 
       - run: make install
 
