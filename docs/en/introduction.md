@@ -1,4 +1,4 @@
-Library Genesis (LibGen) is the largest free library in history. Volunteers and contributors of [this data holding project](https://www.reddit.com/r/libgen/comments/eo0y2c/library_genesis_project_update_25_million_books/) collect, pack and distribute books and scientific articles with Peer to Peer (P2P) network. SciMag Collection is one of those data holding projects, it stores all 85M papers on Sci-Hub.
+Library Genesis (LibGen) is the largest free library in history. Volunteers and contributors of [this data holding project](https://www.reddit.com/r/libgen/comments/eo0y2c/library_genesis_project_update_25_million_books/) collect, pack and distribute books and scientific articles with Peer to Peer (P2P) network. SciMag Collection is one of those data holding projects, it contains more than 85M papers collected by Sci-Hub.
 
 Our project is based on SciMag Collection, BitTorrent and the IPFS network, aiming to provide the same experience as the original [Sci-Hub website](https://sci-hub.st/), retrieval papers from the P2P network by DOI while not relying on any DNS or HTTP server.
 
@@ -18,7 +18,7 @@ Get papers from P2P network through DOI, similar to SciHub website. No additiona
 
 ### An IPFS node client
 
-This project provides a tool that allows SciMag seeders on BT networks to seed directly on IPFS networks without unpacking archived packages.
+This project provides a tool that allows SciMag seeders on BT networks to seed directly on IPFS networks without unzipping archived packages.
 
 In other words, if your are seeding SciMag Collection and using this tool at the same time, you can seed on the IPFS network with almost no additional hard disk space.
 
