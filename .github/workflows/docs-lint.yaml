@@ -14,12 +14,16 @@ on:
     types: [opened, synchronize, reopened]
     branches:
       - master
+      - test
     paths:
       - "**.md"
       - "**.yaml"
       - "**.yml"
       - "**.html"
       - "**.json"
+
+permissions:
+  pull-requests: write
 
 jobs:
   lint-other:
