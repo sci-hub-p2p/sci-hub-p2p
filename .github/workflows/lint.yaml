@@ -49,6 +49,6 @@ jobs:
         run: make install
 
       - name: Generate Code
-        run: make generate
+        run: make generate -B
 
       - run: git diff --exit-code
