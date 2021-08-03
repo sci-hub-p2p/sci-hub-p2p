@@ -57,7 +57,13 @@ jobs:
           TMPFILE=$(mktemp)
           git diff >"${TMPFILE}"
           git reset --hard HEAD
-          reviewdog -f=diff -f.diff.strip=1 -reporter=github-pr-review < "${TMPFILE}"
+
+          TMPEVENT=$(mktemp)
+          jq '.+{"action_name": "pull_request_target"}' $GITHUB_EVENT_PATH > $TMPEVENT
+          export GITHUB_EVENT_PATH=$TMPEVENT
+
+          reviewdog -f=diff -f.diff.strip=1 -reporter=github-pr-review -tee < "${TMPFILE}"
+
           exit 1
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
