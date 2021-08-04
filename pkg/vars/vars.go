@@ -26,6 +26,12 @@ func GetAppBaseDir() string {
 		return appBaseDir
 	}
 
+	if p := os.Getenv("APP_HOME"); p != "" {
+		appBaseDir = filepath.Clean(p)
+
+		return appBaseDir
+	}
+
 	home, err := os.UserHomeDir()
 	if err != nil {
 		panic(err)
