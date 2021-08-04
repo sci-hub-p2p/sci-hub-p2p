@@ -146,7 +146,7 @@ def task_macOS():
         "actions": [
             CmdAction(
                 ["go", "build", "-o", macos_binary],
-                env=env(GOOS="windows"),
+                env=env(GOOS="darwin"),
             )
         ],
         "targets": [macos_binary],
