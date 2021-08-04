@@ -59,6 +59,14 @@ def task_test():
     }
 
 
+def task_generate():
+    """Generate go files"""
+    return {
+        "actions": [],
+        "file_dep": list(generated),
+    }
+
+
 def should_skip(dir_name: str):
     s = path.normpath(dir_name).split(os.sep)
     for part in s:
@@ -82,6 +90,7 @@ def wildcard(ext) -> Set[str]:
 
 proto = wildcard("proto")
 go = wildcard("go") | {x.replace(".proto", ".pb.go") for x in proto}
+generated = {x.replace(".proto", ".pb.go") for x in proto}
 
 
 def task_proto():
@@ -146,7 +155,7 @@ def task_macOS():
         "actions": [
             CmdAction(
                 ["go", "build", "-o", macos_binary],
-                env=env(GOOS="windows"),
+                env=env(GOOS="darwin"),
             )
         ],
         "targets": [macos_binary],
