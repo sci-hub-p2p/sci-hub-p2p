@@ -34,12 +34,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-1-${{ hashFiles('**/go.sum') }}-
 
-      - name: Set Version Env Vars
-        shell: bash
-        run: python .github/scripts/build_info.py
+      - run: pip install doit
 
       - name: Build
-        run: make --debug=V ${{ runner.os }}
+        run: doit ${{ runner.os }}
 
       - uses: actions/upload-artifact@v2
         with:

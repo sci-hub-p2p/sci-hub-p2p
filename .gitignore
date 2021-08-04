@@ -16,3 +16,6 @@ testdata/big_file.*
 out/*.key
 *.log
 tmp/
+.doit.*
+*.pyc
+.bin/
