@@ -1,5 +1,5 @@
-testdata/sm_00900000-00999999.torrent: ./scripts/fetch.bash
-	bash ./scripts/fetch.bash
+testdata/sm_00900000-00999999.torrent: scripts/fetch_torrent.py
+	python scripts/fetch_torrent.py
 
 testdata/big_file.bin: ./scripts/gen_big_file.py
 	python ./scripts/gen_big_file.py
