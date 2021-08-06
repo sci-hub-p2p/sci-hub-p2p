@@ -1,3 +1,9 @@
+---
+permalink: 简介
+---
+
+# 简介
+
 [创世纪图书馆](https://zh.wikipedia.org/zh-cn/%E5%88%9B%E4%B8%96%E7%BA%AA%E5%9B%BE%E4%B9%A6%E9%A6%86)（Library Genesis，或缩写为 LibGen) 是真正储存 Sci-Hub 论文的地方。LibGen 打包了所有其储存的学术论文（称为 scimag ），并且提供了[全部的种子文件](https://libgen.rs/scimag/repository_torrent/)。
 
 Reddit 上发起了许多[数据保存项目](https://www.reddit.com/r/DataHoarder/comments/nc27fv/rescue_mission_for_scihub_and_open_science_we_are/)，号召大家使用 BT 保存所有 LibGen 储存的论文。
