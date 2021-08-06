@@ -2,41 +2,40 @@ site_name: Sci-Hub on P2P
 
 copyright: Copyright &copy; 2021 <a href='mailto:trim21.me@gmail.com'>Trim21</a>
 repo_url: https://github.com/sci-hub-p2p/sci-hub-p2p
-site_url: https://sci-hub-p2p.readthedocs.io/docs/
+site_url: https://sci-hub-p2p.readthedocs.io/
 use_directory_urls: false
 
 theme:
   name: material
 
 extra:
-  domain: "sci-hub-p2p.readthedocs.io"
   alternate:
     - name: 中文
-      link: "zh/introduction.html"
-      lang: zh
+      link: "_zh/introduction.html"
+      lang: _zh
 
     - name: English
-      link: "en/introduction.html"
-      lang: en
+      link: "_en/introduction.html"
+      lang: _en
 
 nav:
   - "index.md"
   - 中文:
-      - 简介: "zh/introduction.md"
-      - 使用: "zh/usage.md"
+      - 简介: "_zh/introduction.md"
+      - 使用: "_zh/usage.md"
       - 更多信息:
-          - "zh/extra/index.md"
-      - "zh/ipfs.md"
-      - "zh/faq.md"
+          - "_zh/extra/index.md"
+      - "_zh/ipfs.md"
+      - "_zh/faq.md"
   - English:
-      - "en/introduction.md"
-      - "en/usage.md"
+      - "_en/introduction.md"
+      - "_en/usage.md"
       - Additional Information:
-          - "en/extra/index.md"
-      - "en/ipfs.md"
-      - "en/faq.md"
-  - About:
-      - Contributing: "contributing.md"
+          - "_en/extra/index.md"
+      - "_en/ipfs.md"
+      - "_en/faq.md"
+  - Contributing: "contributing.md"
+  - Issue Tracker: "https://github.com/sci-hub-p2p/sci-hub-p2p/issues"
 
 extra_javascript:
   - https://code.jquery.com/jquery-3.6.0.min.js
@@ -48,9 +47,9 @@ plugins:
   - macros
   - search
 
-markdown_extensions:
+markdown_ext_ensions:
   - pymdownx.highlight
-  - pymdownx.superfences
+  - pymdownx.superf_ences
   - pymdownx.inlinehilite
   - admonition
   - pymdownx.details
