@@ -6,11 +6,17 @@ on:
       - master
     paths-ignore:
       - "**.md"
+      - "**.txt"
+      - "mkdocs.yaml"
+      - ".readthedocs.yaml"
   pull_request:
     branches:
       - master
     paths-ignore:
       - "**.md"
+      - "**.txt"
+      - "mkdocs.yaml"
+      - ".readthedocs.yaml"
 
 jobs:
   lint:
