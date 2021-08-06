@@ -8,7 +8,7 @@ This is not a cli client of sci-hub website.
 
 ## [中文简介](https://sci-hub-p2p.readthedocs.io/en/latest/zh/introduction.html)
 
-## [Contributing](https://sci-hub-p2p.readthedocs.io/en/latest/contributing/)
+## [Contributing](https://sci-hub-p2p.readthedocs.io/en/latest/contributing.html)
 
 ## License
 
