@@ -29,7 +29,7 @@ In other words, if your are seeding SciMag Collection and using this tool at the
 
 <!-- prettier-ignore -->
 !!!note
-"Almost no extra storage cost" means that each seed data (about 100GB) takes up about 200MB of additional space.
+    "Almost no extra storage cost" means that each seed data (about 100GB) takes up about 200MB of additional space.
 
 For more information, please refer to the relevant documentation of [IPFS](./ipfs.md).
 
