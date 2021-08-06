@@ -12,11 +12,11 @@ extra:
   alternate:
     - name: 中文
       link: "_zh/introduction.html"
-      lang: _zh
+      lang: zh
 
     - name: English
       link: "_en/introduction.html"
-      lang: _en
+      lang: en
 
 nav:
   - "index.md"
@@ -47,9 +47,9 @@ plugins:
   - macros
   - search
 
-markdown_ext_ensions:
+markdown_extensions:
   - pymdownx.highlight
-  - pymdownx.superf_ences
+  - pymdownx.superfences
   - pymdownx.inlinehilite
   - admonition
   - pymdownx.details
