@@ -1,3 +1,8 @@
+"""set env var
+`REF`: `v0.0.1` or `pr-13`
+`SHA`: commit sha, length 7
+`TIME`: build time iso format
+"""
 import re
 import os
 from datetime import datetime

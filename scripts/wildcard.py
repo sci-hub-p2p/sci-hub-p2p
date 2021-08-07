@@ -1,4 +1,18 @@
-"""This script is to find source file with pre-defined rules."""
+"""replace makefile built-in `wildcard`.
+Find file with save extensions recursively.
+
+```bash
+python scripts/wildcard.py go
+```
+
+```text
+./cmd/cmd.go
+./cmd/daemon/root.go
+./cmd/flag/global.go
+./cmd/indexes/index.go
+```
+
+"""
 
 import os
 import sys
