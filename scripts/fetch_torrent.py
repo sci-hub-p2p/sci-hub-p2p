@@ -1,5 +1,5 @@
 from os import path
-from urllib.request import urlopen, Request
+from urllib.request import Request, urlopen
 
 dst = path.join(path.dirname(__file__), "../testdata/sm_00900000-00999999.torrent")
 

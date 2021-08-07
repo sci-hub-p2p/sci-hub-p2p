@@ -3,8 +3,8 @@
 `SHA`: commit sha, length 7
 `TIME`: build time iso format
 """
-import re
 import os
+import re
 from datetime import datetime
 
 ref = os.getenv("GITHUB_REF", "develop")

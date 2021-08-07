@@ -6,6 +6,7 @@ on:
       - master
     paths:
       - "**.md"
+      - "**.py"
       - "**.yaml"
       - "**.yml"
       - "**.html"
@@ -16,6 +17,7 @@ on:
       - master
     paths:
       - "**.md"
+      - "**.py"
       - "**.yaml"
       - "**.yml"
       - "**.html"
@@ -29,8 +31,10 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: 14.x.x
-
       - run: npm i -g prettier
+
+      - uses: actions/setup-python@v2
+      - run: pip install black isort
 
       - uses: reviewdog/action-setup@v1
         with:
@@ -47,7 +51,10 @@ jobs:
         if: ${{ github.event_name == 'push' }}
 
       - name: prettier
-        run: prettier --write --list-different ./
+        run: |
+          prettier --write --list-different ./
+          isort ./
+          black ./
 
       - run: git diff --exit-code
 
