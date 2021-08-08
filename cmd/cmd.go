@@ -23,6 +23,7 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
+	"sci_hub_p2p/cmd/bootstrap"
 	"sci_hub_p2p/cmd/daemon"
 	"sci_hub_p2p/cmd/flag"
 	"sci_hub_p2p/cmd/indexes"
@@ -91,7 +92,7 @@ var debugCmd = &cobra.Command{
 }
 
 func Execute() {
-	rootCmd.AddCommand(daemon.Cmd, indexes.Cmd, torrent.Cmd, paper.Cmd, debugCmd, ipfs.Cmd)
+	rootCmd.AddCommand(daemon.Cmd, indexes.Cmd, torrent.Cmd, paper.Cmd, debugCmd, ipfs.Cmd, bootstrap.Cmd)
 
 	rootCmd.PersistentFlags().StringVar(&flag.LogFile, "log-file", "", "extra logger file, eg: ./out/log.jsonlines")
 	rootCmd.PersistentFlags().BoolVar(&flag.Debug, "debug", false, "enable Debug")
