@@ -9,6 +9,7 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU General Public License for more details.
+
 package ipfslite
 
 import (
@@ -29,10 +30,12 @@ import (
 	"github.com/ipfs/go-ipfs-provider/simple"
 	ipld "github.com/ipfs/go-ipld-format"
 	"github.com/ipfs/go-merkledag"
+	"github.com/ipfs/go-namesys"
 	ufsio "github.com/ipfs/go-unixfs/io"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/routing"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"sci_hub_p2p/pkg/logger"
@@ -40,6 +43,7 @@ import (
 
 const (
 	defaultReprovideInterval = 12*time.Hour + 5*time.Minute
+	defaultNameSysCache      = 20
 )
 
 // Config wraps configuration options for the Peer.
@@ -71,6 +75,7 @@ type Peer struct {
 	bstore          blockstore.Blockstore
 	bserv           blockservice.BlockService
 	reprovider      provider.System
+	ns              namesys.NameSystem
 }
 
 // New creates an IPFS-Lite Peer. It uses the given ds, libp2p Host and
@@ -111,6 +116,10 @@ func New(
 		return nil, err
 	}
 
+	if err := p.setupNameSystem(); err != nil {
+		return nil, err
+	}
+
 	go p.autoclose()
 
 	return p, nil
@@ -130,6 +139,10 @@ func (p *Peer) setupBlockstore() error {
 	return nil
 }
 
+func (p *Peer) NameResolver() namesys.Resolver {
+	return p.ns
+}
+
 func (p *Peer) setupBlockService() {
 	if p.cfg.Offline {
 		p.bserv = blockservice.New(p.bstore, offline.Exchange(p.bstore))
@@ -144,6 +157,12 @@ func (p *Peer) setupBlockService() {
 
 func (p *Peer) setupDAGService() {
 	p.DAGService = merkledag.NewDAGService(p.bserv)
+}
+
+func (p *Peer) setupNameSystem() (err error) {
+	p.ns, err = namesys.NewNameSystem(p.dht, namesys.WithCache(defaultNameSysCache))
+
+	return errors.Wrap(err, "failed to setup NameSystem")
 }
 
 func (p *Peer) setupReprovider() error {

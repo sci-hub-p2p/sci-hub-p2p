@@ -36,7 +36,7 @@ import (
 
 const interval = time.Second * 20
 
-func Start(db *bbolt.DB, port int, cacheSize int64) error {
+func New(db *bbolt.DB, port int, cacheSize int64) (*ipfslite.Peer, error) {
 	var ctx = context.Background()
 	var datastore ds.Batching = store.NewArchiveFallbackDatastore(db, cacheSize)
 
@@ -48,7 +48,7 @@ func Start(db *bbolt.DB, port int, cacheSize int64) error {
 
 	privKey, err := genKey()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	logger.Info("finish load key")
@@ -62,7 +62,7 @@ func Start(db *bbolt.DB, port int, cacheSize int64) error {
 
 	pnetKey, err := pnetKey()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var options = ipfslite.DefaultLibp2pOptions()
@@ -80,18 +80,29 @@ func Start(db *bbolt.DB, port int, cacheSize int64) error {
 
 	h, dht, err := ipfslite.SetupLibp2p(ctx, privKey, pnetKey, listenAddrs, datastore, options...)
 
+	// var p namesys.Resolver = dht
+
 	if err != nil {
-		return errors.Wrap(err, "failed to start libp2p")
+		return nil, errors.Wrap(err, "failed to start libp2p")
 	}
 
 	lite, err := ipfslite.New(ctx, datastore, h, dht, &ipfslite.Config{ReprovideInterval: time.Hour})
 	if err != nil {
-		return errors.Wrap(err, "failed to create new peer")
+		return nil, errors.Wrap(err, "failed to create new peer")
 	}
 
 	logger.WithLogger("ipfs").Info("peer started")
 	fmt.Printf("your peer address is /ip4/127.0.0.1/tcp/%d/p2p/%s\n", port, h.ID())
 	lite.Bootstrap(ipfslite.DefaultBootstrapPeers())
+
+	return lite, nil
+}
+
+func Start(db *bbolt.DB, port int, cacheSize int64) error {
+	_, err := New(db, port, cacheSize)
+	if err != nil {
+		return errors.Wrap(err, "failed to create new peer")
+	}
 
 	for {
 		time.Sleep(interval)

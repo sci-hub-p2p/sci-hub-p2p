@@ -43,7 +43,7 @@ const defaultBufferItems = 64 // number of keys per Get buffer.
 
 func NewArchiveFallbackDatastore(db *bbolt.DB, cacheSize int64) (d *MapDataStore) {
 	cache, err := ristretto.NewCache(&ristretto.Config{
-		NumCounters: cacheSize / KB256,
+		NumCounters: cacheSize/KB256 + 1,
 		MaxCost:     cacheSize,
 		BufferItems: defaultBufferItems,
 	})

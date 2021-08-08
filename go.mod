@@ -6,6 +6,7 @@ require (
 	github.com/IncSW/go-bencode v0.1.2
 	github.com/anacrolix/log v0.9.0
 	github.com/anacrolix/torrent v1.29.1
+	github.com/asdine/storm/v3 v3.2.1
 	github.com/cheggaaa/pb/v3 v3.0.8
 	github.com/dgraph-io/ristretto v0.1.0
 	github.com/golang/glog v0.0.0-20210429001901-424d2337a529 // indirect
@@ -27,6 +28,8 @@ require (
 	github.com/ipfs/go-ipns v0.1.2
 	github.com/ipfs/go-log v1.0.5
 	github.com/ipfs/go-merkledag v0.3.2
+	github.com/ipfs/go-namesys v0.3.0
+	github.com/ipfs/go-path v0.0.9
 	github.com/ipfs/go-unixfs v0.2.6
 	github.com/itchio/lzma v0.0.0-20190703113020-d3e24e3e3d49
 	github.com/jackpal/bencode-go v1.0.0
@@ -51,7 +54,7 @@ require (
 	go.etcd.io/bbolt v1.3.6
 	go.uber.org/zap v1.18.1
 	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97 // indirect
-	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
+	golang.org/x/sys v0.0.0-20210806184541-e5e7981a1069 // indirect
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 )
