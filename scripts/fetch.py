@@ -1,13 +1,14 @@
+import os
 import sys
-from os import path
 from urllib.request import urlopen
 
 
 def fetch_torrent():
     output = sys.argv[2]
-    dst = path.join(path.dirname(__file__), "..", output)
+    dst = os.path.join(os.path.dirname(__file__), "..", output)
     url = sys.argv[1]
 
+    os.makedirs(os.path.dirname(dst), exist_ok=True)
     with open(dst, "wb") as file:
         with urlopen(url) as response:
             file.write(response.read())
