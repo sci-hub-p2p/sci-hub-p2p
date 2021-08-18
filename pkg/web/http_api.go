@@ -68,7 +68,7 @@ func New(tDB, iDB *bbolt.DB, c *torrent.Client) *fiber.App {
 		Root: pkger.Dir("/frontend/dist/"),
 	}))
 	app.Use("*", func(c *fiber.Ctx) error {
-		f, err := pkger.Open("/frontend/index.html")
+		f, err := pkger.Open("/frontend/dist/index.html")
 		if err != nil {
 			return errors.Wrap(err, "failed to open index.html")
 		}

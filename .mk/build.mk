@@ -26,6 +26,9 @@ dist/sci-hub_linux_64: $(GoSrc) frontend/dist/index.html
 dist/sci-hub_macos_64: $(GoSrc) frontend/dist/index.html
 	env CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o $@ $(GoBuildArgs)
 
+pkg/web/pkged.go: frontend/dist/index.html
+	pkger -o ./pkg/web
+
 tmp/dist.zip: scripts/fetch.py
 	python ./scripts/fetch.py https://github.com/sci-hub-p2p/sci-hub-p2p-frontend/releases/latest/download/dist.zip tmp/dist.zip
 
