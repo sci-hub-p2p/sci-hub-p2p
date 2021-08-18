@@ -18,6 +18,8 @@ import (
 
 	"github.com/anacrolix/torrent"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/filesystem"
+	"github.com/markbates/pkger"
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
 
@@ -41,14 +43,6 @@ func Start(port int) error {
 	}
 	defer iDB.Close()
 
-	// go func() {
-	// 	time.Sleep(time.Second)
-	//
-	// 	if err == nil {
-	// 		openBrowser(fmt.Sprintf("http://127.0.0.1:%d/", port))
-	// 	}
-	// }()
-
 	c, err := client.GetClient()
 	if err != nil {
 		return errors.Wrap(err, "failed to start BitTorrent client")
@@ -69,10 +63,19 @@ func New(tDB, iDB *bbolt.DB, c *torrent.Client) *fiber.App {
 			ErrorHandler:   errorHandler,
 		})
 
-	// app.Use("/static", filesystem.New(filesystem.Config{Root: pkger.Dir("./pkg/web/static")}))
+	setupRouter(app, &handler{torrentDB: tDB, indexesDB: iDB, btClient: c})
+	app.Use("/", filesystem.New(filesystem.Config{
+		Root: pkger.Dir("/frontend/dist/"),
+	}))
+	app.Use("*", func(c *fiber.Ctx) error {
+		f, err := pkger.Open("/frontend/index.html")
+		if err != nil {
+			return errors.Wrap(err, "failed to open index.html")
+		}
+		defer f.Close()
 
-	h := &handler{torrentDB: tDB, indexesDB: iDB, btClient: c}
-	setupRouter(app, h)
+		return c.Type("html").SendStream(f)
+	})
 
 	return app
 }
