@@ -1,11 +1,24 @@
+## Build
+
+All generated files are committed, if you didn't modify any files, it should build with simply `go build`.
+
+```bash
+git clone https://github.com/sci-hub-p2p/sci-hub-p2p.git
+cd sci-hub-p2p
+go build
+```
+
+## Development
+
 This project use GUN make to control the build process. You can try `make help` to see the help message.
 
-## Development requirements
+### Developing Requirements
 
 - go 1.16+
-- python 3.6+ (for generating testing data, only std lib is required)
+- python 3.6+ (only std lib)
 - protobuf 3 (if you want to edit or add any `.proto` file)
-- bash
+
+All generated files like `.pb.go` should be committed.
 
 ## Documents
 

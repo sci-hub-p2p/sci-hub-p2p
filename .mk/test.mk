@@ -1,5 +1,5 @@
-testdata/sm_00900000-00999999.torrent: ./scripts/fetch.bash
-	bash ./scripts/fetch.bash
+testdata/sm_00900000-00999999.torrent: scripts/fetch_torrent.py
+	python scripts/fetch_torrent.py
 
 testdata/big_file.bin: ./scripts/gen_big_file.py
 	python ./scripts/gen_big_file.py
@@ -7,10 +7,10 @@ testdata/big_file.bin: ./scripts/gen_big_file.py
 testdata: testdata/sm_00900000-00999999.torrent testdata/big_file.bin $(GoSrc)
 
 test: testdata
-	go test -v ./...
+	go test -race -v ./...
 
 coverage.out: testdata
-	go test -covermode=atomic -coverprofile=coverage.out -count=1 ./...
+	go test -race -covermode=atomic -coverprofile=coverage.out -count=1 ./...
 
 coverage: coverage.out
 

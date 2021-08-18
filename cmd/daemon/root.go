@@ -13,9 +13,6 @@
 package daemon
 
 import (
-	"fmt"
-	"math"
-
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"go.etcd.io/bbolt"
@@ -23,6 +20,7 @@ import (
 
 	"sci_hub_p2p/internal/utils"
 	"sci_hub_p2p/pkg/consts"
+	"sci_hub_p2p/pkg/consts/size"
 	"sci_hub_p2p/pkg/daemon"
 	"sci_hub_p2p/pkg/logger"
 	"sci_hub_p2p/pkg/vars"
@@ -67,16 +65,12 @@ var startIpfsCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Println(cacheSize * MB)
-		fmt.Println(math.Log2(float64(cacheSize * MB)))
-
-		return daemon.Start(db, port, cacheSize*MB)
+		return daemon.Start(db, port, cacheSize*size.MB)
 	},
 }
 var port int
 var cacheSize int64
 
-const MB int64 = 1 << 20
 const defaultDaemonPort = 4005
 const defaultWebPort = 2333
 const defaultCacheSize = 1 << 9

@@ -18,9 +18,11 @@ To set this up, download all torrent files [here](https://libgen.rs/scimag/repos
 
 Download index files [here](https://github.com/sci-hub-p2p/artifacts/releases/tag/0). Make sure index files are correctly located under `~/sci-hub/index`.
 
-<!-- prettier-ignore -->
-!!!warning
-    All data will be stored in `~/.sci-hub-p2p/` directory, there is no way to configure it yet.
+## Data storage location
+
+You can set environment variable `APP_HOME` to configure the location where to store all data.
+
+Is this environment variable is not set, the tool will use `~/.sci-hub-p2p/` as default location.
 
 ## Load torrents
 

@@ -1,5 +1,9 @@
 # Indexes
 
+<!-- prettier-ignore-->
+!!! info
+    currently, all indexes have been generates, please goto [usage](../usage.md)
+
 ## Generate
 
 ```console

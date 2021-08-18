@@ -6,11 +6,17 @@ on:
       - master
     paths-ignore:
       - "**.md"
+      - "**.txt"
+      - "mkdocs.yaml"
+      - ".readthedocs.yaml"
   pull_request:
     branches:
       - master
     paths-ignore:
       - "**.md"
+      - "**.txt"
+      - "mkdocs.yaml"
+      - ".readthedocs.yaml"
 
 jobs:
   build:
@@ -22,61 +28,31 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Install Python
+        uses: actions/setup-python@v2
+
       - name: Install Go
         uses: actions/setup-go@v2
         with:
           go-version: 1.16.x
 
-      - name: Setup Cache Dir
-        run: |
-          python -c "from os.path import *;print('GOCACHE='+normpath(expanduser('~/.cache/go-build')))" >> $GITHUB_ENV
-        shell: bash
-
       - name: Cache Dependencies
         uses: actions/cache@v2
         with:
           path: |
-            ${{ env.GOCACHE }}
+            ~/appdata/local/go-build
+            ~/Library/Caches/go-build
+            ~/.cache/go-build
             ~/go/pkg/mod
           key: ${{ runner.os }}-go-1-${{ hashFiles('**/go.sum') }}-build
           restore-keys: |
             ${{ runner.os }}-go-1-${{ hashFiles('**/go.sum') }}-
-            ${{ runner.os }}-go-1-
-
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: "3.x"
-          repo-token: ${{ github.token }}
-
-      - name: Install protoc-gen-go
-        run: make install
 
       - name: Set Version Env Vars
-        shell: bash
-        run: |
-          echo "GITHUB_REF=$GITHUB_REF"
-          echo "GITHUB_SHA=$GITHUB_SHA"
-
-          TIME=$(node -p 'new Date().toISOString()')
-          SHA=${GITHUB_SHA:0:8}
-
-          if [[ ${GITHUB_REF} == refs/tags/* ]]; then
-            export REF=${GITHUB_REF:10}
-          elif [[ ${GITHUB_REF} == refs/heads/* ]]; then
-            export REF=branch-${GITHUB_REF:11}
-          elif [[ ${GITHUB_REF} == refs/pull/*/merge ]]; then
-            export REF=pr-$(python -c "print('$GITHUB_REF'[10:-6])")
-          else
-            export REF=development
-          fi
-
-          echo "SHA=$SHA" >>$GITHUB_ENV
-          echo "REF=$REF" >>$GITHUB_ENV
-          echo "TIME=${TIME}" >>$GITHUB_ENV
+        run: python .github/scripts/build_info.py
 
       - name: Build
-        run: make --debug=V ${{ runner.os }}
+        run: make ${{ runner.os }}
 
       - uses: actions/upload-artifact@v2
         with:

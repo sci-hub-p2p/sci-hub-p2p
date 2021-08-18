@@ -1,3 +1,4 @@
+"""generate a test binary file at `./testdata/big_file.bin`"""
 import sys
 import random
 import hashlib

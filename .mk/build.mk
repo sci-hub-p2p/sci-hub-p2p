@@ -1,11 +1,11 @@
 include .mk/args.mk
-Static = $(wildcard ./pkg/web/static/*.html)
-Template = $(wildcard ./pkg/web/template/*.gohtml)
+Static = $(shell python ./scripts/wildcard.py html)
+Template = $(shell python ./scripts/wildcard.py gohtml)
 
-ProtoFiles = $(shell find . -path "*/.*" -prune -o -name "*.proto" -print)
+ProtoFiles = $(shell python ./scripts/wildcard.py proto)
 GoProtoFiles=$(patsubst %.proto,%.pb.go,$(ProtoFiles))
 
-GoSrc = $(shell find . -path "*/.*" -prune -o -name "*.go" -print)
+GoSrc = $(shell python ./scripts/wildcard.py go)
 GoSrc += $(GoProtoFiles)
 
 $(GoProtoFiles): $(ProtoFiles)

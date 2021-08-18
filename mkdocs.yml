@@ -3,38 +3,39 @@ site_name: Sci-Hub on P2P
 copyright: Copyright &copy; 2021 <a href='mailto:trim21.me@gmail.com'>Trim21</a>
 repo_url: https://github.com/sci-hub-p2p/sci-hub-p2p
 site_url: https://sci-hub-p2p.readthedocs.io/
+use_directory_urls: false
 
 theme:
   name: material
 
 extra:
-  domain: "sci-hub-p2p.readthedocs.io"
   alternate:
     - name: 中文
-      link: "zh/简介/"
+      link: "_zh/introduction.html"
       lang: zh
 
     - name: English
-      link: "en/introduction/"
+      link: "_en/introduction.html"
       lang: en
 
 nav:
   - "index.md"
   - 中文:
-      - "zh/简介.md"
-      - "zh/安装.md"
-      - 使用:
-          - "zh/usage/使用.md"
-          - "zh/usage/索引.md"
-      - "zh/ipfs.md"
-      - "zh/常见问题.md"
+      - 简介: "_zh/introduction.md"
+      - 使用: "_zh/usage.md"
+      - 更多信息:
+          - "_zh/extra/index.md"
+      - "_zh/ipfs.md"
+      - "_zh/faq.md"
   - English:
-      - "en/introduction.md"
-      - "en/usage.md"
-      - "en/ipfs.md"
-      - "en/faq.md"
-  - About:
-      - Contributing: "contributing.md"
+      - "_en/introduction.md"
+      - "_en/usage.md"
+      - Additional Information:
+          - "_en/extra/index.md"
+      - "_en/ipfs.md"
+      - "_en/faq.md"
+  - Contributing: "contributing.md"
+  - Issue Tracker: "https://github.com/sci-hub-p2p/sci-hub-p2p/issues"
 
 extra_javascript:
   - https://code.jquery.com/jquery-3.6.0.min.js

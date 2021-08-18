@@ -18,7 +18,6 @@ package daemon
 import (
 	"context"
 	"fmt"
-	"time"
 
 	ds "github.com/ipfs/go-datastore"
 	log2 "github.com/ipfs/go-log"
@@ -34,9 +33,7 @@ import (
 	"sci_hub_p2p/pkg/store"
 )
 
-const interval = time.Second * 20
-
-func Start(db *bbolt.DB, port int, cacheSize int64) error {
+func New(db *bbolt.DB, port int, cacheSize int64) (*ipfslite.Peer, error) {
 	var ctx = context.Background()
 	var datastore ds.Batching = store.NewArchiveFallbackDatastore(db, cacheSize)
 
@@ -48,54 +45,93 @@ func Start(db *bbolt.DB, port int, cacheSize int64) error {
 
 	privKey, err := genKey()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	logger.Info("finish load key")
+	pnetKey, err := pnetKey()
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		useUqic = pnetKey == nil
+		listen  = listenAddr(port, useUqic)
+		options = ipfslite.DefaultLibp2pOptions()
+	)
+
+	if useUqic {
+		options = append(options, libp2p.Transport(libp2pquic.NewTransport))
+	} else {
+		logger.Warn("you are using pnet key, disable quic support")
+	}
+
+	h, dht, err := ipfslite.SetupLibp2p(ctx, privKey, pnetKey, listen, datastore, options...)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to start libp2p")
+	}
+
+	lite, err := ipfslite.New(ctx, datastore, h, dht, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create new peer")
+	}
+
+	lite.Bootstrap(ipfslite.DefaultBootstrapPeers())
+
+	logger.WithLogger("ipfs").Info("peer started")
+	fmt.Println("listening on:")
+
+	for _, host := range listen {
+		fmt.Printf("\t%s/p2p/%s\n", host, h.ID())
+	}
+
+	return lite, nil
+}
+
+func listenAddr(port int, quic bool) []multiaddr.Multiaddr {
+	var address []multiaddr.Multiaddr
 
 	listen, err := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", port))
 	if err != nil {
 		panic(err)
 	}
 
-	listenAddrs := []multiaddr.Multiaddr{listen}
+	address = append(address, listen)
 
-	pnetKey, err := pnetKey()
+	listenV6, err := multiaddr.NewMultiaddr(fmt.Sprintf("/ip6/::/tcp/%d", port))
 	if err != nil {
-		return err
+		panic(err)
 	}
 
-	var options = ipfslite.DefaultLibp2pOptions()
+	address = append(address, listenV6)
 
-	if pnetKey != nil {
-		logger.Warn("you are using pnet key, disable quic support")
-	} else {
-		options = append(options, libp2p.Transport(libp2pquic.NewTransport))
+	if quic {
 		listen, err := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/0.0.0.0/udp/%d/quic", port))
 		if err != nil {
 			panic(err)
 		}
-		listenAddrs = append(listenAddrs, listen)
+
+		address = append(address, listen)
+
+		listenV6, err := multiaddr.NewMultiaddr(fmt.Sprintf("/ip6/::/udp/%d/quic", port))
+		if err != nil {
+			panic(err)
+		}
+
+		address = append(address, listenV6)
 	}
 
-	h, dht, err := ipfslite.SetupLibp2p(ctx, privKey, pnetKey, listenAddrs, datastore, options...)
+	return address
+}
 
-	if err != nil {
-		return errors.Wrap(err, "failed to start libp2p")
-	}
-
-	lite, err := ipfslite.New(ctx, datastore, h, dht, &ipfslite.Config{ReprovideInterval: time.Hour})
+func Start(db *bbolt.DB, port int, cacheSize int64) error {
+	_, err := New(db, port, cacheSize)
 	if err != nil {
 		return errors.Wrap(err, "failed to create new peer")
 	}
 
-	logger.WithLogger("ipfs").Info("peer started")
-	fmt.Printf("your peer address is /ip4/127.0.0.1/tcp/%d/p2p/%s\n", port, h.ID())
-	lite.Bootstrap(ipfslite.DefaultBootstrapPeers())
+	<-make(chan struct{})
 
-	for {
-		time.Sleep(interval)
-	}
+	return nil
 }
 
 func setupIPFSLogger() {
