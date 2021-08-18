@@ -13,6 +13,7 @@
 package size
 
 const (
-	Sha1Bytes = 20
-	Sha1Hex   = 40
+	Sha1Bytes       = 20
+	Sha1Hex         = 40
+	MB        int64 = 1 << 20
 )

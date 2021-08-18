@@ -9,6 +9,7 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU General Public License for more details.
+
 package daemon
 
 import (
@@ -37,8 +38,6 @@ func pnetKey() (pnet.PSK, error) {
 	r, err := os.Open(keyPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			logger.WithLogger("ipfs").Info("didn't find pnet key in ~/.ipfs/swam.key, skip")
-
 			return nil, nil
 		}
 
