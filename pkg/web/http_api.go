@@ -13,6 +13,7 @@
 package web
 
 import (
+	"fmt"
 	"runtime"
 	"strconv"
 
@@ -49,6 +50,7 @@ func Start(port int) error {
 	}
 	defer c.Close()
 
+	fmt.Printf("Web-UI running on http://127.0.0.1:%d/\n", port)
 	err = New(tDB, iDB, c).Listen(":" + strconv.Itoa(port))
 
 	return errors.Wrap(err, "failed to start http server")
@@ -58,9 +60,10 @@ func New(tDB, iDB *bbolt.DB, c *torrent.Client) *fiber.App {
 	app := fiber.New(
 		fiber.Config{
 			// Views:          engine,
-			ReadBufferSize: MB512,
-			BodyLimit:      MB512,
-			ErrorHandler:   errorHandler,
+			DisableStartupMessage: true,
+			ReadBufferSize:        MB512,
+			BodyLimit:             MB512,
+			ErrorHandler:          errorHandler,
 		})
 
 	setupRouter(app, &handler{torrentDB: tDB, indexesDB: iDB, btClient: c})
