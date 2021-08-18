@@ -9,6 +9,9 @@ on:
       - "**.txt"
       - "mkdocs.yaml"
       - ".readthedocs.yaml"
+    tags:
+      - "v*.*.*"
+
   pull_request:
     branches:
       - master
@@ -59,4 +62,33 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: ${{ runner.os }} ${{ env.REF }} ${{ env.SHA }}
-          path: ./dist/
+          path: ./dist/*
+
+  release:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [build]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - uses: actions/download-artifact@v2
+        with:
+          path: ./tmp/
+
+      - run: mkdir -p ./dist/
+      - run: mv ./tmp/*/* ./dist/
+
+      - name: Get Tag Name
+        run: echo "TAG=${GITHUB_REF##*/}" >> $GITHUB_ENV
+
+      - name: hash files
+        run: |
+          echo -e '<details><summary> release hash </summary>\n\n```' > ../hash
+          sha256sum --tag ./* >> ../hash
+          echo -e '```\n</details>' >> ../hash
+        working-directory: dist
+      - name: Upload Github Release
+        run: gh release create "$TAG" -t "$TAG" -F ./hash ./dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
