@@ -16,6 +16,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	torrent2 "github.com/anacrolix/torrent"
 	"github.com/gofiber/fiber/v2"
@@ -35,6 +36,7 @@ type handler struct {
 	torrentDB *bbolt.DB
 	indexesDB *bbolt.DB
 	btClient  *torrent2.Client
+	m         *sync.Mutex
 }
 
 func (h *handler) index(c *fiber.Ctx) error {
@@ -152,7 +154,10 @@ func (h *handler) indexesUpload(c *fiber.Ctx) error {
 	})
 }
 
-func (h handler) getPaper(doi string, c *fiber.Ctx) error {
+func (h *handler) getPaper(doi string, c *fiber.Ctx) error {
+	h.m.Lock()
+	defer h.m.Unlock()
+
 	r, err := persist.GetIndexRecordDB(h.indexesDB, []byte(doi))
 	if err != nil {
 		if errors.Is(err, persist.ErrNotFound) {

@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"runtime"
 	"strconv"
+	"sync"
 
 	"github.com/anacrolix/torrent"
 	"github.com/gofiber/fiber/v2"
@@ -66,7 +67,7 @@ func New(tDB, iDB *bbolt.DB, c *torrent.Client) *fiber.App {
 			ErrorHandler:          errorHandler,
 		})
 
-	setupRouter(app, &handler{torrentDB: tDB, indexesDB: iDB, btClient: c})
+	setupRouter(app, &handler{torrentDB: tDB, indexesDB: iDB, btClient: c, m: &sync.Mutex{}})
 	app.Use("/", filesystem.New(filesystem.Config{
 		Root: pkger.Dir("/frontend/dist/"),
 	}))
