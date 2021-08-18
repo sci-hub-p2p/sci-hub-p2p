@@ -200,6 +200,11 @@ linters-settings:
       - "func (*go.etcd.io/bbolt.DB).Batch"
       - "func (*go.etcd.io/bbolt.DB).View"
       - "func (*go.etcd.io/bbolt.Bucket).ForEach"
+      - "func (*github.com/gofiber/fiber/v2.Ctx).Send"
+      - "func (*github.com/gofiber/fiber/v2.Ctx).Render("
+      - "func (*github.com/gofiber/fiber/v2.Ctx).Redirect("
+      - "func (*github.com/gofiber/fiber/v2.Ctx).JSON("
+      - "func os.Open(name string)"
 
   ifshort:
     # Maximum length of vars declaration measured in number of lines, after which linter won't suggest using short syntax.

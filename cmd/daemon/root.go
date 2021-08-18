@@ -24,15 +24,25 @@ import (
 	"sci_hub_p2p/pkg/daemon"
 	"sci_hub_p2p/pkg/logger"
 	"sci_hub_p2p/pkg/vars"
+	"sci_hub_p2p/pkg/web"
 )
 
 var Cmd = &cobra.Command{
 	Use: "daemon",
 }
 
-var startCmd = &cobra.Command{
+var httpAPICmd = &cobra.Command{
+	Use:     "http",
+	Short:   "start http server for http api and Web-UI",
+	PreRunE: utils.EnsureDir(vars.GetAppTmpDir()),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return web.Start(port)
+	},
+}
+
+var startIpfsCmd = &cobra.Command{
 	Use:     "start",
-	Short:   "start daemon",
+	Short:   "start ipfs node",
 	PreRunE: utils.EnsureDir(vars.GetAppBaseDir()),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		logger.Info("open database", zap.String("db", vars.IpfsDBPath()))
@@ -62,10 +72,13 @@ var port int
 var cacheSize int64
 
 const defaultDaemonPort = 4005
+const defaultWebPort = 2333
 const defaultCacheSize = 1 << 9
 
 func init() {
-	Cmd.AddCommand(startCmd)
-	startCmd.Flags().IntVarP(&port, "port", "p", defaultDaemonPort, "IPFS peer default port")
-	startCmd.Flags().Int64Var(&cacheSize, "cache", defaultCacheSize, "memory cache size for disk in MB")
+	Cmd.AddCommand(startIpfsCmd, httpAPICmd)
+	startIpfsCmd.Flags().IntVarP(&port, "port", "p", defaultDaemonPort, "IPFS peer default port")
+	startIpfsCmd.Flags().Int64Var(&cacheSize, "cache", defaultCacheSize, "memory cache size for disk in MB")
+
+	httpAPICmd.Flags().IntVarP(&port, "port", "p", defaultWebPort, "IPFS peer default port")
 }

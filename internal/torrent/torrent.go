@@ -41,16 +41,16 @@ func (f File) Copy() File {
 }
 
 type Torrent struct {
-	InfoHash     string
-	Announce     string
-	Name         string
+	InfoHash     string `json:"info_hash"`
+	Announce     string `json:"-"`
+	Name         string `json:"name"`
 	infoHash     []byte
 	raw          []byte
-	Pieces       [][]byte
-	Files        []File
-	AnnounceList [][]string
-	PieceLength  int64
-	CreationDate int
+	Pieces       [][]byte   `json:"-"`
+	Files        []File     `json:"-"`
+	AnnounceList [][]string `json:"-"`
+	PieceLength  int64      `json:"-"`
+	CreationDate int        `json:"-"`
 }
 
 var ErrWrongPieces = errors.New("The length of the pieces can't be divided by 20")

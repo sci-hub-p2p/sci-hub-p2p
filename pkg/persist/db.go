@@ -9,6 +9,7 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU General Public License for more details.
+
 package persist
 
 import (
@@ -22,6 +23,27 @@ import (
 )
 
 var ErrNotFound = errors.New("Not found in database")
+
+func GetIndexRecordDB(iDB *bbolt.DB, doi []byte) (*indexes.Record, error) {
+	var r *indexes.Record
+
+	err := iDB.View(func(tx *bbolt.Tx) error {
+		if v := tx.Bucket(consts.IndexBucketName()).Get(doi); v != nil {
+			r = indexes.LoadRecordV0(v)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read from Database")
+	}
+
+	if r == nil {
+		return nil, errors.Wrap(ErrNotFound, "failed to read doi in DB")
+	}
+
+	return r, nil
+}
 
 func GetIndexRecord(doi []byte) (*indexes.Record, error) {
 	iDB, err := bbolt.Open(vars.IndexesBoltPath(), consts.DefaultFilePerm, bbolt.DefaultOptions)
@@ -58,9 +80,13 @@ func GetTorrent(hash []byte) (*torrent.Torrent, error) {
 	}
 	defer tDB.Close()
 
+	return GetTorrentDB(tDB, hash)
+}
+
+func GetTorrentDB(tDB *bbolt.DB, hash []byte) (*torrent.Torrent, error) {
 	var raw []byte
 
-	err = tDB.View(func(tx *bbolt.Tx) error {
+	err := tDB.View(func(tx *bbolt.Tx) error {
 		value := tx.Bucket(consts.TorrentBucket()).Get(hash)
 		if value == nil {
 			return errors.Wrap(ErrNotFound, "failed to find torrent in DB")

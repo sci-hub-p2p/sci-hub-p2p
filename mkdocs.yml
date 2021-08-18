@@ -23,6 +23,7 @@ nav:
   - 中文:
       - 简介: "_zh/introduction.md"
       - 使用: "_zh/usage.md"
+      - "_zh/web-ui.md"
       - 更多信息:
           - "_zh/extra/index.md"
       - "_zh/ipfs.md"
@@ -30,6 +31,7 @@ nav:
   - English:
       - "_en/introduction.md"
       - "_en/usage.md"
+      - "_en/web-ui.md"
       - Additional Information:
           - "_en/extra/index.md"
       - "_en/ipfs.md"

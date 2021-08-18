@@ -1,5 +1,5 @@
-testdata/sm_00900000-00999999.torrent: scripts/fetch_torrent.py
-	python scripts/fetch_torrent.py
+testdata/sm_00900000-00999999.torrent:
+	python ./scripts/fetch.py https://libgen.rs/scimag/repository_torrent/sm_00900000-00999999.torrent testdata/sm_00900000-00999999.torrent
 
 testdata/big_file.bin: ./scripts/gen_big_file.py
 	python ./scripts/gen_big_file.py

@@ -1,0 +1,190 @@
+openapi: 3.0.3
+info:
+  title: Sci-Hub P2P
+  version: 0.0.1
+  description: "[go back to documents](./)"
+
+servers:
+  - variables:
+      port:
+        default: "4005"
+      basePath:
+        default: "api/v0"
+    url: http://127.0.0.1:{port}/{basePath}
+
+paths:
+  "/debug":
+    get:
+      description: get debug info
+      responses:
+        200:
+          description: ""
+          content:
+            application/json:
+              schema:
+                "title": "debug"
+                "type": "object"
+                "additionalProperties": false
+                "properties":
+                  "version":
+                    "type": "string"
+                  "commit":
+                    "type": "string"
+                  "builder":
+                    "type": "string"
+                  "build_time":
+                    "type": "string"
+                  "os":
+                    "type": "string"
+                  "arch":
+                    "type": "string"
+                  "base_dir":
+                    "type": "string"
+                "required":
+                  - "arch"
+                  - "base_dir"
+                  - "commit"
+                  - "builder"
+                  - "build_time"
+                  - "os"
+                  - "version"
+              example:
+                version: v0.0.1
+                commit: 8aj2nsa8
+                builder: "go version go1.16.6 windows/amd64"
+                build_time: "2021-07-31T19:44:54.569Z"
+                os: "windows"
+                arch: "amd64"
+                base_dir: "/path/to/.sci-hub-p2p"
+
+  "/torrent":
+    get:
+      description: list current torrent in database
+      responses:
+        200:
+          description: torrent already loaded, and load again
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        info_hash:
+                          type: string
+                        name:
+                          type: string
+    put:
+      description: add a torrent to database
+      requestBody:
+        required: true
+        description: should be raw bencoding encoded binary content
+        content:
+          application/octet-stream:
+            example: binary
+      responses:
+        200:
+          description: torrent already loaded, and load again
+
+        400:
+          $ref: "#/components/responses/RequestWrongBodyEncoding"
+        402:
+          $ref: "#/components/responses/RequestEmptyBody"
+
+  "/index":
+    put:
+      description: add a index file to database
+      requestBody:
+        required: true
+        description: should be raw lzma compressed jsonlines file
+        content:
+          application/octet-stream:
+            example: binary
+      responses:
+        200:
+          description: successfully load index file
+          content:
+            application/json:
+              example:
+                count: 99996
+        400:
+          $ref: "#/components/responses/RequestWrongBodyEncoding"
+        402:
+          $ref: "#/components/responses/RequestEmptyBody"
+
+  "/paper":
+    get:
+      description: Get paper from P2P network.
+      parameters:
+        - name: doi
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: successfully return a paper
+          content:
+            application/pdf: {}
+        404:
+          description: |
+            Can't found DOI or torrent in database
+            check `data.info_hash` to know if there's a torrent missing in database
+          content:
+            application/json:
+              schema:
+                example:
+                  status: error
+                  message: can't find paper
+                  data:
+                    info_hash: "{info hash in hex string}"
+                oneOf:
+                  - $ref: "#/components/schemas/error"
+                  - type: object
+                    allOf:
+                      - $ref: "#/components/schemas/error"
+                      - properties:
+                          data:
+                            type: object
+                            properties:
+                              info_hash:
+                                type: string
+components:
+  schemas:
+    error:
+      title: "Error"
+      description: error with message
+      type: "object"
+      additionalProperties: false
+      "properties":
+        "status":
+          type: "string"
+          enum: ["error"]
+        "message":
+          "type": "string"
+      required:
+        - status
+        - messag
+
+  responses:
+    RequestEmptyBody:
+      description: empty request body
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error"
+          example:
+            status: error
+            mesage: empty response body
+
+    RequestWrongBodyEncoding:
+      description: request body can'b be decoded
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error"
+          example:
+            status: error
+            mesage: can't decode request body

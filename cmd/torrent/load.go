@@ -26,6 +26,7 @@ import (
 	"sci_hub_p2p/pkg/consts"
 	"sci_hub_p2p/pkg/consts/size"
 	"sci_hub_p2p/pkg/logger"
+	"sci_hub_p2p/pkg/persist"
 	"sci_hub_p2p/pkg/vars"
 )
 
@@ -72,15 +73,9 @@ var loadCmd = &cobra.Command{
 				if err != nil {
 					return errors.Wrap(err, "failed to read file content")
 				}
-
-				t, err := torrent.ParseRaw(raw)
+				err = persist.SaveTorrent(b, raw)
 				if err != nil {
-					return errors.Wrapf(err, "failed to parse torrent %s", file)
-				}
-
-				err = b.Put(t.RawInfoHash(), raw)
-				if err != nil {
-					return err
+					return errors.Wrapf(err, "failed to save torrent %s", file)
 				}
 			}
 
