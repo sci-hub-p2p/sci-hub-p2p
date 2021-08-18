@@ -29,7 +29,7 @@ dist/sci-hub_macos_64: $(GoSrc) generate
 pkg/web/rice-box.go: frontend/dist/index.html
 	rice embed-go -i ./pkg/web/
 
-tmp/dist.zip: scripts/fetch.py
+tmp/dist.zip:
 	python ./scripts/fetch.py https://github.com/sci-hub-p2p/sci-hub-p2p-frontend/releases/latest/download/dist.zip tmp/dist.zip
 
 frontend/dist/index.html: tmp/dist.zip
