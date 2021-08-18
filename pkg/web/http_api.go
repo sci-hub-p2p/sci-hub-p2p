@@ -18,10 +18,10 @@ import (
 	"strconv"
 	"sync"
 
+	rice "github.com/GeertJohan/go.rice"
 	"github.com/anacrolix/torrent"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
-	"github.com/markbates/pkger"
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
 
@@ -68,11 +68,14 @@ func New(tDB, iDB *bbolt.DB, c *torrent.Client) *fiber.App {
 		})
 
 	setupRouter(app, &handler{torrentDB: tDB, indexesDB: iDB, btClient: c, m: &sync.Mutex{}})
+
+	embed := rice.MustFindBox("../../frontend/dist/").HTTPBox()
+
 	app.Use("/", filesystem.New(filesystem.Config{
-		Root: pkger.Dir("/frontend/dist/"),
+		Root: embed,
 	}))
 	app.Use("*", func(c *fiber.Ctx) error {
-		f, err := pkger.Open("/frontend/dist/index.html")
+		f, err := embed.Open("index.html")
 		if err != nil {
 			return errors.Wrap(err, "failed to open index.html")
 		}
@@ -85,7 +88,8 @@ func New(tDB, iDB *bbolt.DB, c *torrent.Client) *fiber.App {
 }
 
 func setupRouter(app *fiber.App, h *handler) {
-	router := app.Group("/api/v0")
+	api := app.Group("/api")
+	router := api.Group("/v0")
 	router.Get("/debug", func(c *fiber.Ctx) error {
 		return c.JSON(DebugInfo{
 			Version:   vars.Ref,
@@ -102,6 +106,9 @@ func setupRouter(app *fiber.App, h *handler) {
 	router.Put("/torrent", h.torrentUpload)
 	router.Put("/index", h.indexesUpload)
 	router.Get("/paper", h.paperQuery)
+	api.Use("*", func(c *fiber.Ctx) error {
+		return c.Status(fiber.StatusNotFound).JSON(Error{Status: "error", Message: "router not found"})
+	})
 }
 
 func errorHandler(c *fiber.Ctx, err error) error {

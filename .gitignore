@@ -3,6 +3,7 @@
 *.torrent
 coverage*
 *.exe
+*.exe~
 sci_hub_p2p
 *.json.gz
 out/
