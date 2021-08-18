@@ -18,3 +18,4 @@ out/*.key
 *.log
 tmp/
 frontend/
+pkg/web/rice-box.go
